@@ -1,0 +1,50 @@
+{
+  "description": "活动经验等级段倍率表。倍率为标准单位经验的乘数，会根据角色等级所在区间自动取值。当前为占位数据，后续根据实际游戏数据填入。",
+  "activities": {
+    "juezhan_wangcheng": {
+      "name": "决战王城",
+      "defaultMultiplier": 1.0,
+      "ranges": [
+        { "minLevel": 1, "maxLevel": 49, "multiplier": 1.0 },
+        { "minLevel": 50, "maxLevel": 69, "multiplier": 1.0 },
+        { "minLevel": 70, "maxLevel": 89, "multiplier": 1.0 },
+        { "minLevel": 90, "maxLevel": 99, "multiplier": 1.0 },
+        { "minLevel": 100, "maxLevel": 109, "multiplier": 1.0 },
+        { "minLevel": 110, "maxLevel": 119, "multiplier": 1.0 },
+        { "minLevel": 120, "maxLevel": 129, "multiplier": 1.0 },
+        { "minLevel": 130, "maxLevel": 139, "multiplier": 1.0 },
+        { "minLevel": 140, "maxLevel": 155, "multiplier": 1.0 }
+      ]
+    },
+    "tuiju_xiaolian": {
+      "name": "推举孝廉",
+      "defaultMultiplier": 1.0,
+      "ranges": [
+        { "minLevel": 1, "maxLevel": 49, "multiplier": 1.0 },
+        { "minLevel": 50, "maxLevel": 69, "multiplier": 1.0 },
+        { "minLevel": 70, "maxLevel": 89, "multiplier": 1.0 },
+        { "minLevel": 90, "maxLevel": 99, "multiplier": 1.0 },
+        { "minLevel": 100, "maxLevel": 109, "multiplier": 1.0 },
+        { "minLevel": 110, "maxLevel": 119, "multiplier": 1.0 },
+        { "minLevel": 120, "maxLevel": 129, "multiplier": 1.0 },
+        { "minLevel": 130, "maxLevel": 139, "multiplier": 1.0 },
+        { "minLevel": 140, "maxLevel": 155, "multiplier": 1.0 }
+      ]
+    },
+    "yunshu_wuzi": {
+      "name": "运送物资",
+      "defaultMultiplier": 1.0,
+      "ranges": [
+        { "minLevel": 1, "maxLevel": 49, "multiplier": 1.0 },
+        { "minLevel": 50, "maxLevel": 69, "multiplier": 1.0 },
+        { "minLevel": 70, "maxLevel": 89, "multiplier": 1.0 },
+        { "minLevel": 90, "maxLevel": 99, "multiplier": 1.0 },
+        { "minLevel": 100, "maxLevel": 109, "multiplier": 1.0 },
+        { "minLevel": 110, "maxLevel": 119, "multiplier": 1.0 },
+        { "minLevel": 120, "maxLevel": 129, "multiplier": 1.0 },
+        { "minLevel": 130, "maxLevel": 139, "multiplier": 1.0 },
+        { "minLevel": 140, "maxLevel": 155, "multiplier": 1.0 }
+      ]
+    }
+  }
+}

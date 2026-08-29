@@ -1,0 +1,504 @@
+{
+  "rows": [
+    {
+      "level": 1,
+      "constitution": 1,
+      "armorIgnore": 1,
+      "healthCap": 1,
+      "monsterDR": 1,
+      "essence": 1,
+      "wuzhu": 30000,
+      "vitality": 5000
+    },
+    {
+      "level": 2,
+      "constitution": 1,
+      "armorIgnore": 1.1,
+      "healthCap": 2,
+      "monsterDR": 2,
+      "essence": 1,
+      "wuzhu": 120000,
+      "vitality": 10000
+    },
+    {
+      "level": 3,
+      "constitution": 1,
+      "armorIgnore": 1.2,
+      "healthCap": 3,
+      "monsterDR": 3,
+      "essence": 1,
+      "wuzhu": 270000,
+      "vitality": 15000
+    },
+    {
+      "level": 4,
+      "constitution": 1,
+      "armorIgnore": 1.3,
+      "healthCap": 4,
+      "monsterDR": 4,
+      "essence": 1,
+      "wuzhu": 480000,
+      "vitality": 20000
+    },
+    {
+      "level": 5,
+      "constitution": 1,
+      "armorIgnore": 1.4,
+      "healthCap": 5,
+      "monsterDR": 5,
+      "essence": 1,
+      "wuzhu": 500000,
+      "vitality": 25000
+    },
+    {
+      "level": 6,
+      "constitution": 2,
+      "armorIgnore": 1.5,
+      "healthCap": 6,
+      "monsterDR": 5.5,
+      "essence": 2,
+      "wuzhu": 560000,
+      "vitality": 30000
+    },
+    {
+      "level": 7,
+      "constitution": 2,
+      "armorIgnore": 1.6,
+      "healthCap": 7,
+      "monsterDR": 6,
+      "essence": 2,
+      "wuzhu": 630000,
+      "vitality": 35000
+    },
+    {
+      "level": 8,
+      "constitution": 2,
+      "armorIgnore": 1.7,
+      "healthCap": 8,
+      "monsterDR": 6.5,
+      "essence": 2,
+      "wuzhu": 710000,
+      "vitality": 40000
+    },
+    {
+      "level": 9,
+      "constitution": 2,
+      "armorIgnore": 1.8,
+      "healthCap": 9,
+      "monsterDR": 7,
+      "essence": 2,
+      "wuzhu": 1080000,
+      "vitality": 45000
+    },
+    {
+      "level": 10,
+      "constitution": 2,
+      "armorIgnore": 1.9,
+      "healthCap": 10,
+      "monsterDR": 7.5,
+      "essence": 2,
+      "wuzhu": 1170000,
+      "vitality": 50000
+    },
+    {
+      "level": 11,
+      "constitution": 2,
+      "armorIgnore": 2,
+      "healthCap": 11,
+      "monsterDR": 7.9,
+      "essence": 3,
+      "wuzhu": 1270000,
+      "vitality": 55000
+    },
+    {
+      "level": 12,
+      "constitution": 3,
+      "armorIgnore": 2.1,
+      "healthCap": 12,
+      "monsterDR": 8.3,
+      "essence": 3,
+      "wuzhu": 1370000,
+      "vitality": 60000
+    },
+    {
+      "level": 13,
+      "constitution": 3,
+      "armorIgnore": 2.2,
+      "healthCap": 13,
+      "monsterDR": 8.7,
+      "essence": 3,
+      "wuzhu": 1770000,
+      "vitality": 65000
+    },
+    {
+      "level": 14,
+      "constitution": 3,
+      "armorIgnore": 2.3,
+      "healthCap": 14,
+      "monsterDR": 9.1,
+      "essence": 3,
+      "wuzhu": 1880000,
+      "vitality": 70000
+    },
+    {
+      "level": 15,
+      "constitution": 3,
+      "armorIgnore": 2.4,
+      "healthCap": 15,
+      "monsterDR": 9.5,
+      "essence": 5,
+      "wuzhu": 2000000,
+      "vitality": 75000
+    },
+    {
+      "level": 16,
+      "constitution": 3,
+      "armorIgnore": 2.5,
+      "healthCap": 16,
+      "monsterDR": 9.9,
+      "essence": 5,
+      "wuzhu": 2130000,
+      "vitality": 80000
+    },
+    {
+      "level": 17,
+      "constitution": 4,
+      "armorIgnore": 2.6,
+      "healthCap": 17,
+      "monsterDR": 10.3,
+      "essence": 5,
+      "wuzhu": 2270000,
+      "vitality": 85000
+    },
+    {
+      "level": 18,
+      "constitution": 4,
+      "armorIgnore": 2.7,
+      "healthCap": 18,
+      "monsterDR": 10.7,
+      "essence": 5,
+      "wuzhu": 3000000,
+      "vitality": 90000
+    },
+    {
+      "level": 19,
+      "constitution": 4,
+      "armorIgnore": 2.8,
+      "healthCap": 19,
+      "monsterDR": 11.1,
+      "essence": 5,
+      "wuzhu": 3150000,
+      "vitality": 95000
+    },
+    {
+      "level": 20,
+      "constitution": 4,
+      "armorIgnore": 2.9,
+      "healthCap": 20,
+      "monsterDR": 11.5,
+      "essence": 10,
+      "wuzhu": 3300000,
+      "vitality": 100000
+    },
+    {
+      "level": 21,
+      "constitution": 4,
+      "armorIgnore": 3,
+      "healthCap": 21,
+      "monsterDR": 11.8,
+      "essence": 10,
+      "wuzhu": 3460000,
+      "vitality": 105000
+    },
+    {
+      "level": 22,
+      "constitution": 4,
+      "armorIgnore": 3.1,
+      "healthCap": 22,
+      "monsterDR": 12.1,
+      "essence": 10,
+      "wuzhu": 3630000,
+      "vitality": 110000
+    },
+    {
+      "level": 23,
+      "constitution": 5,
+      "armorIgnore": 3.2,
+      "healthCap": 23,
+      "monsterDR": 12.4,
+      "essence": 10,
+      "wuzhu": 3800000,
+      "vitality": 115000
+    },
+    {
+      "level": 24,
+      "constitution": 5,
+      "armorIgnore": 3.3,
+      "healthCap": 24,
+      "monsterDR": 12.7,
+      "essence": 10,
+      "wuzhu": 3980000,
+      "vitality": 120000
+    },
+    {
+      "level": 25,
+      "constitution": 5,
+      "armorIgnore": 3.4,
+      "healthCap": 25,
+      "monsterDR": 13,
+      "essence": 10,
+      "wuzhu": 4170000,
+      "vitality": 125000
+    },
+    {
+      "level": 26,
+      "constitution": 5,
+      "armorIgnore": 3.5,
+      "healthCap": 26,
+      "monsterDR": 13.3,
+      "essence": 10,
+      "wuzhu": 5840000,
+      "vitality": 130000
+    },
+    {
+      "level": 27,
+      "constitution": 5,
+      "armorIgnore": 3.6,
+      "healthCap": 27,
+      "monsterDR": 13.6,
+      "essence": 20,
+      "wuzhu": 6040000,
+      "vitality": 135000
+    },
+    {
+      "level": 28,
+      "constitution": 6,
+      "armorIgnore": 3.7,
+      "healthCap": 28,
+      "monsterDR": 13.9,
+      "essence": 20,
+      "wuzhu": 6250000,
+      "vitality": 140000
+    },
+    {
+      "level": 29,
+      "constitution": 6,
+      "armorIgnore": 3.8,
+      "healthCap": 29,
+      "monsterDR": 14.2,
+      "essence": 20,
+      "wuzhu": 6460000,
+      "vitality": 145000
+    },
+    {
+      "level": 30,
+      "constitution": 6,
+      "armorIgnore": 3.9,
+      "healthCap": 30,
+      "monsterDR": 14.5,
+      "essence": 20,
+      "wuzhu": 6680000,
+      "vitality": 150000
+    },
+    {
+      "level": 31,
+      "constitution": 6,
+      "armorIgnore": 4,
+      "healthCap": 31,
+      "monsterDR": 14.8,
+      "essence": 20,
+      "wuzhu": 6910000,
+      "vitality": 155000
+    },
+    {
+      "level": 32,
+      "constitution": 6,
+      "armorIgnore": 4.1,
+      "healthCap": 32,
+      "monsterDR": 15.1,
+      "essence": 20,
+      "wuzhu": 7140000,
+      "vitality": 160000
+    },
+    {
+      "level": 33,
+      "constitution": 6,
+      "armorIgnore": 4.2,
+      "healthCap": 33,
+      "monsterDR": 15.4,
+      "essence": 20,
+      "wuzhu": 7380000,
+      "vitality": 165000
+    },
+    {
+      "level": 34,
+      "constitution": 7,
+      "armorIgnore": 4.3,
+      "healthCap": 34,
+      "monsterDR": 15.7,
+      "essence": 20,
+      "wuzhu": 7630000,
+      "vitality": 170000
+    },
+    {
+      "level": 35,
+      "constitution": 7,
+      "armorIgnore": 4.4,
+      "healthCap": 35,
+      "monsterDR": 16,
+      "essence": 20,
+      "wuzhu": 7880000,
+      "vitality": 175000
+    },
+    {
+      "level": 36,
+      "constitution": 7,
+      "armorIgnore": 4.5,
+      "healthCap": 36,
+      "monsterDR": 16.3,
+      "essence": 20,
+      "wuzhu": 8140000,
+      "vitality": 180000
+    },
+    {
+      "level": 37,
+      "constitution": 7,
+      "armorIgnore": 4.6,
+      "healthCap": 37,
+      "monsterDR": 16.6,
+      "essence": 20,
+      "wuzhu": 8400000,
+      "vitality": 185000
+    },
+    {
+      "level": 38,
+      "constitution": 7,
+      "armorIgnore": 4.7,
+      "healthCap": 38,
+      "monsterDR": 16.9,
+      "essence": 20,
+      "wuzhu": 8680000,
+      "vitality": 190000
+    },
+    {
+      "level": 39,
+      "constitution": 8,
+      "armorIgnore": 4.8,
+      "healthCap": 39,
+      "monsterDR": 17.2,
+      "essence": 20,
+      "wuzhu": 8950000,
+      "vitality": 195000
+    },
+    {
+      "level": 40,
+      "constitution": 8,
+      "armorIgnore": 4.9,
+      "healthCap": 40,
+      "monsterDR": 17.5,
+      "essence": 40,
+      "wuzhu": 12210000,
+      "vitality": 200000
+    },
+    {
+      "level": 41,
+      "constitution": 8,
+      "armorIgnore": 5,
+      "healthCap": 41,
+      "monsterDR": 17.7,
+      "essence": 40,
+      "wuzhu": 12500000,
+      "vitality": 205000
+    },
+    {
+      "level": 42,
+      "constitution": 8,
+      "armorIgnore": 5.1,
+      "healthCap": 42,
+      "monsterDR": 17.9,
+      "essence": 40,
+      "wuzhu": 12800000,
+      "vitality": 210000
+    },
+    {
+      "level": 43,
+      "constitution": 8,
+      "armorIgnore": 5.2,
+      "healthCap": 43,
+      "monsterDR": 18.1,
+      "essence": 40,
+      "wuzhu": 13110000,
+      "vitality": 215000
+    },
+    {
+      "level": 44,
+      "constitution": 8,
+      "armorIgnore": 5.3,
+      "healthCap": 44,
+      "monsterDR": 18.3,
+      "essence": 40,
+      "wuzhu": 13420000,
+      "vitality": 220000
+    },
+    {
+      "level": 45,
+      "constitution": 9,
+      "armorIgnore": 5.4,
+      "healthCap": 45,
+      "monsterDR": 18.5,
+      "essence": 50,
+      "wuzhu": 19680000,
+      "vitality": 225000
+    },
+    {
+      "level": 46,
+      "constitution": 9,
+      "armorIgnore": 5.5,
+      "healthCap": 46,
+      "monsterDR": 18.7,
+      "essence": 50,
+      "wuzhu": 20000000,
+      "vitality": 230000
+    },
+    {
+      "level": 47,
+      "constitution": 9,
+      "armorIgnore": 5.6,
+      "healthCap": 47,
+      "monsterDR": 18.9,
+      "essence": 50,
+      "wuzhu": 20330000,
+      "vitality": 235000
+    },
+    {
+      "level": 48,
+      "constitution": 9,
+      "armorIgnore": 5.7,
+      "healthCap": 48,
+      "monsterDR": 19.1,
+      "essence": 50,
+      "wuzhu": 20670000,
+      "vitality": 240000
+    },
+    {
+      "level": 49,
+      "constitution": 9,
+      "armorIgnore": 5.8,
+      "healthCap": 49,
+      "monsterDR": 19.3,
+      "essence": 50,
+      "wuzhu": 21020000,
+      "vitality": 245000
+    },
+    {
+      "level": 50,
+      "constitution": 10,
+      "armorIgnore": 6,
+      "healthCap": 50,
+      "monsterDR": 19.5,
+      "essence": 50,
+      "wuzhu": 21370000,
+      "vitality": 250000
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "dungeons": [
+    { "name": "孟获", "normal": { "value": 140, "multiplier": null }, "hero": { "value": 140, "multiplier": null }, "warrior": { "value": 145, "multiplier": null }, "saint": { "value": 170, "multiplier": null } },
+    { "name": "过关", "normal": { "value": 115, "multiplier": null }, "hero": { "value": 125, "multiplier": null }, "warrior": { "value": 150, "multiplier": null }, "saint": { "value": 160, "multiplier": null } },
+    { "name": "单骑", "normal": { "value": 140, "multiplier": null }, "hero": { "value": 140, "multiplier": null }, "warrior": { "value": 145, "multiplier": null }, "saint": { "value": 170, "multiplier": null } },
+    { "name": "岐山", "normal": { "value": 180, "multiplier": null }, "hero": { "value": 220, "multiplier": null }, "warrior": { "value": 240, "multiplier": 1.6 }, "saint": { "value": 260, "multiplier": 1.6 } },
+    { "name": "合肥", "normal": { "value": 190, "multiplier": null }, "hero": { "value": 230, "multiplier": null }, "warrior": { "value": 270, "multiplier": 2.3 }, "saint": { "value": 360, "multiplier": 2.3 } },
+    { "name": "赤壁", "normal": { "value": 240, "multiplier": null }, "hero": { "value": 280, "multiplier": null }, "warrior": { "value": 420, "multiplier": 2.2 }, "saint": { "value": 470, "multiplier": 2.2 } },
+    { "name": "潼关", "normal": { "value": null, "multiplier": null }, "hero": { "value": null, "multiplier": null }, "warrior": { "value": null, "multiplier": null }, "saint": { "value": null, "multiplier": null } }
+  ],
+  "wilderness": [
+    { "name": "卧牛山", "focusMultiplier": null, "damageReduction": 120 },
+    { "name": "东岭关", "focusMultiplier": null, "damageReduction": 130 },
+    { "name": "阳平关", "focusMultiplier": null, "damageReduction": 130 },
+    { "name": "凤鸣山", "focusMultiplier": null, "damageReduction": 140 },
+    { "name": "谷口", "focusMultiplier": 1.4, "damageReduction": 170 },
+    { "name": "谷内", "focusMultiplier": 1.4, "damageReduction": 200 },
+    { "name": "逍遥津渡口", "focusMultiplier": 1.4, "damageReduction": 226 },
+    { "name": "逍遥津", "focusMultiplier": 1.4, "damageReduction": 226 },
+    { "name": "漳水南堤", "focusMultiplier": 2.4, "damageReduction": 321 },
+    { "name": "铜雀台", "focusMultiplier": 2.4, "damageReduction": 376 },
+    { "name": "下邳", "focusMultiplier": null, "damageReduction": null }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext"],
+    "composite": true,
+    "skipLibCheck": true
+  },
+  "include": ["electron/**/*.ts", "electron.vite.config.ts", "src/data/quiz-bank.json"]
+}

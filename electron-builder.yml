@@ -1,0 +1,44 @@
+# electron-builder 打包配置
+# 输出：release/ 下的 nsis 安装包（不含 OCR 引擎，引擎按需下载，见 scripts/build-ocr-engine.mjs）
+appId: com.sgbuddy.desktop
+productName: SG Buddy
+directories:
+  output: release
+files:
+  - dist/**
+  - package.json
+  - '!resources/umi-ocr/**'
+  - '!resources/chi_sim.traineddata'
+  - '!resources/tesseract-portable.zip'
+  # 减小安装包体积（Gitee 附件 100MB 限制）
+  - '!**/*.map'
+  - '!**/tesseract-core-simd*'
+  - '!**/tesseract-core-relaxedsimd*'
+  - '!**/tesseract-core.wasm*'
+  - '!**/tesseract-core.js'
+asar: true
+compression: maximum
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: true
+  perMachine: false
+  artifactName: SG-Buddy-Setup-v${version}.exe
+  shortcutName: SG Buddy
+  deleteAppDataOnUninstall: false
+extraResources:
+  # 窗口图标（打包后窗口/任务栏使用，进程内通过 process.resourcesPath 引用）
+  - from: resources/icon.png
+    to: icon.png
+  # Tesseract 中文语言包（离线降级 OCR）
+  - from: resources/chi_sim.traineddata.gz
+    to: ocr/chi_sim.traineddata.gz
+  # 7za：运行时解压 OCR 引擎分卷（7-Zip，LGPL）
+  - from: resources/7za.exe
+    to: 7za.exe
+afterPack: scripts/after-pack.cjs
+npmRebuild: true

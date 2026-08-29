@@ -1,0 +1,70 @@
+// 怪物基础经验表默认数据（来源：QQ三国数值系统研究 @WanderingQuantum）
+// 供 monster-exp:reset IPC handler 使用
+
+export interface MonsterExpDefault {
+  name: string       // 怪物类型名称：小怪 / 精英 / boss
+  area: string       // 地区
+  level: number      // 怪物等级
+  base_exp: number   // 基础经验
+  fatigue: number    // 疲劳消耗
+}
+
+export const MONSTER_EXP_DEFAULTS: MonsterExpDefault[] = [
+  { name: '小怪', area: '卧牛山', level: 100, base_exp: 2505, fatigue: 0.16 },
+  { name: '小怪', area: '卧牛山', level: 102, base_exp: 3197, fatigue: 0.16 },
+  { name: '小怪', area: '卧牛山', level: 104, base_exp: 3359, fatigue: 0.16 },
+  { name: '小怪', area: '卧牛山', level: 106, base_exp: 3786, fatigue: 0.16 },
+  { name: '小怪', area: '卧牛山', level: 108, base_exp: 3975, fatigue: 0.16 },
+  { name: '小怪', area: '东岭关', level: 103, base_exp: 5567, fatigue: 0.21 },
+  { name: '小怪', area: '东岭关', level: 105, base_exp: 6124, fatigue: 0.21 },
+  { name: '小怪', area: '东岭关', level: 108, base_exp: 7010, fatigue: 0.21 },
+  { name: '精英', area: '东岭关', level: 103, base_exp: 7033, fatigue: 0.21 },
+  { name: '精英', area: '东岭关', level: 105, base_exp: 7736, fatigue: 0.21 },
+  { name: '精英', area: '东岭关', level: 108, base_exp: 8855, fatigue: 0.21 },
+  { name: 'boss', area: '东岭关', level: 103, base_exp: 291568, fatigue: 6.30 },
+  { name: 'boss', area: '东岭关', level: 108, base_exp: 367104, fatigue: 6.30 },
+  { name: '小怪', area: '阳平关', level: 110, base_exp: 5351, fatigue: 0.16 },
+  { name: '小怪', area: '阳平关', level: 112, base_exp: 5611, fatigue: 0.16 },
+  { name: '小怪', area: '阳平关', level: 114, base_exp: 6129, fatigue: 0.16 },
+  { name: '小怪', area: '阳平关', level: 116, base_exp: 6834, fatigue: 0.16 },
+  { name: '小怪', area: '阳平关', level: 118, base_exp: 7438, fatigue: 0.16 },
+  { name: '小怪', area: '凤鸣山', level: 113, base_exp: 9874, fatigue: 0.21 },
+  { name: '小怪', area: '凤鸣山', level: 115, base_exp: 11315, fatigue: 0.21 },
+  { name: '小怪', area: '凤鸣山', level: 118, base_exp: 12784, fatigue: 0.21 },
+  { name: '精英', area: '凤鸣山', level: 113, base_exp: 12474, fatigue: 0.21 },
+  { name: '精英', area: '凤鸣山', level: 115, base_exp: 14292, fatigue: 0.21 },
+  { name: '精英', area: '凤鸣山', level: 118, base_exp: 16148, fatigue: 0.21 },
+  { name: 'boss', area: '凤鸣山', level: 113, base_exp: 517160, fatigue: 6.30 },
+  { name: 'boss', area: '凤鸣山', level: 118, base_exp: 720983, fatigue: 6.30 },
+  { name: '小怪', area: '子午谷午口', level: 121, base_exp: 20211, fatigue: 0.35 },
+  { name: '小怪', area: '子午谷午口', level: 122, base_exp: 20676, fatigue: 0.35 },
+  { name: '小怪', area: '子午谷午口', level: 124, base_exp: 21638, fatigue: 0.35 },
+  { name: '小怪', area: '子午谷午口', level: 126, base_exp: 24349, fatigue: 0.35 },
+  { name: '小怪', area: '子午谷午口', level: 128, base_exp: 25482, fatigue: 0.35 },
+  { name: '小怪', area: '子午谷', level: 123, base_exp: 42865, fatigue: 0.49 },
+  { name: '小怪', area: '子午谷', level: 125, base_exp: 44860, fatigue: 0.49 },
+  { name: '小怪', area: '子午谷', level: 128, base_exp: 51643, fatigue: 0.49 },
+  { name: 'boss', area: '子午谷', level: 123, base_exp: 1128056, fatigue: 6.30 },
+  { name: 'boss', area: '子午谷', level: 128, base_exp: 1359020, fatigue: 6.30 },
+  { name: 'boss', area: '子午谷', level: 133, base_exp: 1953565, fatigue: 6.30 },
+  { name: '小怪', area: '逍遥津渡口', level: 131, base_exp: 40001, fatigue: 0.35 },
+  { name: '小怪', area: '逍遥津渡口', level: 132, base_exp: 40921, fatigue: 0.35 },
+  { name: '小怪', area: '逍遥津渡口', level: 134, base_exp: 42825, fatigue: 0.35 },
+  { name: '小怪', area: '逍遥津渡口', level: 136, base_exp: 44818, fatigue: 0.35 },
+  { name: '小怪', area: '逍遥津渡口', level: 138, base_exp: 46903, fatigue: 0.35 },
+  { name: '小怪', area: '逍遥津', level: 133, base_exp: 84839, fatigue: 0.49 },
+  { name: '小怪', area: '逍遥津', level: 135, base_exp: 88788, fatigue: 0.49 },
+  { name: '小怪', area: '逍遥津', level: 138, base_exp: 95057, fatigue: 0.49 },
+  { name: 'boss', area: '逍遥津', level: 135, base_exp: 2336527, fatigue: 6.30 },
+  { name: 'boss', area: '逍遥津', level: 138, base_exp: 2814170, fatigue: 6.30 },
+  { name: '小怪', area: '漳水南堤', level: 141, base_exp: 80990, fatigue: 0.35 },
+  { name: '小怪', area: '漳水南堤', level: 142, base_exp: 85849, fatigue: 0.35 },
+  { name: '小怪', area: '漳水南堤', level: 144, base_exp: 96461, fatigue: 0.35 },
+  { name: '小怪', area: '漳水南堤', level: 146, base_exp: 108383, fatigue: 0.35 },
+  { name: '小怪', area: '漳水南堤', level: 148, base_exp: 117227, fatigue: 0.35 },
+  { name: '小怪', area: '铜雀台', level: 143, base_exp: 182001, fatigue: 0.49 },
+  { name: '小怪', area: '铜雀台', level: 145, base_exp: 204497, fatigue: 0.49 },
+  { name: '小怪', area: '铜雀台', level: 148, base_exp: 234455, fatigue: 0.49 },
+  { name: 'boss', area: '铜雀台', level: 145, base_exp: 4246712, fatigue: 6.30 },
+  { name: 'boss', area: '铜雀台', level: 148, base_exp: 6252145, fatigue: 6.30 },
+]

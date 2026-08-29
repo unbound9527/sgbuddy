@@ -1,0 +1,48 @@
+# 发布流程：推送 vX.Y.Z 格式 tag（如 v1.1.0）触发构建，安装包自动上传到 Gitee Release
+# 需要的仓库 Secrets：
+#   GITEE_OWNER —— Gitee 用户名（与 electron/services/updater.ts 的 GITEE_OWNER 一致）
+#   GITEE_REPO  —— Gitee 仓库名
+#   GITEE_TOKEN —— Gitee 私人令牌（设置 → 私人令牌，需 releases 权限）
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build renderer/main
+        run: npm run build
+
+      - name: Package installer
+        run: npx electron-builder --win
+        env:
+          # GitHub Actions 机器在海外，官方源可达；如需镜像可改：
+          # ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+          # ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
+
+      - name: Publish to Gitee Release
+        run: node scripts/publish-gitee.mjs --tag ${{ github.ref_name }} --file "release/SG-Buddy-Setup-${{ github.ref_name }}.exe" --notes "SG Buddy ${{ github.ref_name }} 发布"
+        env:
+          GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
+          GITEE_REPO: ${{ secrets.GITEE_REPO }}
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}

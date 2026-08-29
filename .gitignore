@@ -1,0 +1,26 @@
+node_modules/
+dist/
+out/
+release/
+*.db
+*.db-journal
+*.db-wal
+*.tsbuildinfo
+*.log
+.DS_Store
+Thumbs.db
+
+# 本地开发工具与个人文件（不上传 remote）
+.worktrees/
+.playwright-mcp/
+.zcode/
+.claude/
+.superpowers/
+docs/
+TODO.md
+temp_diff.txt
+scripts/restore-tmp/
+resources/umi-ocr/
+
+# 脚本产物（可由 scripts/*.mjs 重新生成）
+src/data/quiz-bank-categorized.json
