@@ -11,33 +11,22 @@
 | GitHub Secrets | 仓库 Settings → Secrets：`GITEE_OWNER` / `GITEE_REPO` / `GITEE_TOKEN`（仅 CI 全自动路径需要） |
 | 两端仓库 | `github.com/unbound9527/sgbuddy` 与 `gitee.com/rookieee/sgbuddy`，remote 名分别为 `github` / `gitee` |
 
-## 日常发版（本地直传，约 10 分钟）
+## 日常发版（一条命令，约 10 分钟）
 
 ```bash
-# 1. 更新版本号（package.json 的 version 字段，与 tag 一致）
-#    例：1.0.0 → 1.0.1
-
-# 2. 提交并推送代码
-git add -A && git commit -m "release: v1.0.1"
-git push github main && git push gitee main
-
-# 3. 本地构建安装包（国内网络需要镜像变量）
-ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ \
-ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ \
-npm run dist
-# 产物：release/SG-Buddy-Setup-v1.0.1.exe
-
-# 4. 打 tag 并推送（触发 CI 构建留档；v* tag 会触发 release.yml）
-git tag v1.0.1
-git push github v1.0.1 && git push gitee v1.0.1
-
-# 5. 上传 Gitee Release（幂等：Release 不存在会自动创建，同名附件先删后传，可重跑）
-node scripts/publish-gitee.mjs --tag v1.0.1 \
-  --file release/SG-Buddy-Setup-v1.0.1.exe \
-  --notes "SG Buddy v1.0.1 发布"
+npm run release -- 1.0.1
+# 等价：node scripts/release.mjs 1.0.1
 ```
 
-发版后 CI 会在 GitHub 侧自动创建同名 GitHub Release 并上传安装包（作为 Gitee Go 中转的源，也是海外用户的下载点）。
+脚本自动完成：更新 `package.json` 版本并提交 → 本地构建（国内镜像已内置；杀软 EPERM 自动降级 electronDist 方案重试）→ 推送 main 与 tag 到两端（CI 由此自动创建 GitHub Release）→ 上传 Gitee Release（幂等，可重跑）。
+
+可选参数：
+
+- `--dry-run`：只预演将要执行的步骤，不实际执行
+- `--skip-build`：跳过构建（复用 `release/` 下已有产物）
+- `--skip-publish`：只构建和推送 tag，不上传 Gitee
+
+发版后 CI 会在 GitHub 侧创建同名 GitHub Release 并上传安装包（海外用户的下载点，也是 Gitee Go 中转的源）；随后 CI 还会直传 Gitee 一次（等价构建，自动覆盖本地刚传的附件，无需理会）。
 
 ### 构建报 EPERM 时
 
