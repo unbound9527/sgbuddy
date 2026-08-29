@@ -40,6 +40,15 @@ jobs:
         # （tag 推送时其默认隐式发布到 GitHub Release，会因缺少 GH_TOKEN 报错）
         run: npx electron-builder --win --publish never
 
+      # 安装包同时发一份 GitHub Release：供 Gitee Go 流水线（国内服务器）中转同步到 Gitee
+      - name: Create GitHub Release with installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $exe = "release/SG-Buddy-Setup-${{ github.ref_name }}.exe"
+          gh release create "${{ github.ref_name }}" $exe --title "SG Buddy ${{ github.ref_name }}" --notes "安装包发布，国内下载请走 Gitee Release" --clobber
+          if ($LASTEXITCODE -ne 0) { gh release upload "${{ github.ref_name }}" $exe --clobber }
+
       - name: Publish to Gitee Release
         run: node scripts/publish-gitee.mjs --tag ${{ github.ref_name }} --file "release/SG-Buddy-Setup-${{ github.ref_name }}.exe" --notes "SG Buddy ${{ github.ref_name }} 发布"
         env:
