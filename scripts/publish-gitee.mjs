@@ -78,16 +78,20 @@ if (!release) {
   console.log(`✅ 已创建 Release ${tag}`)
 }
 
-// 2. 删除同名旧附件（幂等重发布）；附件接口按 release 数字 ID 寻址（tag 路径不存在，404）
+// 2. 删除同名旧附件（幂等重发布）
+// 注意：release.assets 不含附件 id，附件增删查要用 attach_files 子资源（按 release 数字 ID 寻址）
 const releaseId = release.id
-const existing = (release.assets || []).filter(a => a.name === fileName)
-for (const asset of existing) {
+let attachFiles = []
+try {
+  attachFiles = (await api(`/repos/${OWNER}/${REPO}/releases/${releaseId}/attach_files?access_token=${TOKEN}`)) || []
+} catch { /* 列表失败则跳过删除，直接上传 */ }
+for (const f of attachFiles.filter(a => a.name === fileName)) {
   try {
     await api(
-      `/repos/${OWNER}/${REPO}/releases/${releaseId}/attach_files/${asset.id}?access_token=${TOKEN}`,
+      `/repos/${OWNER}/${REPO}/releases/${releaseId}/attach_files/${f.id}?access_token=${TOKEN}`,
       { method: 'DELETE' },
     )
-    console.log(`🗑  已删除旧附件 ${asset.name}`)
+    console.log(`🗑  已删除旧附件 ${f.name}（id ${f.id}）`)
   } catch (e) {
     console.warn(`⚠️  删除旧附件失败（继续上传）: ${e.message}`)
   }
