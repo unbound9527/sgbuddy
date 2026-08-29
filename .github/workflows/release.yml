@@ -36,7 +36,9 @@ jobs:
       # GitHub Actions 机器在海外，官方源可达；如需镜像可在本步骤 env 里设置：
       #   ELECTRON_MIRROR / ELECTRON_BUILDER_BINARIES_MIRROR
       - name: Package installer
-        run: npx electron-builder --win
+        # 发布由下一步 publish-gitee.mjs 负责，electron-builder 本身不发布
+        # （tag 推送时其默认隐式发布到 GitHub Release，会因缺少 GH_TOKEN 报错）
+        run: npx electron-builder --win --publish never
 
       - name: Publish to Gitee Release
         run: node scripts/publish-gitee.mjs --tag ${{ github.ref_name }} --file "release/SG-Buddy-Setup-${{ github.ref_name }}.exe" --notes "SG Buddy ${{ github.ref_name }} 发布"
