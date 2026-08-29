@@ -71,6 +71,7 @@ npm run dist
 ## 更新机制与发布
 
 - 应用启动时自动检查更新：从 **Gitee Releases** 获取最新版本（国内网络可用），发现新版本后提示下载并静默安装；更新源配置在 `electron/services/updater.ts` 顶部（`GITEE_OWNER` / `GITEE_REPO`，默认 `rookieee/sgbuddy`）
+- **发版完整 SOP 见 [RELEASE.md](RELEASE.md)**：本地直传（推荐，约 10 分钟）/ CI 全自动 / Gitee Go 中转 / OCR 引擎发布与常见问题
 
 **发布正式版（推荐：本地构建 + 直传 Gitee，国内速度几分钟）**
 
