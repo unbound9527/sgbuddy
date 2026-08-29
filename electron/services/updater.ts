@@ -78,10 +78,35 @@ export async function getRelease(tag?: string): Promise<ReleaseInfo> {
   }
 }
 
+/** 拉取最新的「正式版本」Release
+ *  不用 releases/latest：Gitee 按创建时间取最新，ocr-engine 等特殊 Release 会占位，
+ *  且其 tag 非 vX.Y.Z 会被 compareVersions 判成 NaN 而误报有更新。改为列出后按 tag 过滤。 */
+export async function getLatestAppRelease(): Promise<ReleaseInfo> {
+  if (!isConfigured()) throw new Error('更新服务未配置（GITEE_OWNER / GITEE_REPO 为空）')
+  const res = await net.fetch(`${API_BASE}/repos/${GITEE_OWNER}/${GITEE_REPO}/releases?direction=desc&page=1&per_page=20`)
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('仓库暂无 Release')
+    throw new Error(`Gitee API 请求失败（HTTP ${res.status}）`)
+  }
+  const list = (await res.json()) as Array<Record<string, unknown>>
+  const pick = (list ?? []).find(r => /^v\d+\.\d+\.\d+/.test(String(r.tag_name ?? '')))
+  if (!pick) throw new Error('仓库暂无 Release')
+  return {
+    tag_name: String(pick.tag_name),
+    name: pick.name != null ? String(pick.name) : '',
+    body: pick.body != null ? String(pick.body) : '',
+    assets: ((pick.assets ?? []) as Array<Record<string, unknown>>).map(a => ({
+      name: String(a.name),
+      browser_download_url: String(a.browser_download_url),
+      size: Number(a.size ?? 0),
+    })),
+  }
+}
+
 /** 检查应用更新：返回是否有新版本（出错时不打扰用户，hasUpdate=false + error） */
 export async function checkForUpdates(): Promise<UpdateInfo> {
   try {
-    const release = await getRelease()
+    const release = await getLatestAppRelease()
     const version = parseVersion(release.tag_name)
     if (compareVersions(version, app.getVersion()) <= 0) return { hasUpdate: false }
     // 取 Windows 安装包附件（排除 blockmap）
