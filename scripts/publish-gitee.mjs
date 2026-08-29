@@ -44,17 +44,17 @@ async function api(path, opts = {}) {
   return res.status === 204 ? null : res.json()
 }
 
-// 1. 确保 Release 存在（tag 已由 git push --tags 建立，这里创建 release 记录）
-let release
-try {
-  release = await api(`/repos/${OWNER}/${REPO}/releases/tags/${encodeURIComponent(tag)}`)
-} catch (e) {
-  if (!String(e).includes('HTTP 404')) throw e
+// 1. 确保 Release 存在（tag 已由 git push 建立，这里创建 release 记录）
+// 注意：Gitee 对不存在的 Release，GET /releases/tags/{tag} 返回 200 + null（也有 404 的情况），需都兼容
+let release = await api(`/repos/${OWNER}/${REPO}/releases/tags/${encodeURIComponent(tag)}`).catch(() => null)
+if (!release) {
   release = await api(`/repos/${OWNER}/${REPO}/releases`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tag_name: tag, name: `SG Buddy ${tag}`, body: notes }),
   })
+  // 创建接口若返回空响应，回查一次
+  if (!release) release = await api(`/repos/${OWNER}/${REPO}/releases/tags/${encodeURIComponent(tag)}`)
   console.log(`✅ 已创建 Release ${tag}`)
 }
 
