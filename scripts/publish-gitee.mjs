@@ -65,12 +65,13 @@ if (!release) {
   console.log(`✅ 已创建 Release ${tag}`)
 }
 
-// 2. 删除同名旧附件（幂等重发布）
+// 2. 删除同名旧附件（幂等重发布）；附件接口按 release 数字 ID 寻址（tag 路径不存在，404）
+const releaseId = release.id
 const existing = (release.assets || []).filter(a => a.name === fileName)
 for (const asset of existing) {
   try {
     await api(
-      `/repos/${OWNER}/${REPO}/releases/${tag}/attach_files/${asset.id}?access_token=${TOKEN}`,
+      `/repos/${OWNER}/${REPO}/releases/${releaseId}/attach_files/${asset.id}?access_token=${TOKEN}`,
       { method: 'DELETE' },
     )
     console.log(`🗑  已删除旧附件 ${asset.name}`)
@@ -84,7 +85,7 @@ console.log(`⬆️  上传 ${fileName}（${(fileSize / 1024 / 1024).toFixed(1)}
 const uploadRes = spawnSync('curl', [
   '-sS', '--fail', '--connect-timeout', '30', '--max-time', process.env.CURL_MAX_TIME || '1800', '--retry', '2', '--retry-delay', '5',
   '-X', 'POST',
-  `https://gitee.com/api/v5/repos/${OWNER}/${REPO}/releases/${encodeURIComponent(tag)}/attach_files?access_token=${TOKEN}`,
+  `https://gitee.com/api/v5/repos/${OWNER}/${REPO}/releases/${releaseId}/attach_files?access_token=${TOKEN}`,
   '-F', `file=@${filePath}`,
 ], { encoding: 'utf8' })
 if (uploadRes.status !== 0 || !uploadRes.stdout) {
