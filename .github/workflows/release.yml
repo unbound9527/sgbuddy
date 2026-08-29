@@ -33,12 +33,10 @@ jobs:
       - name: Build renderer/main
         run: npm run build
 
+      # GitHub Actions 机器在海外，官方源可达；如需镜像可在本步骤 env 里设置：
+      #   ELECTRON_MIRROR / ELECTRON_BUILDER_BINARIES_MIRROR
       - name: Package installer
         run: npx electron-builder --win
-        env:
-          # GitHub Actions 机器在海外，官方源可达；如需镜像可改：
-          # ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-          # ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
 
       - name: Publish to Gitee Release
         run: node scripts/publish-gitee.mjs --tag ${{ github.ref_name }} --file "release/SG-Buddy-Setup-${{ github.ref_name }}.exe" --notes "SG Buddy ${{ github.ref_name }} 发布"
