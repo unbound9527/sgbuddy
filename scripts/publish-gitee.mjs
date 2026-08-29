@@ -51,7 +51,13 @@ if (!release) {
   release = await api(`/repos/${OWNER}/${REPO}/releases?access_token=${TOKEN}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tag_name: tag, name: `SG Buddy ${tag}`, body: notes }),
+    body: JSON.stringify({
+      tag_name: tag,
+      name: `SG Buddy ${tag}`,
+      body: notes,
+      // Gitee 创建 Release 必须指定目标分支
+      target_commitish: process.env.GITEE_BRANCH || 'main',
+    }),
   })
   // 创建接口若返回空响应，回查一次
   if (!release) release = await api(`/repos/${OWNER}/${REPO}/releases/tags/${encodeURIComponent(tag)}?access_token=${TOKEN}`)
