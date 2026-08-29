@@ -82,7 +82,7 @@ for (const asset of existing) {
 // 3. 上传附件（multipart，走 curl：大文件上传可能超过 fetch/undici 默认 5 分钟响应超时）
 console.log(`⬆️  上传 ${fileName}（${(fileSize / 1024 / 1024).toFixed(1)}MB）…`)
 const uploadRes = spawnSync('curl', [
-  '-sS', '--fail', '--connect-timeout', '30', '--max-time', '1800', '--retry', '2', '--retry-delay', '5',
+  '-sS', '--fail', '--connect-timeout', '30', '--max-time', process.env.CURL_MAX_TIME || '1800', '--retry', '2', '--retry-delay', '5',
   '-X', 'POST',
   `https://gitee.com/api/v5/repos/${OWNER}/${REPO}/releases/${encodeURIComponent(tag)}/attach_files?access_token=${TOKEN}`,
   '-F', `file=@${filePath}`,

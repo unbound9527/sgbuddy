@@ -46,3 +46,5 @@ jobs:
           GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
           GITEE_REPO: ${{ secrets.GITEE_REPO }}
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          # GitHub Actions（海外）→ Gitee 上传大文件较慢，放宽单次上传窗口到 90 分钟
+          CURL_MAX_TIME: '5400'
