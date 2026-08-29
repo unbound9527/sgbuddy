@@ -5,8 +5,9 @@
 // 需要环境变量：GITEE_TOKEN（Gitee 私人令牌，仓库 secrets 中配置）
 // 另见：electron/services/updater.ts 的 GITEE_OWNER/GITEE_REPO（应用内更新检测用，需保持一致）
 
-import { readFileSync, statSync } from 'node:fs'
+import { statSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 const OWNER = process.env.GITEE_OWNER || ''
 const REPO = process.env.GITEE_REPO || ''
@@ -78,13 +79,18 @@ for (const asset of existing) {
   }
 }
 
-// 3. 上传附件（multipart）
+// 3. 上传附件（multipart，走 curl：大文件上传可能超过 fetch/undici 默认 5 分钟响应超时）
 console.log(`⬆️  上传 ${fileName}（${(fileSize / 1024 / 1024).toFixed(1)}MB）…`)
-const buf = readFileSync(filePath)
-const form = new FormData()
-form.append('file', new Blob([buf]), fileName)
-const uploaded = await api(`/repos/${OWNER}/${REPO}/releases/${tag}/attach_files?access_token=${TOKEN}`, {
-  method: 'POST',
-  body: form,
-})
-console.log(`✅ 上传完成: ${uploaded.browser_download_url || '(无下载链接返回)'}`)
+const uploadRes = spawnSync('curl', [
+  '-sS', '--fail', '--connect-timeout', '30', '--max-time', '1800', '--retry', '2', '--retry-delay', '5',
+  '-X', 'POST',
+  `https://gitee.com/api/v5/repos/${OWNER}/${REPO}/releases/${encodeURIComponent(tag)}/attach_files?access_token=${TOKEN}`,
+  '-F', `file=@${filePath}`,
+], { encoding: 'utf8' })
+if (uploadRes.status !== 0 || !uploadRes.stdout) {
+  console.error(`❌ 上传失败: ${(uploadRes.stderr || `curl 退出码 ${uploadRes.status}`).slice(0, 300)}`)
+  process.exit(1)
+}
+let uploaded = {}
+try { uploaded = JSON.parse(uploadRes.stdout) } catch { /* 响应非 JSON 时原样打印 */ }
+console.log(`✅ 上传完成: ${uploaded.browser_download_url || uploadRes.stdout.slice(0, 300)}`)
