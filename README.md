@@ -68,12 +68,25 @@ npm run dist
 3. **价格与交易线索抓取**：访问淘宝搜索页、百度贴吧公开页面，仅供本地个人参考，请勿高频访问、勿用于商业用途。
 4. 本软件仅供学习交流，请遵守游戏官方规则；因使用本软件产生的任何后果由使用者自行承担。
 
-## 更新机制
+## 更新机制与发布
 
-- 应用启动时自动检查更新：从 **Gitee Releases** 获取最新版本（国内网络可用），发现新版本后提示下载并静默安装
-- 发布配置：`electron/services/updater.ts` 顶部的 `GITEE_OWNER` / `GITEE_REPO` 需改为你的 Gitee 仓库
-- 发布流程：推送 `vX.Y.Z` 格式 tag（`git push origin v1.0.0`）触发 CI（GitHub Actions），自动构建安装包并上传到 Gitee Release（需在仓库 Secrets 配置 `GITEE_OWNER` / `GITEE_REPO` / `GITEE_TOKEN`，见 `.github/workflows/release.yml`）
-- **OCR 引擎发布（手动）**：引擎不含在安装包里（体积原因），需要单独发布——本地运行 `node scripts/build-ocr-engine.mjs` 生成 `release/ocr-engine/ocr-engine.7z.001`，然后在 Gitee 仓库创建一个 tag 为 `ocr-engine` 的 Release 并上传该分卷。应用首次使用高精度 OCR 时会自动从该 Release 下载安装。
+- 应用启动时自动检查更新：从 **Gitee Releases** 获取最新版本（国内网络可用），发现新版本后提示下载并静默安装；更新源配置在 `electron/services/updater.ts` 顶部（`GITEE_OWNER` / `GITEE_REPO`，默认 `rookieee/sgbuddy`）
+
+**发布正式版（推荐：本地构建 + 直传 Gitee，国内速度几分钟）**
+
+1. 修改 `package.json` 的 `version`，本地构建：`npm run dist`（产物 `release/SG-Buddy-Setup-vX.Y.Z.exe`；若打包报 EPERM（杀软锁文件），改用 `npm run build && npx electron-builder --win --publish never -c.electronDist=node_modules/electron/dist`）
+2. 推送代码与 tag：`git push gitee main --tags && git push github main --tags`
+3. 上传到 Gitee Release：`node scripts/publish-gitee.mjs --tag vX.Y.Z --file release/SG-Buddy-Setup-vX.Y.Z.exe --notes "发布说明"`
+   - 令牌：环境变量 `GITEE_TOKEN`，或仓库根目录创建 `.gitee-token` 文件（已 gitignore，勿提交；Gitee → 设置 → 私人令牌，勾选 projects 权限）
+   - 脚本幂等可重跑：Release 不存在会自动创建，同名附件先删后传
+
+**发布正式版（备选：CI 全自动，跨境上传较慢约 30-90 分钟）**
+
+推送 `vX.Y.Z` tag 到 GitHub 会触发 Actions 自动构建：直传 Gitee Release 并同时创建 GitHub Release（`.github/workflows/release.yml`，需在仓库 Secrets 配置 `GITEE_OWNER` / `GITEE_REPO` / `GITEE_TOKEN`）；也可在 Gitee Go 流水线中运行 `node scripts/sync-release-to-gitee.mjs --tag vX.Y.Z`（配置同名环境变量）从 GitHub Release 中转同步，国内速度更快。
+
+**OCR 引擎发布（一次性手动）**
+
+引擎不含在安装包里（体积原因）。本地运行 `node scripts/build-ocr-engine.mjs` 生成 `release/ocr-engine/ocr-engine.7z.001`（约 52MB），然后 `node scripts/publish-gitee.mjs --tag ocr-engine --file release/ocr-engine/ocr-engine.7z.001 --notes "PaddleOCR-json 高精度引擎（裁剪版）"` 发布到 tag 为 `ocr-engine` 的 Release。应用首次使用高精度 OCR 时会自动从该 Release 下载安装。
 
 ## License
 

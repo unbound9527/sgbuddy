@@ -24,3 +24,6 @@ resources/umi-ocr/
 
 # 脚本产物（可由 scripts/*.mjs 重新生成）
 src/data/quiz-bank-categorized.json
+
+# Gitee 私人令牌（本地发布用，勿提交）
+.gitee-token

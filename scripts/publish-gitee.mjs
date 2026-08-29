@@ -1,18 +1,31 @@
-// scripts/publish-gitee.mjs —— 上传文件到 Gitee Release（CI 发布用）
+// scripts/publish-gitee.mjs —— 上传文件到 Gitee Release（本地发布 / CI 发布通用）
 // 用法：
-//   GITEE_TOKEN=xxx node scripts/publish-gitee.mjs --tag v1.0.0 --file release/SG-Buddy-Setup-1.0.0.exe [--notes "发布说明"]
+//   node scripts/publish-gitee.mjs --tag v1.0.0 --file release/SG-Buddy-Setup-1.0.0.exe [--notes "发布说明"]
 // 逻辑：tag 对应的 Release 不存在则创建；已存在则先删除同名附件再上传（幂等，可重复执行）
-// 需要环境变量：GITEE_TOKEN（Gitee 私人令牌，仓库 secrets 中配置）
+// 令牌来源（依次尝试）：环境变量 GITEE_TOKEN → 仓库根目录 .gitee-token 文件 → 用户目录 ~/.gitee-token
+//   （.gitee-token 已在 .gitignore 中，只存本地，勿提交）
 // 另见：electron/services/updater.ts 的 GITEE_OWNER/GITEE_REPO（应用内更新检测用，需保持一致）
 
-import { statSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readFileSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-const OWNER = process.env.GITEE_OWNER || ''
-const REPO = process.env.GITEE_REPO || ''
-const TOKEN = process.env.GITEE_TOKEN || ''
+const OWNER = process.env.GITEE_OWNER || 'rookieee'
+const REPO = process.env.GITEE_REPO || 'sgbuddy'
 const API = 'https://gitee.com/api/v5'
+
+function resolveToken() {
+  if (process.env.GITEE_TOKEN) return process.env.GITEE_TOKEN.trim()
+  const home = process.env.USERPROFILE || process.env.HOME || ''
+  for (const p of [resolve('.gitee-token'), join(home, '.gitee-token')]) {
+    try {
+      const t = readFileSync(p, 'utf8').trim()
+      if (t) return t
+    } catch { /* 文件不存在，尝试下一个 */ }
+  }
+  return ''
+}
+const TOKEN = resolveToken()
 
 function arg(name) {
   const i = process.argv.indexOf(name)
@@ -20,7 +33,7 @@ function arg(name) {
 }
 
 if (!OWNER || !REPO || !TOKEN) {
-  console.error('❌ 需要 GITEE_OWNER / GITEE_REPO / GITEE_TOKEN 环境变量')
+  console.error('❌ 缺少 Gitee 配置：请设置 GITEE_TOKEN 环境变量，或在仓库根目录创建 .gitee-token 文件（内容为私人令牌）')
   process.exit(1)
 }
 
