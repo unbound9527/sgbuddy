@@ -2,6 +2,8 @@ node_modules/
 dist/
 out/
 release/
+release-*/
+locales-quarantine/
 *.db
 *.db-journal
 *.db-wal
@@ -9,6 +11,9 @@ release/
 *.log
 .DS_Store
 Thumbs.db
+
+# 带时间戳的临时构建配置（误生成，勿提交）
+electron.vite.config.*.mjs
 
 # 本地开发工具与个人文件（不上传 remote）
 .worktrees/

@@ -243,39 +243,46 @@
           <AppIcon icon="alert" :size="11" />
           淘宝打码了币价（未登录），刷新会拿不到数据，可回侧边栏登录淘宝后重试
         </div>
-        <div class="all-table-wrap">
-          <table class="table">
-            <thead><tr><th>大区</th><th>币价 (元/亿)</th><th>更新时间</th><th class="th-op">操作</th></tr></thead>
-            <tbody>
-              <tr v-for="s in allRates" :key="s.id" :class="{ 'row-current': s.id === appStore.currentServerId }">
-                <td>
-                  {{ s.name }}
-                  <span v-if="s.id === appStore.currentServerId" class="cur-tag">当前</span>
-                </td>
-                <td :class="{ 'td-muted': !s.currency_rate }">
-                  {{ s.currency_rate ? Number(s.currency_rate).toFixed(2) : '未获取到' }}
-                </td>
-                <td class="td-muted">{{ s.updated_at || '—' }}</td>
-                <td class="td-op">
-                  <button
-                    class="row-refresh"
-                    :disabled="refreshingId !== null"
-                    @click="refreshOne(s)"
-                    :title="refreshingId === s.id ? '正在抓取…' : '单独刷新该大区币价'"
-                  >
-                    <AppIcon icon="loader" v-if="refreshingId === s.id" :size="12" class="icon-spin" />
-                    <AppIcon icon="refresh" v-else :size="12" />
-                    <span>{{ refreshingId === s.id ? '抓取中' : '刷新' }}</span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="all-grid" @scroll="hideTip">
+          <div
+            v-for="s in allRates" :key="s.id"
+            class="rate-cell"
+            :class="{ 'rate-cell--current': s.id === appStore.currentServerId }"
+          >
+            <span class="cell-name" :title="s.name">
+              <span class="cell-name-text">{{ s.name }}</span>
+              <span v-if="s.id === appStore.currentServerId" class="cur-tag">当前</span>
+            </span>
+            <span
+              class="cell-price"
+              :class="{ 'cell-price--empty': !s.currency_rate }"
+              @mouseenter="onPriceEnter($event, s)"
+              @mouseleave="onPriceLeave"
+            >{{ s.currency_rate ? Number(s.currency_rate).toFixed(2) : '未获取到' }}</span>
+            <button
+              class="cell-refresh"
+              :disabled="refreshingId !== null"
+              @click="refreshOne(s)"
+              :title="refreshingId === s.id ? '正在抓取…' : '单独刷新该大区币价'"
+            >
+              <AppIcon icon="loader" v-if="refreshingId === s.id" :size="12" class="icon-spin" />
+              <AppIcon icon="refresh" v-else :size="12" />
+              <span>{{ refreshingId === s.id ? '抓取中' : '刷新' }}</span>
+            </button>
+          </div>
         </div>
         <div class="all-footnote">刷新 = 立即重抓该大区（绕过 3 小时缓存），抓取约需数秒，请勿连续点击多个大区</div>
       </div>
     </template>
   </div>
+
+  <!-- 更新时间浮层（悬浮币价时显示，teleport 到 body 避免被滚动容器裁剪） -->
+  <Teleport to="body">
+    <div v-if="tipVisible" ref="tipRef" class="rate-tip" :style="tipStyle">
+      <span class="rate-tip-label">更新时间</span>
+      <span class="rate-tip-value" :class="{ 'rate-tip-value--empty': tipEmpty }">{{ tipText }}</span>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -671,14 +678,68 @@ async function loadAllRates() {
 async function showAllTab() {
   activeTab.value = 'all'
   allTabMsg.value = ''
+  hideTip()
   await loadAllRates()
 }
+
+/* ── 币价悬浮提示：显示该大区的更新时间 ── */
+const tipVisible = ref(false)
+const tipText = ref('')
+const tipEmpty = ref(false)
+const tipStyle = ref<Record<string, string>>({})
+const tipRef = ref<HTMLElement | null>(null)
+const TIP_W = 172      // 与 CSS .rate-tip 宽度一致
+const TIP_H = 52       // 兜底值：正常以实测 offsetHeight 为准
+const TIP_GAP = 8
+
+let tipToken = 0
+
+function hideTip() {
+  tipToken++            // 作废进行中的定位任务，避免快速划过多个币价时定位串位
+  tipVisible.value = false
+}
+
+// 切回「本区走势」时收起浮层（浮层是 fixed 定位，不随组件卸载消失）
+watch(activeTab, (tab) => { if (tab !== 'all') hideTip() })
+
+async function onPriceEnter(e: MouseEvent, s: ServerRateRow) {
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const token = ++tipToken
+  tipText.value = s.updated_at || '暂无抓取记录'
+  tipEmpty.value = !s.updated_at
+  // 先以 hidden 渲染一帧量出真实尺寸，量完再定位并显形，避免翻转判断用估算值失准
+  tipStyle.value = { position: 'fixed', left: '0px', top: '0px', width: `${TIP_W}px`, visibility: 'hidden' }
+  tipVisible.value = true
+  await nextTick()
+  if (token !== tipToken) return
+  const w = tipRef.value?.offsetWidth || TIP_W
+  const h = tipRef.value?.offsetHeight || TIP_H
+  // 横向：以币价为中心，贴边时向内收敛
+  let left = r.left + r.width / 2 - w / 2
+  left = Math.max(TIP_GAP, Math.min(left, window.innerWidth - w - TIP_GAP))
+  // 纵向：默认向下，下方空间不足则向上翻转，仍不足则贴顶
+  let top = r.bottom + TIP_GAP
+  if (top + h > window.innerHeight - TIP_GAP) {
+    top = r.top - h - TIP_GAP
+    if (top < TIP_GAP) top = Math.min(r.bottom + TIP_GAP, window.innerHeight - h - TIP_GAP)
+  }
+  tipStyle.value = {
+    position: 'fixed',
+    left: `${Math.round(left)}px`,
+    top: `${Math.round(Math.max(TIP_GAP, top))}px`,
+    width: `${TIP_W}px`,
+    visibility: 'visible',
+  }
+}
+
+function onPriceLeave() { hideTip() }
 
 /** 单独刷新某个大区：force=true 绕过 3 小时缓存，立即重抓 */
 async function refreshOne(s: ServerRateRow) {
   if (refreshingId.value !== null) return
   refreshingId.value = s.id
   allTabMsg.value = ''
+  hideTip()
   try {
     const res = await window.electronAPI.scrapeOne(s.name, true)
     if (res?.needLogin) {
@@ -708,16 +769,17 @@ async function refreshOne(s: ServerRateRow) {
 
 <style scoped>
 .page { height: 100%; display: flex; flex-direction: column; }
-.page-head { margin-bottom: 22px; }
-.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
-.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 4px; }
+/* 本视图只作为弹窗内容使用，头部压紧以给「全部大区币价」腾出整屏可见的高度 */
+.page-head { margin-bottom: 10px; }
+.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; line-height: 1.3; }
+.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 2px; line-height: 1.4; }
 
 .card {
   flex: 1; background: var(--color-surface-1);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  padding: 18px 20px; display: flex; flex-direction: column;
+  padding: 14px 16px; display: flex; flex-direction: column;
   overflow-y: auto; min-height: 0;
 }
 
@@ -798,7 +860,7 @@ async function refreshOne(s: ServerRateRow) {
 .text-danger { color: var(--color-danger); }
 
 /* ── Tab 栏 ── */
-.rate-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-shrink: 0; }
+.rate-tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; }
 .rate-tab {
   padding: 6px 14px; border-radius: var(--radius-sm);
   background: transparent; color: var(--color-text-secondary);
@@ -813,33 +875,75 @@ async function refreshOne(s: ServerRateRow) {
 }
 
 /* ── 全部大区币价 ── */
-.all-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-shrink: 0; }
+.all-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-shrink: 0; }
 .all-summary { font-size: var(--text-xs); color: var(--color-text-secondary); }
 .all-summary b { color: var(--color-text); }
 .all-msg { font-size: var(--text-xs); color: var(--color-accent); text-align: right; }
 .all-login-hint {
   display: flex; align-items: center; gap: 5px;
   font-size: var(--text-micro); color: var(--color-warning);
-  margin-bottom: 8px; flex-shrink: 0;
+  margin-bottom: 6px; flex-shrink: 0;
 }
-.all-table-wrap { flex: 1; overflow-y: auto; min-height: 0; }
-.all-table-wrap .table tbody tr:hover { background: var(--color-surface-2); }
-.row-current td { background: var(--color-slot-bg); }
+/* 每行 3 个大区：大区名 · 币价 · 刷新 */
+.all-grid {
+  /* 自然高度、自身不滚动：24 个大区 8 行可整屏放下；极端情况由 .card 兜底滚动 */
+  flex: 0 0 auto; align-content: start;
+  /* 弹窗宽度下正好 3 列；窗口极窄时自动降为 2/1 列，避免大区名被挤压 */
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+  gap: 6px 10px; padding-right: 2px;
+}
+.rate-cell {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface-1);
+  line-height: 1.4;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rate-cell:hover { background: var(--color-surface-2); border-color: var(--color-border); }
+.rate-cell--current { background: var(--color-slot-bg); border-color: var(--color-accent); }
+.cell-name {
+  flex: 1; min-width: 0; display: flex; align-items: center;
+  font-size: var(--text-xs); color: var(--color-text);
+}
+.cell-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cur-tag {
-  margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  flex-shrink: 0; margin-left: 5px; padding: 0 5px; border-radius: 999px;
   font-size: var(--text-micro); color: var(--color-accent);
   border: 1px solid var(--color-accent); opacity: 0.85;
+  line-height: 1.5;
 }
-.th-op, .td-op { width: 96px; text-align: right; }
-.row-refresh {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: var(--radius-sm);
+.cell-price {
+  flex-shrink: 0; width: 58px; text-align: right; cursor: help;
+  font-size: var(--text-xs); font-weight: 650;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.cell-price:hover { color: var(--color-accent); }
+.cell-price--empty { color: var(--color-text-tertiary); font-weight: 400; }
+.cell-refresh {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+  /* 行高的主要瓶颈：压紧到与币价文字行同高，8 行可省下约 50px */
+  padding: 0 6px; line-height: 1.4; border-radius: var(--radius-sm);
   background: transparent; border: 1px solid var(--color-border-light);
   color: var(--color-text-secondary); cursor: pointer;
   font-size: var(--text-micro); font-family: inherit;
   transition: color 0.15s, border-color 0.15s;
 }
-.row-refresh:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
-.row-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-.all-footnote { margin-top: 8px; font-size: var(--text-micro); color: var(--color-text-tertiary); flex-shrink: 0; }
+.cell-refresh:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
+.cell-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+.all-footnote { margin-top: auto; padding-top: 6px; font-size: var(--text-micro); color: var(--color-text-tertiary); flex-shrink: 0; }
+
+/* 更新时间浮层 */
+.rate-tip {
+  position: fixed; z-index: 9999; pointer-events: none;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-pop);
+  animation: modal-in 0.12s ease-out;
+}
+.rate-tip-label { font-size: var(--text-micro); color: var(--color-text-tertiary); }
+.rate-tip-value { font-size: var(--text-xs); font-weight: 600; color: var(--color-text); }
+.rate-tip-value--empty { color: var(--color-text-tertiary); font-weight: 400; }
 </style>

@@ -381,7 +381,7 @@
               <div class="tg-cs-group-label">{{ cfgTabLabel }}<template v-if="cfgTab === 'beast'"> · {{ g.cat }}</template></div>
               <div class="tg-cs-head"><span>槽位</span><span>当前</span><span>目标</span><span></span></div>
               <div v-for="cs in g.rows" :key="cs.slot" class="tg-cs-row"
-                :class="{ 'tg-cs-row--chg': cs.picked || cs.cleared, 'tg-cs-row--diff': !cs.cleared && cs.current !== cs.target }">
+                :class="{ 'tg-cs-row--chg': cs.picked || cs.cleared, 'tg-cs-row--diff': csDiffers(cs) }">
                 <div class="tg-cs-slot" :title="cs.slot">{{ customSlotLabel(cs.slot) }}</div>
                 <div class="tg-cs-cell">
                   <input class="field-input tg-cs-input tg-cs-input--ro" type="text" :value="cs.current"
@@ -439,7 +439,7 @@
     <div v-if="showBpModal" class="overlay" @click.self="showBpModal = false">
       <div class="modal modal--cal">
         <div class="modal-title"><AppIcon icon="backpack" :size="15" /> 背包资产</div>
-        <div class="modal-sub">产出/买入入背包（不动资金）；卖出记收入时选「背包出库」自动扣减、「产出即卖」不动背包。当日产出想留库就先在下面入库</div>
+        <div class="modal-sub">产出/买入入背包（不动资金）；点行内「售出」直接记今日收入并扣减库存。也可在记卖出账单时选「背包出库」自动扣减、「产出即卖」不动背包。当日产出想留库就先在下面入库</div>
         <div class="bp-add">
           <div class="item-search">
             <input class="field-input" type="text" v-model="bpQuery" placeholder="搜索图鉴物品入库（产出登记，不动资金）"
@@ -469,16 +469,37 @@
         </div>
         <div class="list-area bp-list">
           <div v-if="backpack.length === 0" class="ledger-empty">背包空空如也 — 支出买入的道具提交账单后会自动入到这里</div>
-          <div v-for="b in backpack" :key="b.id" class="bp-row">
-            <span class="bp-name" :title="b.item_name">{{ b.item_name }}</span>
-            <span class="bp-qty">×{{ b.quantity }}</span>
-            <span class="bp-price">市 {{ fmtWan(unitMarket(b)) }}</span>
-            <span class="bp-sum">{{ fmtWan(unitMarket(b) * b.quantity) }}</span>
-            <input class="field-input bp-op-qty" type="number" min="1" step="1" v-num="bpOpQtyOf(b)"
-              @input="setBpOpQty(b, ($event.target as HTMLInputElement).value)" />
-            <button class="btn btn-ghost btn-xs" :title="`入库 ${bpOpQtyOf(b)} 个（产出登记）`" @click="bpOp(b, 1)"><AppIcon icon="plus" :size="11" /></button>
-            <button class="btn btn-ghost btn-xs" :title="`出库 ${bpOpQtyOf(b)} 个（消耗/赠送，不动资金）`" @click="bpOp(b, -1)"><AppIcon icon="x" :size="11" /></button>
-            <button class="band-del" title="删除记录（纠错用）" @click="bpDel(b)"><AppIcon icon="trash" :size="11" /></button>
+          <div v-for="b in backpack" :key="b.id" class="bp-row" :class="{ 'bp-row--sell': bpSellId === b.id }">
+            <template v-if="bpSellId !== b.id">
+              <span class="bp-name" :title="b.item_name">{{ b.item_name }}</span>
+              <span class="bp-qty">×{{ b.quantity }}</span>
+              <span class="bp-price">市 {{ fmtWan(unitMarket(b)) }}</span>
+              <span class="bp-sum">{{ fmtWan(unitMarket(b) * b.quantity) }}</span>
+              <input class="field-input bp-op-qty" type="number" min="1" step="1" v-num="bpOpQtyOf(b)"
+                @input="setBpOpQty(b, ($event.target as HTMLInputElement).value)" />
+              <button class="btn btn-ghost btn-xs" :title="`入库 ${bpOpQtyOf(b)} 个（产出登记）`" @click="bpOp(b, 1)"><AppIcon icon="plus" :size="11" /></button>
+              <button class="btn btn-ghost btn-xs" :title="`出库 ${bpOpQtyOf(b)} 个（消耗/赠送，不动资金）`" @click="bpOp(b, -1)"><AppIcon icon="x" :size="11" /></button>
+              <button class="btn btn-ghost btn-xs bp-sell-btn" :title="`售出 ${bpOpQtyOf(b)} 个（记今日收入并扣减背包）`" @click="bpSellStart(b)"><AppIcon icon="coins" :size="11" /></button>
+              <button class="band-del" title="删除记录（纠错用）" @click="bpDel(b)"><AppIcon icon="trash" :size="11" /></button>
+            </template>
+            <template v-else>
+              <span class="bp-name" :title="b.item_name">{{ b.item_name }}</span>
+              <span class="bp-qty">×{{ b.quantity }}</span>
+              <label class="bp-sell-field">数量
+                <input class="field-input bp-sell-qty" type="number" min="1" :max="b.quantity" step="1" v-num="bpSellQty"
+                  @input="bpSellQty = ($event.target as HTMLInputElement).value" />
+              </label>
+              <label class="bp-sell-field">单价(万)
+                <input class="field-input bp-sell-wan" type="number" min="0" step="0.01" v-num="bpSellWan"
+                  @input="bpSellWan = ($event.target as HTMLInputElement).value" />
+              </label>
+              <span class="bp-sell-sum" :class="{ 'bp-sell-sum--off': !bpSellValid(b) }">+{{ fmtWan(bpSellPreview) }}</span>
+              <button class="btn btn-accent btn-xs" :disabled="!bpSellValid(b)" @click="bpSellConfirm(b)"
+                :title="bpSellValid(b) ? '确认售出：扣减背包并记入今日收入' : '需 1 ≤ 数量 ≤ 库存 且单价 > 0'">
+                <AppIcon icon="check" :size="11" /> 售出
+              </button>
+              <button class="btn btn-ghost btn-xs" @click="bpSellCancel"><AppIcon icon="x" :size="11" /> 取消</button>
+            </template>
           </div>
         </div>
         <div class="cfg-total">背包总估值 <b>{{ fmtWan(backpackValue) }}</b>（数量 × 图鉴市场价，随行情实时变动）</div>
@@ -892,13 +913,17 @@ function resolvePriceIdLoose(snap: Snapshot, slot: string): number | null {
     const row = priceMap.value.get(id)
     if (row && (!name || row.item_name === name)) return id
   }
-  if (!name) return null
-  let best: PriceRow | null = null
-  for (const p of priceRows.value) {
-    if (p.item_name !== name) continue
-    if (!best || p.market_price < best.market_price) best = p
+  if (name) {
+    let best: PriceRow | null = null
+    for (const p of priceRows.value) {
+      if (p.item_name !== name) continue
+      if (!best || p.market_price < best.market_price) best = p
+    }
+    if (best) return best.id
   }
-  return best?.id ?? null
+  // 最终兜底：图鉴重导入后物品名可能变过（快照记的是旧名，如「流火潮日长袍」→「流火溯日长袍」），
+  // 按名字查不到时，只要快照记录的价格 id 仍指向存在的条目就沿用 —— 宁可按旧条目计价，也不能把该槽位算成 0
+  return id
 }
 
 // 槽位市场价（亿）：先按快照价格 id，缺失时按物品名兜底
@@ -946,6 +971,10 @@ async function loadAll() {
 
     await loadSchemesAndPrices()
 
+    // 节点自愈：历史版本按物品名比对差异，同名不同图鉴条目的目标变更（换灵魄品质/装备条目）漏建了节点。
+    // 价格表就绪后按最新派生逻辑重建一次，有差异才写库（幂等，修过即不再触发）
+    await repairJourneyNodes()
+
     await loadBackpack()
 
     await loadJourneyScoped()
@@ -980,6 +1009,7 @@ async function loadSchemesAndPrices() {
 // 会话内标记：大区 / 宝典×大区 的账单回填只做一次
 let loadedServerId: number | null = null
 let loadedJourneyKey = ''
+let loadedJourneyId: number | null = null
 let hydratedBillKey = ''
 // keep-alive 缓存：页面隐藏时切大区不并发重载，回到前台再补
 let activeView = false
@@ -994,11 +1024,15 @@ async function loadJourneyScoped() {
     records.value = []
     entries.value = []
     charTiers.value = []
+    loadedJourneyId = null
     return
   }
   const key = `${sid}:${jid}`
+  // 活跃档位勾选各宝典独立：切换前把当前勾选快照存回上一个宝典，切换后恢复本宝典的快照
+  if (loadedJourneyId != null) charTiersByJourney.value[loadedJourneyId] = [...charTiers.value]
   if (loadedJourneyKey === key) return
   loadedJourneyKey = key
+  loadedJourneyId = jid
   entries.value = []
   hydratedBillKey = ''
   records.value = await window.electronAPI.dbQuery(
@@ -1007,6 +1041,9 @@ async function loadJourneyScoped() {
   ) as Array<Rec>
   await Promise.all([loadTiers(), loadChars()])
   await hydrateBillFromToday()
+  // 恢复本宝典的勾选快照（loadChars 只给中立默认值；今日账单回填已含在上次快照里）
+  const saved = charTiersByJourney.value[jid]
+  if (saved) charTiers.value = chars.value.map((_, i) => saved[i] ?? 3)
 }
 
 // 只刷新当前宝典的流水列表（不动表单条目与 hydration 状态，保留未提交草稿）
@@ -1259,12 +1296,24 @@ function selectJourney(id: number) {
 }
 
 // ── 节点生成与应用 ──
+// 目标槽位与当前是否存在真实差异：物品名不同，或同名但指向不同图鉴条目。
+// 灵魄/装备图鉴存在大量同名多条目（不同品质/等级价格差异巨大，如 禁卫之灵 绿25万/紫9700万、
+// 野兽之灵 绿135万/紫25.6亿），只比物品名会漏掉「同名换品质」的目标变更（P0：节点漏建）。
+function snapshotDiffers(current: Snapshot, target: Snapshot, slot: string): boolean {
+  const toItem = (target.details?.[slot] || '').trim()
+  const fromItem = (current.details?.[slot] || '').trim()
+  if (!toItem || toItem !== fromItem) return !!toItem && toItem !== fromItem
+  const toId = resolvePriceIdLoose(target, slot)
+  const fromId = resolvePriceIdLoose(current, slot)
+  return toId != null && fromId != null && toId !== fromId
+}
+
 function buildNodes(current: Snapshot, target: Snapshot): JNode[] {
   const nodes: JNode[] = []
   for (const slot of NODE_SLOTS) {
     const toItem = (target.details?.[slot] || '').trim()
     const fromItem = (current.details?.[slot] || '').trim()
-    if (!toItem || toItem === fromItem) continue
+    if (!toItem || !snapshotDiffers(current, target, slot)) continue
     const pid = resolvePriceIdLoose(target, slot)
     nodes.push({
       slot, fromItem, toItem,
@@ -1282,7 +1331,7 @@ function buildNodes(current: Snapshot, target: Snapshot): JNode[] {
   for (const slot of beastKeys) {
     const toItem = (target.details?.[slot] || '').trim()
     const fromItem = (current.details?.[slot] || '').trim()
-    if (!toItem || toItem === fromItem) continue
+    if (!toItem || !snapshotDiffers(current, target, slot)) continue
     const pid = resolvePriceIdLoose(target, slot)
     nodes.push({
       slot, fromItem, toItem,
@@ -1559,11 +1608,14 @@ function rebuildNodesForTarget(current: Snapshot, target: Snapshot, prev: JNode[
   const need = (slot: string) => {
     const toItem = (target.details?.[slot] || '').trim()
     const fromItem = (current.details?.[slot] || '').trim()
-    return toItem && toItem !== fromItem ? { toItem, fromItem } : null
+    // 物品名不同，或同名但指向不同图鉴条目（同名多品质/多价格）都算目标变更
+    return toItem && snapshotDiffers(current, target, slot) ? { toItem, fromItem } : null
   }
   const fill = (n: JNode, slot: string, d: { toItem: string; fromItem: string }): boolean => {
     const pid = resolvePriceIdLoose(target, slot)
+    // 换物品，或同名但换了图鉴条目（品质/等级升级），都视为目标变更
     const changed = n.toItem !== d.toItem
+      || (pid != null && n.priceParamId != null && n.priceParamId !== pid)
     n.fromItem = d.fromItem
     n.fromPriceId = resolvePriceIdLoose(current, slot)
     n.toItem = d.toItem
@@ -1610,6 +1662,31 @@ function rebuildNodesForTarget(current: Snapshot, target: Snapshot, prev: JNode[
   fresh.sort((a, b) => a.cost - b.cost) // 新节点按价格升序排在后段
   const pending = [...pend, ...fresh]
   return { nodes: [...keep, ...pending], pending, added, updated, dropped }
+}
+
+// 节点集签名：只比较派生关键字段（槽位/轮次/解锁态/目标与来源物品/价格条目/手动改价），
+// 用于判断节点是否与目标快照同步，避免每次加载都无谓写库
+function nodeSignature(ns: JNode[]): string {
+  return ns.map(n => [
+    n.slot, n.round ?? 0, n.claimed ? 1 : 0,
+    n.toItem, n.fromItem, n.priceParamId ?? '',
+    n.costEdited ? `e${n.cost}` : '',
+  ].join('#')).join(';')
+}
+
+// 节点自愈：目标快照与节点集不同步时（旧版本按物品名比对漏建节点），按最新派生逻辑重建并持久化。
+// 已解锁历史站原样保留、未解锁节点沿用原顺序、手动改过价的节点不被覆盖 —— 与「保存目标调整」同一套规则
+async function repairJourneyNodes() {
+  for (const j of journeys.value) {
+    const r = rebuildNodesForTarget(j.current_snapshot, j.target_snapshot, j.nodes)
+    if (nodeSignature(r.nodes) === nodeSignature(j.nodes)) continue
+    await window.electronAPI.dbQuery(
+      "UPDATE growth_journey SET nodes=?, updated_at=datetime('now','localtime') WHERE id=?",
+      [JSON.stringify(r.nodes), j.id]
+    )
+    j.nodes = r.nodes
+    console.info(`[宝典] 「${j.name}」节点与目标快照不同步，已自愈重建：补 ${r.added} / 变更 ${r.updated} / 取消 ${r.dropped}`)
+  }
 }
 
 const showTargetModal = ref(false)
@@ -2005,6 +2082,16 @@ function tgtSlotFilled(cs: CustomSlotState): boolean {
   const snap = j.target_snapshot
   return !!((snap.details?.[cs.slot] || '').trim() || tgtStoredPriceId(cs) != null)
 }
+// 配置对比行的差异高亮：物品名不同，或同名但指向不同图鉴条目（同名多品质/多价格，如换灵魄品质）
+function csDiffers(cs: CustomSlotState): boolean {
+  if (cs.cleared) return false
+  if ((cs.current || '') !== (cs.target || '')) return true
+  const j = journey.value
+  if (!j) return false
+  const cid = resolvePriceIdLoose(j.current_snapshot, cs.slot)
+  const tid = resolvePriceIdLoose(j.target_snapshot, cs.slot)
+  return cid != null && tid != null && cid !== tid
+}
 
 function customPickSlot(cs: CustomSlotState, p: PriceRow) {
   cs.picked = p
@@ -2217,15 +2304,18 @@ function tierCumAmountWan(lv: number, t: number): number {
 interface CharCfg { name: string; band: number }
 const chars = ref<CharCfg[]>([])
 const charTiers = ref<number[]>([])
+// 活跃档位勾选按宝典独立（会话级）：key = journey id，切换宝典时由 loadJourneyScoped 存取。
+// 已提交今日账单的勾选由 hydrateBillFromToday 从流水回填（持久层），未提交的勾选只在会话内隔离
+const charTiersByJourney = ref<Record<number, number[]>>({})
 const charsKey = computed(() => `growth_book_chars_${app.currentServerId}`)
 
 async function loadChars() {
   const saved = await window.electronAPI.getSetting(charsKey.value)
   const list = parseJSON<CharCfg[]>(saved, [])
-  // 保留已有档位勾选（提交/刷新后不重置，便于修改重提）；首次或新号默认满档
-  const prev = charTiers.value
+  // 先给中立默认值（满档），不保留上一宝典的勾选（防止切宝典串档）；
+  // 本宝典会话快照由 loadJourneyScoped 在 loadChars 之后恢复，今日已提交档位由 hydrateBillFromToday 回填
   chars.value = list
-  charTiers.value = list.map((_, i) => prev[i] ?? 3)
+  charTiers.value = list.map(() => 3)
 }
 function pickTier(i: number, t: number) {
   charTiers.value[i] = charTiers.value[i] === t ? 0 : t
@@ -2682,6 +2772,65 @@ async function bpDel(b: BpItem) {
   if (!(await appConfirm({ title: '删除背包记录', message: `删除背包记录「${b.item_name}」？（仅纠错用，正常消耗用「出库」）`, confirmText: '删除', danger: true }))) return
   await window.electronAPI.dbQuery('DELETE FROM backpack_items WHERE id=?', [b.id])
   await loadBackpack()
+}
+
+// ── 背包售出：行内直接卖存货 = 记一笔「背包出库」收入流水（流动资金 +）并扣减背包数量 ──
+// detail 口径与账单卖出条目完全一致（from_backpack/deducted），删除流水/重提今日账单时能精确回滚背包
+const bpSellId = ref<number | null>(null)
+const bpSellQty = ref('1')
+const bpSellWan = ref('')
+
+function bpSellStart(b: BpItem) {
+  bpSellId.value = b.id
+  // 数量默认取行内操作数量（上限为库存），单价默认按图鉴市场价（万）
+  const q = Math.min(parseInt(bpOpQtyOf(b)) || 1, b.quantity)
+  bpSellQty.value = String(Math.max(1, q))
+  bpSellWan.value = String(Math.round(unitMarket(b) * 10000 * 100) / 100)
+}
+function bpSellCancel() {
+  bpSellId.value = null
+}
+const bpSellPreview = computed(() => round7(wanToYi(bpSellWan.value) * (parseInt(bpSellQty.value) || 0)))
+function bpSellValid(b: BpItem): boolean {
+  const q = parseInt(bpSellQty.value) || 0
+  return q >= 1 && q <= b.quantity && wanToYi(bpSellWan.value) > 0
+}
+async function bpSellConfirm(b: BpItem) {
+  const sid = app.currentServerId
+  const jid = activeJourneyId.value
+  if (!sid || !jid || !bpSellValid(b)) return
+  const qty = Math.min(parseInt(bpSellQty.value) || 0, b.quantity)
+  const unitWan = Math.round((parseFloat(bpSellWan.value) || 0) * 100) / 100
+  const amount = round7(wanToYi(String(unitWan)) * qty)
+  if (qty < 1 || amount <= 0) return
+  await window.electronAPI.dbTransaction([
+    {
+      sql: 'INSERT INTO asset_records (server_id, journey_id, record_date, type, source, amount, detail) VALUES (?,?,?,?,?,?,?)',
+      params: [sid, jid, todayKey.value, 'income', 'item', amount,
+        JSON.stringify({ price_param_id: b.price_param_id, item_name: b.item_name, quantity: qty, unit_price_wan: unitWan, from_backpack: true, deducted: qty })],
+    },
+    {
+      sql: "UPDATE backpack_items SET quantity = MAX(0, quantity - ?), updated_at=datetime('now','localtime') WHERE id=?",
+      params: [qty, b.id],
+    },
+    { sql: 'DELETE FROM backpack_items WHERE quantity <= 0' },
+  ])
+  bpSellId.value = null
+  // 同步为今日账单的一条已计入条目：重提今日账单按 entries 重建流水，
+  // 不补这条的话本次售出会在覆盖式重提时被当成「不在账单里」而误删
+  entries.value.push({
+    key: entryKey++,
+    direction: 'income',
+    kind: 'item',
+    itemName: b.item_name,
+    priceParamId: b.price_param_id,
+    quantity: qty,
+    unitWan: String(unitWan),
+    fromBackpack: true,
+    committed: true,
+  })
+  await Promise.all([refreshJourneyRecords(), loadBackpack()])
+  showToast(`已售出 ${qty} 个「${b.item_name}」，+${fmtWan(amount)} 记入今日收入`)
 }
 
 // ── 收益日历（弹窗） ──
@@ -3399,6 +3548,13 @@ watch(() => app.schemeDataVersion, () => { loadSchemesAndPrices().catch(() => {}
 .bp-price { color: var(--color-text-tertiary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .bp-sum { color: var(--color-warning); flex-shrink: 0; width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
 .bp-op-qty { width: 52px; padding: 3px 6px; text-align: center; flex-shrink: 0; }
+.bp-sell-btn { color: var(--color-success); }
+.bp-row--sell { background: var(--color-success-bg); border-radius: var(--radius-sm); padding: 6px 4px; gap: 8px; }
+.bp-sell-field { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-tertiary); flex-shrink: 0; white-space: nowrap; }
+.bp-sell-qty { width: 52px; padding: 3px 6px; text-align: center; }
+.bp-sell-wan { width: 76px; padding: 3px 6px; text-align: right; }
+.bp-sell-sum { color: var(--color-success); font-weight: 600; flex-shrink: 0; min-width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
+.bp-sell-sum--off { color: var(--color-text-tertiary); font-weight: 400; }
 
 /* 档位工资表 */
 .tier-table { display: flex; flex-direction: column; gap: 6px; }
