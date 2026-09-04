@@ -2,10 +2,10 @@
   <div class="dr-calc-wrap">
     <!-- 总减伤 + 标准表入口（始终可见） -->
     <div class="dr-total-bar">
-      <span class="dr-total-label">🛡 总减伤</span>
+      <span class="dr-total-label"><AppIcon icon="shield" :size="14" /> 总减伤</span>
       <span class="dr-total-value">{{ totalDR }}</span>
       <div class="dr-total-spacer"></div>
-      <button class="dr-guide-link" @click="showGuideModal = true" title="查看减伤标准表">📖 查看减伤标准表</button>
+      <button class="dr-guide-link" @click="showGuideModal = true" title="查看减伤标准表"><AppIcon icon="book" :size="13" /> 查看减伤标准表</button>
     </div>
 
     <!-- 子 tab -->
@@ -170,7 +170,7 @@
 
     <!-- 副本对照表 -->
     <div class="dr-section" v-if="subTab === 'dungeon'">
-      <h3 class="dr-section-title">⚔ 副本减伤对照<span class="dr-section-note">×N 为专注倍率</span></h3>
+      <h3 class="dr-section-title"><AppIcon icon="swords" :size="14" /> 副本减伤对照<span class="dr-section-note">×N 为专注倍率</span></h3>
       <div class="dr-table-wrap">
         <table class="dr-table">
           <thead>
@@ -194,7 +194,7 @@
 
     <!-- 野外对照表 -->
     <div class="dr-section" v-if="subTab === 'wild'">
-      <h3 class="dr-section-title">🗺 野外减伤对照</h3>
+      <h3 class="dr-section-title"><AppIcon icon="map" :size="14" /> 野外减伤对照</h3>
       <div class="dr-table-wrap">
         <table class="dr-table">
           <thead>
@@ -222,12 +222,12 @@
     <div class="modal-overlay" v-if="showGuideModal" @click.self="showGuideModal = false">
       <div class="modal">
         <div class="modal-head">
-          <h4>🛡️ 减伤标准表</h4>
-          <button class="btn-icon" @click="showGuideModal = false">✕</button>
+          <h4><AppIcon icon="shield" :size="16" /> 减伤标准表</h4>
+          <button class="btn-icon" @click="showGuideModal = false"><AppIcon icon="x" :size="15" /></button>
         </div>
         <div class="modal-body">
           <div class="dr-section">
-            <h3 class="dr-section-title">⚔ 副本减伤要求</h3>
+            <h3 class="dr-section-title"><AppIcon icon="swords" :size="14" /> 副本减伤要求</h3>
             <div class="dr-table-wrap">
               <table class="dr-table">
                 <thead>
@@ -246,7 +246,7 @@
             </div>
           </div>
           <div class="dr-section">
-            <h3 class="dr-section-title">🗺 野外减伤标准</h3>
+            <h3 class="dr-section-title"><AppIcon icon="map" :size="14" /> 野外减伤标准</h3>
             <div class="dr-table-wrap">
               <table class="dr-table">
                 <thead>
@@ -274,6 +274,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import drData from '@/data/damage-reduction-table.json'
 import { calcTotalDR, DEFAULT_DR_INPUTS, toughnessInfo, type DRInputs } from '@/utils/damageReduction'
 
@@ -422,28 +423,30 @@ const showGuideModal = ref(false)
 .dr-total-bar {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 14px; border-radius: var(--radius-md);
-  background: var(--color-accent-bg); border: 0.5px solid var(--color-accent-ring);
+  background: var(--color-accent-bg); border: 1px solid var(--color-accent-ring);
+  box-shadow: var(--shadow-card);
   flex-shrink: 0;
 }
-.dr-total-label { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.dr-total-label { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
 .dr-total-value {
-  font-size: 24px; font-weight: 700; color: var(--color-accent);
-  font-variant-numeric: tabular-nums; line-height: 1;
+  font-size: var(--text-xl); font-weight: 650; color: var(--color-accent);
+  font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em;
 }
 .dr-total-spacer { flex: 1; }
 .dr-guide-link {
-  border: 0.5px solid var(--color-border); background: var(--color-surface-1);
-  color: var(--color-accent); font-size: 12px; font-family: inherit; cursor: pointer;
-  padding: 5px 12px; border-radius: 5px; transition: all 0.12s; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--color-border-light); background: var(--color-surface-1);
+  color: var(--color-accent); font-size: var(--text-xs); font-family: inherit; cursor: pointer;
+  padding: 5px 12px; border-radius: var(--radius-sm); transition: all 0.12s ease; flex-shrink: 0;
 }
 .dr-guide-link:hover { border-color: var(--color-accent); background: var(--color-accent-bg); }
 
 /* ── 子 tab ── */
 .dr-subtabs { display: flex; gap: 4px; flex-shrink: 0; }
 .dr-subtab {
-  padding: 5px 14px; border: none; border-radius: 5px;
+  padding: 5px 14px; border: none; border-radius: var(--radius-sm);
   background: var(--color-surface-2); color: var(--color-text-secondary);
-  font-size: 12px; font-family: inherit; cursor: pointer; transition: all 0.12s;
+  font-size: var(--text-xs); font-family: inherit; cursor: pointer; transition: all 0.12s ease;
 }
 .dr-subtab:hover { background: var(--color-hover); color: var(--color-text); }
 .dr-subtab--active { background: var(--color-accent-bg); color: var(--color-accent); font-weight: 600; }
@@ -451,33 +454,42 @@ const showGuideModal = ref(false)
 /* ── 模块（双列紧凑） ── */
 .dr-modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 .dr-module {
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md); padding: 10px 12px;
+  box-shadow: var(--shadow-card);
   display: flex; flex-direction: column; gap: 6px;
 }
 .dr-module-title {
-  margin: 0; font-size: 13px; font-weight: 700; color: var(--color-text);
+  margin: 0; font-size: var(--text-sm); font-weight: 650; color: var(--color-text);
   border-left: 3px solid var(--color-accent); padding-left: 7px; line-height: 1.3;
 }
-.dr-module-note { margin: 0; font-size: 10.5px; color: var(--color-text-tertiary); line-height: 1.5; }
+.dr-module-note { margin: 0; font-size: var(--text-micro); color: var(--color-text-tertiary); line-height: 1.5; }
 .dr-controls {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
   gap: 8px; align-items: start;
 }
 .dr-control { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .dr-control-label {
-  font-size: 10.5px; font-weight: 550; color: var(--color-text-secondary);
+  font-size: var(--text-micro); font-weight: 550; color: var(--color-text-secondary);
   line-height: 1.3; min-height: 27px;
 }
 .dr-control-row { display: flex; align-items: center; gap: 5px; }
 .dr-input {
-  width: 100%; padding: 5px 8px; font-size: 12.5px; font-family: inherit;
+  width: 100%; padding: 5px 8px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 5px; min-width: 0;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm); min-width: 0;
 }
 .dr-input:focus { outline: none; border-color: var(--color-accent-ring); }
+/* 原生 select（结拜 / XS 盾 / 钙化）：appearance none + 自定义 chevron */
+select.dr-input {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-color: var(--color-surface-2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 26px;
+}
 .dr-toughness-pct {
-  font-size: 11px; color: var(--color-accent); font-weight: 600;
+  font-size: var(--text-micro); color: var(--color-accent); font-weight: 600;
   white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 
@@ -485,34 +497,37 @@ const showGuideModal = ref(false)
 .dr-help {
   display: inline-flex; align-items: center; justify-content: center;
   width: 13px; height: 13px; border-radius: 50%;
-  font-size: 9px; color: var(--color-text-tertiary);
-  border: 0.5px solid var(--color-border); cursor: help;
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border-light); cursor: help;
   margin-left: 3px; position: relative; vertical-align: 1px;
 }
 .dr-help:hover { color: var(--color-accent); border-color: var(--color-accent); }
 .dr-help:hover::after {
   content: attr(data-tip);
   position: absolute; left: 0; top: calc(100% + 5px); z-index: 20;
-  width: 200px; padding: 6px 8px; border-radius: 4px;
-  background: var(--color-surface-3); border: 0.5px solid var(--color-border);
-  color: var(--color-text-secondary); font-size: 10.5px; line-height: 1.5;
+  width: 200px; padding: 6px 8px; border-radius: var(--radius-sm);
+  background: var(--color-surface-3); border: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary); font-size: var(--text-micro); line-height: 1.5;
   white-space: normal; font-weight: 400;
 }
 
 /* ── 分节（对照表） ── */
 .dr-section {
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md); overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 .dr-section-title {
-  margin: 0; padding: 10px 14px; font-size: 13px; font-weight: 600;
+  margin: 0; padding: 10px 14px; font-size: var(--text-sm); font-weight: 600;
+  display: flex; align-items: center;
   background: var(--color-surface-2); border-bottom: 0.5px solid var(--color-border-light);
 }
-.dr-section-note { margin-left: 8px; font-size: 10.5px; font-weight: 400; color: var(--color-text-tertiary); }
+.dr-section-title .dr-section-note { margin-left: 8px; }
+.dr-section-note { font-size: var(--text-micro); font-weight: 400; color: var(--color-text-tertiary); }
 .dr-table-wrap { overflow-x: auto; }
-.dr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dr-table { width: 100%; border-collapse: collapse; font-size: var(--text-xs); }
 .dr-table th {
-  padding: 7px 12px; text-align: left; font-size: 11px; font-weight: 550;
+  padding: 7px 12px; text-align: left; font-size: var(--text-micro); font-weight: 550;
   color: var(--color-text-secondary); background: var(--color-surface-2);
   border-bottom: 0.5px solid var(--color-border-light); white-space: nowrap;
 }
@@ -532,17 +547,41 @@ const showGuideModal = ref(false)
 .dr-cell--fail { background: rgba(255, 69, 58, 0.10); }
 .dr-cell--fail .dr-cell-val { color: var(--color-danger); font-weight: 600; }
 .dr-cell-val { font-variant-numeric: tabular-nums; }
-.dr-cell-mark { margin-left: 5px; font-size: 11px; font-weight: 700; }
+.dr-cell-mark { margin-left: 5px; font-size: var(--text-micro); font-weight: 700; }
 .dr-mark--ok { color: var(--color-success); }
 .dr-mark--fail { color: var(--color-danger); }
 
-/* ── 减伤标准表弹层 ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal { background: var(--color-surface-1); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); width: 560px; max-width: 92vw; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; max-height: 80vh; }
+/* ── 减伤标准表弹层（玻璃） ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5, 6, 9, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  animation: overlay-in 0.15s ease-out;
+}
+[data-theme="light"] .modal-overlay { background: rgba(30, 35, 45, 0.25); }
+.modal {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border-radius: var(--radius-lg); width: 560px; max-width: 92vw;
+  box-shadow: var(--shadow-pop); display: flex; flex-direction: column; max-height: 80vh;
+  animation: modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .modal { background: var(--color-surface-1); }
+}
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid var(--color-border-light); flex-shrink: 0; }
-.modal-head h4 { font-size: 15px; font-weight: 600; margin: 0; }
-.btn-icon { background: none; border: none; cursor: pointer; font-size: 15px; color: var(--color-text-tertiary); }
+.modal-head h4 { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-md); font-weight: 600; margin: 0; }
+.btn-icon {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; font-size: var(--text-md);
+  color: var(--color-text-tertiary); border-radius: var(--radius-sm); transition: all 0.12s ease;
+}
+.btn-icon:hover { background: var(--color-surface-2); color: var(--color-text); }
 .modal-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; }
+.modal .dr-section { box-shadow: none; }
 .modal .dr-section-title { border: none; padding: 0 0 6px; background: transparent; }
 .modal .dr-table tbody tr:nth-child(even) td { background: var(--color-surface-2); }
 

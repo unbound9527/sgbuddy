@@ -72,14 +72,14 @@ function slotOptions(slotKey: string, beastName: string) {
 
 <style scoped>
 .beast-grade-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
-.grade-label { width: 48px; flex-shrink: 0; font-size: 13px; font-weight: 550; color: var(--color-text-secondary); text-align: right; }
+.grade-label { width: 48px; flex-shrink: 0; font-size: var(--text-sm); font-weight: 550; color: var(--color-text-secondary); text-align: right; }
 .grade-slots { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .beast-row-btn {
   width: 32px; height: 32px; border: 0.5px dashed var(--color-border);
   border-radius: var(--radius-sm); background: transparent;
-  color: var(--color-text-tertiary); font-size: 16px; cursor: pointer;
+  color: var(--color-text-tertiary); font-size: var(--text-lg); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: all .12s;
+  flex-shrink: 0; transition: all 0.12s ease;
 }
 .beast-row-btn:hover { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-bg); }
 .beast-row-btn--del:hover { border-color: var(--color-danger); color: var(--color-danger); background: transparent; }

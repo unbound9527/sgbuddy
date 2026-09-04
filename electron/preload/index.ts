@@ -31,9 +31,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 手动触发币价抓取（force 为 true 时忽略 3h 缓存）
   scrapeOne: (serverName: string, force?: boolean) =>
-    ipcRenderer.invoke('app:scrape-one', serverName, force),
+    ipcRenderer.invoke('app:scrape-one', serverName, force) as Promise<{ price: number | null; needLogin?: boolean; error?: string }>,
   scrapeRates: (force?: boolean) =>
     ipcRenderer.invoke('app:scrape-rates', force),
+  // 淘宝价格打码时手动登录（Cookie 持久化，登录一次即可）
+  currencyLogin: () =>
+    ipcRenderer.invoke('currency:login') as Promise<{ ok: boolean }>,
+  currencyLoginStatus: () =>
+    ipcRenderer.invoke('currency:login-status') as Promise<{ loggedIn: boolean; error?: string }>,
 
   // 交易线索
   scrapeClues: (serverName: string) =>
@@ -44,6 +49,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('clue:update-status', id, status),
   deleteClue: (id: number) =>
     ipcRenderer.invoke('clue:delete', id) as Promise<{ ok: boolean; deleted: number }>,
+  // 区服-贴吧映射单一数据源（含无贴吧区服=null）
+  getTiebaMap: () => ipcRenderer.invoke('clue:tieba-map') as Promise<Record<string, string | null>>,
+  // 被反爬拦截时弹窗手动过验证（传 serverName 或贴吧名）
+  openWallVerify: (serverOrTiebaName: string) =>
+    ipcRenderer.invoke('clue:open-wall', serverOrTiebaName) as Promise<{ ok: boolean }>,
   setClueServer: (name: string) =>
     ipcRenderer.invoke('clue:set-server', name),
   clearClues: (serverName: string) =>
@@ -52,6 +62,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event: any, data: any) => cb(data)
     ipcRenderer.on('clue:progress', handler)
     return () => { ipcRenderer.removeListener('clue:progress', handler) }
+  },
+  // 手动刷新时逐条收到新增线索（流式上屏）
+  onClueNew: (cb: (row: ClueRecord) => void) => {
+    const handler = (_event: any, row: any) => cb(row)
+    ipcRenderer.on('clue:new', handler)
+    return () => { ipcRenderer.removeListener('clue:new', handler) }
   },
   // 装备图片
   selectImage: () => ipcRenderer.invoke('image:select') as Promise<string | null>,
@@ -77,6 +93,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportScheme: (data: any) => ipcRenderer.invoke('export:scheme', data) as Promise<{ ok: boolean; path?: string; error?: string }>,
   // 经验表导出（A/B/C 三表一个 Excel 文件）
   exportExp: (data: any) => ipcRenderer.invoke('export:exp', data) as Promise<{ ok: boolean; path?: string; error?: string }>,
+  // 物价导出 / 导入（同表头 Excel）
+  exportPrices: (rows: any[]) => ipcRenderer.invoke('prices:export', rows) as Promise<{ ok: boolean; path?: string; error?: string }>,
+  importPrices: () => ipcRenderer.invoke('prices:import') as Promise<{ ok: boolean; rows?: any[]; error?: string }>,
 
   // 应用设置
   getSetting: (key: string) => ipcRenderer.invoke('setting:get', key),
@@ -160,7 +179,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('shortcut:switched', h)
     return () => { ipcRenderer.removeListener('shortcut:switched', h) }
   },
+
+  // 窗口列表变化推送（主进程监视器检测到窗口开/关/隐藏时发送）
+  onWindowsChanged: (cb: (list: GameWindow[]) => void) => {
+    const h = (_e: any, list: GameWindow[]) => cb(list)
+    ipcRenderer.on('windows:changed', h)
+    return () => { ipcRenderer.removeListener('windows:changed', h) }
+  },
+
+  // 托盘指令（path → 路由跳转；cat → 攻略页分类；action → check-update/about）
+  onTrayCommand: (cb: (cmd: TrayCommand) => void) => {
+    const h = (_e: any, cmd: TrayCommand) => cb(cmd)
+    ipcRenderer.on('tray:command', h)
+    return () => { ipcRenderer.removeListener('tray:command', h) }
+  },
 })
+
+export interface TrayCommand {
+  path?: string
+  cat?: string
+  action?: 'check-update' | 'about'
+}
 
 // 类型声明
 export interface ElectronAPI {
@@ -173,8 +212,10 @@ export interface ElectronAPI {
   selectGamePath: () => Promise<string | null>
   getAppVersion: () => Promise<string>
   openExternal: (url: string) => Promise<{ ok: boolean; error?: string }>
-  scrapeOne: (serverName: string) => Promise<{ price: number | null; error?: string }>
-  scrapeRates: (force?: boolean) => Promise<{ updated: number; failed: number; currentPrice: number | null; ok?: boolean; error?: string }>
+  scrapeOne: (serverName: string, force?: boolean) => Promise<{ price: number | null; needLogin?: boolean; error?: string }>
+  scrapeRates: (force?: boolean) => Promise<{ updated: number; failed: number; currentPrice: number | null; needLogin?: boolean; ok?: boolean; error?: string }>
+  currencyLogin: () => Promise<{ ok: boolean }>
+  currencyLoginStatus: () => Promise<{ loggedIn: boolean; error?: string }>
   selectImage: () => Promise<string | null>
   saveImage: (itemName: string, sourcePath: string, priceId?: number) => Promise<{ ok: boolean; id?: number; path?: string; error?: string }>
   listImages: (itemName: string, priceId?: number) => Promise<Array<{ id: number; image_path: string; sort_order: number }>>
@@ -188,13 +229,22 @@ export interface ElectronAPI {
   readClipboardText: () => Promise<string | null>
   exportScheme: (data: any) => Promise<{ ok: boolean; path?: string; error?: string }>
   exportExp: (data: any) => Promise<{ ok: boolean; path?: string; error?: string }>
-  scrapeClues: (serverName: string) => Promise<{ added: number; errors: string[] }>
+  exportPrices: (rows: any[]) => Promise<{ ok: boolean; path?: string; error?: string }>
+  importPrices: () => Promise<{ ok: boolean; rows?: any[]; error?: string }>
+  scrapeClues: (serverName: string) => Promise<{
+    added: number
+    errors: string[]
+    meta: { wall: boolean; wallMsg?: string; triedTieba: boolean; titles: string[]; pages: number; foundClues: number; diag: string[] }
+  }>
   loadClues: (params: { serverName: string; source?: string; keyword?: string; limit?: number }) => Promise<ClueRecord[]>
   updateClueStatus: (id: number, status: string) => Promise<unknown>
   deleteClue: (id: number) => Promise<{ ok: boolean; deleted: number }>
+  getTiebaMap: () => Promise<Record<string, string | null>>
+  openWallVerify: (serverOrTiebaName: string) => Promise<{ ok: boolean }>
   setClueServer: (name: string) => Promise<void>
   clearClues: (serverName: string) => Promise<{ ok: boolean; deleted: number }>
   onClueProgress: (cb: (data: { source: string; done: number; total: number }) => void) => () => void
+  onClueNew: (cb: (row: ClueRecord) => void) => () => void
   getSetting: (key: string) => Promise<string | null>
   setSetting: (key: string, value: string) => Promise<void>
   listGameWindows: () => Promise<GameWindow[]>
@@ -222,6 +272,7 @@ export interface ElectronAPI {
   getAllQuizQuestions: () => Promise<QuizRow[]>
   deleteQuizQuestion: (id: number) => Promise<{ ok: boolean }>
   onSwitched: (cb: (payload: { idx: number; count: number }) => void) => () => void
+  onWindowsChanged: (cb: (list: GameWindow[]) => void) => () => void
   ocrEngineStatus: () => Promise<{ installed: boolean; dir: string; giteeConfigured: boolean }>
   downloadOcrEngine: () => Promise<{ ok: boolean; error?: string }>
   onOcrEngineProgress: (cb: (p: { stage: 'downloading' | 'extracting'; received: number; total: number }) => void) => () => void
@@ -230,6 +281,7 @@ export interface ElectronAPI {
   installUpdate: (installerPath: string) => Promise<{ ok: boolean }>
   onUpdateProgress: (cb: (p: { received: number; total: number }) => void) => () => void
   onUpdateAvailable: (cb: (info: UpdateInfo) => void) => () => void
+  onTrayCommand: (cb: (cmd: TrayCommand) => void) => () => void
 }
 
 interface DailyLink {

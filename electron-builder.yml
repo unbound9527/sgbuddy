@@ -31,9 +31,12 @@ nsis:
   shortcutName: SG Buddy
   deleteAppDataOnUninstall: false
 extraResources:
-  # 窗口图标（打包后窗口/任务栏使用，进程内通过 process.resourcesPath 引用）
+  # 窗口/托盘图标（打包后引用，进程内通过 process.resourcesPath 定位）
   - from: resources/icon.png
     to: icon.png
+  # Windows 窗口/任务栏图标：BrowserWindow 的 icon 在 Windows 需要 .ico 才能显示（png 会被忽略）
+  - from: resources/icon.ico
+    to: icon.ico
   # Tesseract 中文语言包（离线降级 OCR）
   - from: resources/chi_sim.traineddata.gz
     to: ocr/chi_sim.traineddata.gz

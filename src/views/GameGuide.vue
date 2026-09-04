@@ -30,18 +30,19 @@
           @dragleave="onCardDragLeave(cat.key)"
           @drop.prevent.stop="onCardDrop(cat.key)"
         >
-          <span class="grid-card-icon">{{ cat.icon }}</span>
+          <span class="grid-card-icon"><AppIcon :icon="cat.icon" :size="22" /></span>
           <span class="grid-card-label">{{ cat.label }}</span>
           <span v-if="toolKeySet.has(cat.key)" class="grid-card-badge">互动</span>
-          <button class="grid-card-unfav" title="移出常用" @click.stop="removeFav(cat.key)">✕</button>
+          <button class="grid-card-unfav" title="移出常用" @click.stop="removeFav(cat.key)"><AppIcon icon="x" :size="11" /></button>
         </div>
       </div>
-      <div v-else class="card-grid-empty">🎯 拖拽卡片到常用区即可置顶显示</div>
+      <div v-else class="card-grid-empty"><AppIcon icon="target" :size="13" /> 拖拽卡片到常用区即可置顶显示</div>
 
       <!-- 其他卡片（默认折叠） -->
       <div class="card-collapse-bar" v-if="otherCards.length > 0">
         <button class="card-collapse-btn" @click="expanded = !expanded">
-          {{ expanded ? '▲ 收起' : '⋯ 展开全部（' + otherCards.length + '）' }}
+          <AppIcon :icon="expanded ? 'chevron-up' : 'chevron-down'" :size="12" />
+          {{ expanded ? '收起' : '展开全部（' + otherCards.length + '）' }}
         </button>
         <small v-if="expanded" class="card-collapse-hint">把常用卡片拖到上面区域即设为常用，其余收起后不显示</small>
       </div>
@@ -67,7 +68,7 @@
           @dragleave="onCardDragLeave(cat.key)"
           @drop.prevent.stop="onCardDrop(cat.key)"
         >
-          <span class="grid-card-icon">{{ cat.icon }}</span>
+          <span class="grid-card-icon"><AppIcon :icon="cat.icon" :size="22" /></span>
           <span class="grid-card-label">{{ cat.label }}</span>
           <span v-if="toolKeySet.has(cat.key)" class="grid-card-badge">互动</span>
         </div>
@@ -79,14 +80,14 @@
     <template v-else>
       <div class="detail-head">
         <button class="back-btn" @click="goBackFromDetail">← 返回</button>
-        <h2>{{ activeCatLabel }}</h2>
+        <h2><AppIcon v-if="activeCatIcon" :icon="activeCatIcon" :size="18" /> {{ activeCatLabel }}</h2>
       </div>
       <div class="content">
         <!-- 每日活动（周期活动 + 每日活动） -->
         <template v-if="activeCat === 'daily'">
           <div class="daily-acts">
             <div class="daily-acts-head">
-              <span class="daily-acts-title">🎯 每日活动 · 每日必领</span>
+              <span class="daily-acts-title"><AppIcon icon="target" :size="14" /> 每日活动 · 每日必领</span>
               <small class="daily-acts-sub">日常福利一键直达 · 别错过每日奖励</small>
             </div>
             <div
@@ -112,7 +113,7 @@
                     <span class="daily-act-desc">{{ act.desc }}</span>
                     <span class="daily-act-arrow">↗</span>
                   </a>
-                  <button class="daily-act-delete" @click.prevent.stop="deleteLink(act.id)" title="删除此链接">✕</button>
+                  <button class="daily-act-delete" @click.prevent.stop="deleteLink(act.id)" title="删除此链接"><AppIcon icon="x" :size="11" /></button>
                 </div>
               </div>
             </div>
@@ -174,7 +175,7 @@
                   @keydown.enter="onQuizSearch"
                   autofocus
                 />
-                <button class="quiz-search-btn" @click="onQuizSearch">🔍 检索</button>
+                <button class="quiz-search-btn" @click="onQuizSearch"><AppIcon icon="search" :size="13" /> 检索</button>
               </div>
               <div class="quiz-filters">
                 <button
@@ -206,7 +207,7 @@
                     <td class="quiz-td-q">{{ q.question }}</td>
                     <td class="quiz-td-a">{{ q.answer }}</td>
                     <td class="quiz-td-op">
-                      <button class="quiz-op-btn" @click="deleteQuizItem(q)">✕ 删除</button>
+                      <button class="quiz-op-btn" @click="deleteQuizItem(q)"><AppIcon icon="x" :size="11" /> 删除</button>
                     </td>
                   </tr>
                 </tbody>
@@ -215,7 +216,7 @@
 
             <!-- 空状态 -->
             <div class="quiz-empty" v-if="hasQuizSearch && quizTotalFiltered === 0">
-              <span class="quiz-empty-icon">😕</span>
+              <span class="quiz-empty-icon"><AppIcon icon="help" :size="36" /></span>
               <p>未找到匹配的题目</p>
               <p class="quiz-empty-hint">试试换个关键词，如"关羽"、"赤壁"、"军团"</p>
             </div>
@@ -270,9 +271,9 @@
             <!-- 工具栏 -->
             <div class="lv-toolbar">
               <div class="lv-toolbar-left">
-                <span class="lv-edit-hint">💡 双击单元格编辑，失焦自动保存</span>
-                <button class="lv-btn lv-btn-reset" @click="resetLeveling">🔄 重置默认</button>
-                <button class="lv-btn lv-btn-add" @click="addLevelingRow">➕ 添加等级段</button>
+                <span class="lv-edit-hint"><AppIcon icon="lightbulb" :size="12" /> 双击单元格编辑，失焦自动保存</span>
+                <button class="lv-btn lv-btn-reset" @click="resetLeveling"><AppIcon icon="rotate" :size="12" /> 重置默认</button>
+                <button class="lv-btn lv-btn-add" @click="addLevelingRow"><AppIcon icon="plus" :size="12" /> 添加等级段</button>
               </div>
               <div class="lv-toolbar-right">
                 <span class="lv-stage-count">{{ activeStages.length }} 个阶段</span>
@@ -315,7 +316,7 @@
                       <span v-else v-html="nl2br(row.tip)"></span>
                     </td>
                     <td class="lv-td-act">
-                      <button class="lv-btn-del" @click="deleteLevelingRow(ri)" title="删除此行">✕</button>
+                      <button class="lv-btn-del" @click="deleteLevelingRow(ri)" title="删除此行"><AppIcon icon="x" :size="13" /></button>
                     </td>
                   </tr>
                 </tbody>
@@ -324,9 +325,9 @@
 
             <!-- 空 sheet 提示 -->
             <div class="lv-empty-sheet" v-else>
-              <span class="lv-empty-icon">📈</span>
+              <span class="lv-empty-icon"><AppIcon icon="trending-up" :size="36" /></span>
               <p>暂无等级段数据</p>
-              <button class="lv-btn lv-btn-add" @click="addLevelingRow">➕ 添加第一个等级段</button>
+              <button class="lv-btn lv-btn-add" @click="addLevelingRow"><AppIcon icon="plus" :size="12" /> 添加第一个等级段</button>
             </div>
 
           </div>
@@ -339,7 +340,7 @@
               <div class="act-progress-header">
                 <span class="act-progress-label">今日活跃：<strong>{{ totalPoints }}</strong> / {{ cfg.target }}</span>
                 <span v-if="remainingToFull > 0" class="act-progress-remain">距满档还差 <strong>{{ remainingToFull }}</strong></span>
-                <span v-else class="act-progress-done">✅ 已满档</span>
+                <span v-else class="act-progress-done"><AppIcon icon="circle-check" :size="14" /> 已满档</span>
               </div>
               <div class="act-progress-bar-wrap">
                 <div class="act-progress-bar" :style="{ width: progressPct + '%' }" :class="{ full: isFull }"></div>
@@ -396,21 +397,21 @@
               <div class="act-selector act-selector--btns">
                 <label>&nbsp;</label>
                 <div class="act-toolbar-btns">
-                  <button class="act-wage-btn" @click="showWageModal = true">💰 工资汇总</button>
-                  <button class="act-wage-btn" @click="openTaskMgr()">⚙ 任务管理</button>
+                  <button class="act-wage-btn" @click="showWageModal = true"><AppIcon icon="coins" :size="13" /> 工资汇总</button>
+                  <button class="act-wage-btn" @click="openTaskMgr()"><AppIcon icon="sliders" :size="13" /> 任务管理</button>
                 </div>
               </div>
             </div>
 
             <!-- 福利任务栏 -->
             <div class="act-bonus-bar">
-              <span class="act-bonus-label">⭐ 福利任务 · {{ activityServer }} · {{ dayLabel }}</span>
-              <span v-if="bonusTasks.length === 0" class="act-bonus-empty">（未配置，点击任务卡片 ☆ 设置）</span>
+              <span class="act-bonus-label"><AppIcon icon="star" :size="13" /> 福利任务 · {{ activityServer }} · {{ dayLabel }}</span>
+              <span v-if="bonusTasks.length === 0" class="act-bonus-empty">（未配置，点击任务卡片 <AppIcon icon="star" :size="11" /> 设置）</span>
               <span v-if="bonusLimitHint" class="act-bonus-hint">{{ bonusLimitHint }}</span>
               <div class="act-bonus-tags">
                 <span v-for="t in bonusTasks" :key="t.id" class="act-bonus-tag">
                   {{ t.name }}<em>×2</em>
-                  <button class="act-bonus-remove" @click.stop="toggleBonus(t.id)" title="移除">✕</button>
+                  <button class="act-bonus-remove" @click.stop="toggleBonus(t.id)" title="移除"><AppIcon icon="x" :size="11" /></button>
                 </span>
               </div>
             </div>
@@ -444,9 +445,9 @@
                       :class="['act-star-btn', { active: t.isBonus }]"
                       @click.stop="toggleBonus(t.id)"
                       :title="t.isBonus ? '取消福利' : '设为福利任务（翻倍）'"
-                    >{{ t.isBonus ? '⭐' : '☆' }}</button>
-                    <span v-if="t.isBonus && !t.levelTooHigh" class="act-task-badge">✨翻倍</span>
-                    <span v-if="t.levelTooHigh" class="act-task-badge act-task-badge--lock">🔒{{ t.minLevel }}级</span>
+                    ><AppIcon icon="star" :size="14" /></button>
+                    <span v-if="t.isBonus && !t.levelTooHigh" class="act-task-badge"><AppIcon icon="sparkles" :size="10" /> 翻倍</span>
+                    <span v-if="t.levelTooHigh" class="act-task-badge act-task-badge--lock"><AppIcon icon="lock" :size="10" />{{ t.minLevel }}级</span>
                   </div>
                 </div>
                 <div class="act-task-pts">+{{ t.displayPoints }} 活跃</div>
@@ -468,7 +469,7 @@
 
             <!-- 空状态：当天无可用任务 -->
             <div class="act-empty" v-else>
-              <span class="act-empty-icon">📋</span>
+              <span class="act-empty-icon"><AppIcon icon="copy" :size="36" /></span>
               <p>当天没有可用任务</p>
             </div>
 
@@ -476,10 +477,10 @@
             <div class="modal-overlay" v-if="showTaskMgr" @click.self="showTaskMgr = false">
               <div class="modal modal--task-mgr">
                 <div class="modal-head">
-                  <h4>⚙ 活跃任务管理</h4>
+                  <h4><AppIcon icon="sliders" :size="14" /> 活跃任务管理</h4>
                   <div class="modal-head-actions">
                     <button class="task-add-btn" @click="addTaskToPool">＋ 新增</button>
-                    <button class="btn-icon" @click="showTaskMgr = false">✕</button>
+                    <button class="btn-icon" @click="showTaskMgr = false"><AppIcon icon="x" :size="13" /></button>
                   </div>
                 </div>
                 <div class="modal-body task-mgr-body">
@@ -528,7 +529,7 @@
                             >{{ d.label.slice(1) }}</button>
                           </div>
                         </div>
-                        <button class="task-del-btn" @click="removeTaskFromPool(ti)" title="删除">✕</button>
+                        <button class="task-del-btn" @click="removeTaskFromPool(ti)" title="删除"><AppIcon icon="x" :size="13" /></button>
                       </div>
                       <!-- 等级活跃点子行 -->
                       <div v-if="expandedTask === ti" class="task-level-row">
@@ -562,8 +563,8 @@
             <div class="modal-overlay" v-if="showWageModal" @click.self="showWageModal = false">
               <div class="modal modal--wage">
                 <div class="modal-head">
-                  <h4>💰 各等级活跃工资汇总</h4>
-                  <button class="btn-icon" @click="showWageModal = false">✕</button>
+                  <h4><AppIcon icon="coins" :size="14" /> 各等级活跃工资汇总</h4>
+                  <button class="btn-icon" @click="showWageModal = false"><AppIcon icon="x" :size="13" /></button>
                 </div>
                 <div class="modal-body">
                   <table class="wage-table">
@@ -657,7 +658,7 @@
           <div class="sxdp-wrap">
             <div class="sxdp-toolbar">
               <div class="sxdp-toolbar-right">
-                <button v-if="sxdpFilterActive" class="lv-btn lv-btn-reset" @click="clearSxdpFilters">✕ 清除筛选</button>
+                <button v-if="sxdpFilterActive" class="lv-btn lv-btn-reset" @click="clearSxdpFilters"><AppIcon icon="x" :size="12" /> 清除筛选</button>
                 <span class="lv-stage-count">
                   <template v-if="sxdpFilterActive">{{ sxdpVisibleRows.length }} / {{ sxdpData.length }} 套搭配</template>
                   <template v-else>{{ sxdpData.length }} 套搭配</template>
@@ -697,14 +698,14 @@
                   <tr v-if="sxdpVisibleRows.length === 0">
                     <td :colspan="sxdpColumns.length + 1" class="sxdp-td-nomatch">
                       没有符合筛选条件的搭配
-                      <button class="lv-btn lv-btn-reset" @click="clearSxdpFilters">✕ 清除筛选</button>
+                      <button class="lv-btn lv-btn-reset" @click="clearSxdpFilters"><AppIcon icon="x" :size="12" /> 清除筛选</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div class="lv-empty-sheet" v-else>
-              <span class="lv-empty-icon">☯</span>
+              <span class="lv-empty-icon"><AppIcon icon="circle-dot" :size="36" /></span>
               <p>暂无四象搭配数据</p>
             </div>
           </div>
@@ -748,7 +749,7 @@
                 </div>
                 <span class="ec-level-arrow">→</span>
                 <input type="number" v-model.number="ecTargetLevel" min="1" max="155" class="ec-level-input" />
-                <span v-if="ecTargetLevel <= ecStartLevel" class="ec-level-warn">⚠ 目标需大于起始</span>
+                <span v-if="ecTargetLevel <= ecStartLevel" class="ec-level-warn"><AppIcon icon="alert" :size="12" /> 目标需大于起始</span>
               </div>
               <div class="ec-level-row">
                 <label class="ec-level-label">起始星期</label>
@@ -758,8 +759,8 @@
                 </select>
               </div>
               <div class="ec-toolbar-btns">
-                <button class="ec-rate-btn" @click="openAccelModal">🔒 全局经验</button>
-                <button class="ec-rate-btn" @click="openRateModal">⚙ 倍率设置</button>
+                <button class="ec-rate-btn" @click="openAccelModal"><AppIcon icon="lock" :size="12" /> 全局经验</button>
+                <button class="ec-rate-btn" @click="openRateModal"><AppIcon icon="sliders" :size="12" /> 倍率设置</button>
               </div>
             </div>
 
@@ -771,10 +772,10 @@
                 <section class="ec-panel" :class="{ 'ec-panel--collapsed': !ecPanelOpen('tasks') }">
                   <div class="ec-panel-head" @click="toggleEcPanel('tasks')" title="点击折叠/展开">
                     <span class="ec-panel-caret">{{ ecPanelOpen('tasks') ? '▾' : '▸' }}</span>
-                    <span class="ec-panel-title">🎯 活跃任务</span>
+                    <span class="ec-panel-title"><AppIcon icon="target" :size="12" /> 活跃任务</span>
                     <span class="ec-task-sub-count">（{{ ecActiveAllTasks.length }} 项在用）</span>
                     <span class="grind-segment-spacer"></span>
-                    <button v-if="ecActiveAllTasks.length > 0" class="grind-head-btn" title="一键清除已勾选的任务" @click.stop="clearEcTasks">✕ 清除</button>
+                    <button v-if="ecActiveAllTasks.length > 0" class="grind-head-btn" title="一键清除已勾选的任务" @click.stop="clearEcTasks"><AppIcon icon="x" :size="11" /> 清除</button>
                   </div>
                   <div class="ec-panel-body" v-show="ecPanelOpen('tasks')">
                     <template v-if="ecAllTasksChips.length > 0">
@@ -807,7 +808,7 @@
                       </div>
                     </template>
                     <div class="ec-task-empty" v-else>
-                      <template v-if="ecAvailableTasks.length > 0">所有活跃任务倍率均为 0，已全部隐藏（可在 ⚙ 倍率设置中调整倍率）</template>
+                      <template v-if="ecAvailableTasks.length > 0">所有活跃任务倍率均为 0，已全部隐藏（可在 <AppIcon icon="sliders" :size="11" /> 倍率设置中调整倍率）</template>
                       <template v-else>当前等级无可用的活跃任务</template>
                     </div>
                   </div>
@@ -817,15 +818,15 @@
               <!-- 中：逐天明细（超过 5 年仍未达标 / 经验表数据不足时不展开明细，显示摘要 + 提醒） -->
             <div class="ec-result-section" v-if="ecTargetLevel > ecStartLevel && (ecSelectedTasks.size > 0 || ecActiveItems.length > 0 || grindActive)">
               <template v-if="ecSimHideTable">
-                <div class="ec-result-head">📊 升级模拟<span class="ec-days-summary-note">（{{ ecSimStop === 'cap' ? '超过 5 年仍无法达到目标级' : '经验表数据不足' }}，不展开逐天明细）</span></div>
+                <div class="ec-result-head"><AppIcon icon="chart" :size="14" /> 升级模拟<span class="ec-days-summary-note">（{{ ecSimStop === 'cap' ? '超过 5 年仍无法达到目标级' : '经验表数据不足' }}，不展开逐天明细）</span></div>
                 <div class="ec-days-summary">
                   <div class="ec-days-summary-route">{{ ecStartLevel }} 级 → {{ ecTargetLevel }} 级</div>
                   <div class="ec-days-summary-est">{{ ecSimEstimateText }}</div>
-                  <div class="ec-days-remind">⚠ {{ ecSimLongHint }}</div>
+                  <div class="ec-days-remind"><AppIcon icon="alert" :size="12" /> {{ ecSimLongHint }}</div>
                 </div>
               </template>
               <template v-else>
-                <div class="ec-result-head">📊 逐天明细
+                <div class="ec-result-head"><AppIcon icon="chart" :size="14" /> 逐天明细
                   <span v-if="ecDayRows.length > 0" class="ec-total-days">预计 <strong>{{ ecTotalDays }}</strong></span>
                 </div>
                 <div class="ec-detail-table-wrap">
@@ -849,7 +850,7 @@
                         @click="setStartFromDay(row)"
                         title="点击将起始等级设为当前行状态"
                       >
-                        <td :title="row.bonusExpiring.length > 0 ? '🧧 ' + row.bonusExpiring.join('、') + ' 今日到期（加成次日失效）' : undefined">第{{ row.day }}天（{{ weekdayNameOfDay(row.day) }}）</td>
+                        <td :title="row.bonusExpiring.length > 0 ? row.bonusExpiring.join('、') + ' 今日到期（加成次日失效）' : undefined">第{{ row.day }}天（{{ weekdayNameOfDay(row.day) }}）</td>
                         <td :title="row.leveledUp ? row.startLevel + '级 → ' + row.endLevel + '级（当天升级）' : row.startLevel + '级'">
                           <span :class="{ 'ec-levelup-new': row.leveledUp }">{{ row.endLevel }}</span>
                         </td>
@@ -883,10 +884,10 @@
                 <section class="ec-panel" :class="{ 'ec-panel--collapsed': !ecPanelOpen('monster-kill') }">
                   <div class="ec-panel-head" @click="toggleEcPanel('monster-kill')" title="点击折叠/展开">
                     <span class="ec-panel-caret">{{ ecPanelOpen('monster-kill') ? '▾' : '▸' }}</span>
-                    <span class="ec-panel-title">⚔ 打怪经验</span>
+                    <span class="ec-panel-title"><AppIcon icon="swords" :size="12" /> 打怪经验</span>
                     <span class="grind-segment-spacer"></span>
                     <button class="grind-head-btn" title="重置本方案等级段为「经验表 → B 最优打怪群组合」默认（每级组合含自定义编辑，同组合相邻等级合并为段）" @click.stop="applyBestGrindCombo">默认</button>
-                    <button class="grind-head-btn" title="每日刷怪时长 / 双倍时间 / 队伍 / 亲密度 / 师徒 / 青梅 / 熟练度 / 每周大疲劳设置（效率自动按怪物群计算；疲劳 380/天 + 大疲劳 2520/周，耗尽后截断当日刷怪）；打怪衰减率在 🔒 全局经验" @click.stop="grindSettingsOpen = true">⚙</button>
+                    <button class="grind-head-btn" title="每日刷怪时长 / 双倍时间 / 队伍 / 亲密度 / 师徒 / 青梅 / 熟练度 / 每周大疲劳设置（效率自动按怪物群计算；疲劳 380/天 + 大疲劳 2520/周，耗尽后截断当日刷怪）；打怪衰减率在「全局经验」设定弹窗" @click.stop="grindSettingsOpen = true"><AppIcon icon="sliders" :size="11" /></button>
                   </div>
                   <div class="ec-panel-body" v-show="ecPanelOpen('monster-kill')">
                     <!-- 首日（起始星期）刷怪结果：有效分钟、开齐心、疲劳消耗明细（先扣系统再扣大疲劳） -->
@@ -895,7 +896,7 @@
                       <span v-if="grindResult.qiXinMinutes > 0">开齐心 {{ Math.round(grindResult.qiXinMinutes) }} 分钟</span>
                       <span>疲劳 {{ Math.round(grindResult.fatigueUsed) }}（系统 {{ Math.round(grindResult.systemFatigueUsed) }} + 大疲劳 {{ Math.round(grindResult.bigFatigueUsed) }}）</span>
                       <span v-if="grindResult.fatigueLimited" class="grind-fatigue-limited"
-                        title="配置时长超过当日疲劳容量（系统 {{ grindStartSystemFatigue }} + 本周剩余大疲劳），超出部分无法刷怪">⚠ 当日疲劳耗尽</span>
+                        title="配置时长超过当日疲劳容量（系统 {{ grindStartSystemFatigue }} + 本周剩余大疲劳），超出部分无法刷怪"><AppIcon icon="alert" :size="12" /> 当日疲劳耗尽</span>
                     </div>
                     <div v-if="grindMonsterList.length === 0" class="ec-task-empty">怪物数据加载中…</div>
                     <template v-else>
@@ -918,18 +919,18 @@
                           <div class="grind-seg-summary-hint">等级未覆盖的天数不打怪 · 点击等级段行或下方按钮修改</div>
                         </template>
                         <div v-else class="grind-empty-tip">尚未配置等级段（等级未覆盖的天数不打怪）</div>
-                        <button class="grind-seg-edit-btn" @click="openSegmentSettings()">⚙ 等级段设置</button>
+                        <button class="grind-seg-edit-btn" @click="openSegmentSettings()"><AppIcon icon="sliders" :size="11" /> 等级段设置</button>
                       </div>
                     </template>
                   </div>
                 </section>
 
-                <!-- 打怪经验设置弹窗（队伍/亲密度/师徒/青梅/熟练度；称号 2026-08-23 起移除；打怪衰减率 2026-08-27 起移入 🔒 全局经验设定弹窗） -->
+                <!-- 打怪经验设置弹窗（队伍/亲密度/师徒/青梅/熟练度；称号 2026-08-23 起移除；打怪衰减率 2026-08-27 起移入「全局经验」设定弹窗） -->
                 <div class="modal-overlay" v-if="grindSettingsOpen" @click.self="grindSettingsOpen = false">
                   <div class="modal grind-modal" style="width: 560px; max-width: 92vw; max-height: 86vh;">
                     <div class="modal-head">
-                      <h4>⚔ 打怪经验设置</h4>
-                      <button class="btn-icon" @click="grindSettingsOpen = false">✕</button>
+                      <h4><AppIcon icon="swords" :size="14" /> 打怪经验设置</h4>
+                      <button class="btn-icon" @click="grindSettingsOpen = false"><AppIcon icon="x" :size="13" /></button>
                     </div>
                     <div class="modal-body grind-modal-body">
                       <!-- 每日设置：按周配置刷怪时长 / 开齐心 / 双倍时间 -->
@@ -966,13 +967,13 @@
                             <span class="grind-sum-cap">上限 {{ WEEKLY_GRIND_MIN_CAP }} 分钟</span>
                           </span>
                           <span :class="['grind-sum-chip', { over: qiXinWeeklyMinutes > WEEKLY_QIXIN_MIN_CAP }]">
-                            <template v-if="qiXinWeeklyMinutes > WEEKLY_QIXIN_MIN_CAP">⚠ 开齐心 {{ Math.round(qiXinWeeklyMinutes) }} 分钟/周，超上限，超出部分不计齐心乘数</template>
+                            <template v-if="qiXinWeeklyMinutes > WEEKLY_QIXIN_MIN_CAP"><AppIcon icon="alert" :size="11" /> 开齐心 {{ Math.round(qiXinWeeklyMinutes) }} 分钟/周，超上限，超出部分不计齐心乘数</template>
                             <template v-else>开齐心 {{ Math.round(qiXinWeeklyMinutes) }} 分钟/周</template>
                             <span class="grind-sum-cap">上限 {{ WEEKLY_QIXIN_MIN_CAP }} 分钟</span>
                           </span>
                           <span :class="['grind-sum-chip', { over: weeklyFatigueEstimate > weeklyFatigueCap }]"
                             :title="'按首日目标地图烧速 ' + grindTotalEfficiency + ' PL/小时 估算；实际按逐天模拟逐日扣减：先扣系统疲劳 380/天，再扣大疲劳'">
-                            <template v-if="weeklyFatigueEstimate > weeklyFatigueCap">⚠ 预计疲劳 {{ Math.round(weeklyFatigueEstimate) }}/周，超上限，超出部分刷不了</template>
+                            <template v-if="weeklyFatigueEstimate > weeklyFatigueCap"><AppIcon icon="alert" :size="11" /> 预计疲劳 {{ Math.round(weeklyFatigueEstimate) }}/周，超上限，超出部分刷不了</template>
                             <template v-else>预计疲劳 {{ Math.round(weeklyFatigueEstimate) }}/周</template>
                             <span class="grind-sum-cap">上限 {{ weeklyFatigueCap }}（系统 {{ SYSTEM_DAILY_FATIGUE * 7 }} + 大疲劳 {{ grindConfig.bigFatigueCap }}）</span>
                           </span>
@@ -985,7 +986,7 @@
                         <div class="grind-pair-grid">
                           <label class="grind-field">
                             <span class="grind-field-label">队伍人数
-                              <span class="grind-info" title="组队打怪经验（不开齐心分钟按队伍人数查表）：1人100% / 2人85% / 3人80% / 4人75% / 5人68%；开齐心分钟按开齐心人数查表（1人100% / 2人105% / 3人109% / 4人112% / 5人115%）。5人队全开齐心约为不开齐心的 1.69 倍。">ⓘ</span>
+                              <span class="grind-info" title="组队打怪经验（不开齐心分钟按队伍人数查表）：1人100% / 2人85% / 3人80% / 4人75% / 5人68%；开齐心分钟按开齐心人数查表（1人100% / 2人105% / 3人109% / 4人112% / 5人115%）。5人队全开齐心约为不开齐心的 1.69 倍。"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <select class="grind-select" :value="grindConfig.partySize" @change="setGrindInt('partySize', Number(($event.target as HTMLSelectElement).value))">
                               <option v-for="n in 5" :key="n" :value="n">{{ n }}人</option>
@@ -993,7 +994,7 @@
                           </label>
                           <label class="grind-field">
                             <span class="grind-field-label">开齐心人数
-                              <span class="grind-info" title="开齐心的分钟按开齐心人数查开齐心表（2人105% / 3人109% / 4人112% / 5人115%），不开齐心的分钟仍按队伍人数查不开齐心表。默认与队伍人数一致，可单独调低（如 5 人队只有 3 人开齐心 → 开齐心分钟 ×109%、不开齐心分钟 ×68%）。">ⓘ</span>
+                              <span class="grind-info" title="开齐心的分钟按开齐心人数查开齐心表（2人105% / 3人109% / 4人112% / 5人115%），不开齐心的分钟仍按队伍人数查不开齐心表。默认与队伍人数一致，可单独调低（如 5 人队只有 3 人开齐心 → 开齐心分钟 ×109%、不开齐心分钟 ×68%）。"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <select class="grind-select" :value="grindConfig.qiXinPartySize ?? grindConfig.partySize"
                               @change="setGrindQiXinPartySize(Number(($event.target as HTMLSelectElement).value))">
@@ -1002,7 +1003,7 @@
                           </label>
                           <label class="grind-field">
                             <span class="grind-field-label">好友亲密度
-                              <span class="grind-info" title="好友亲密度经验加成（打怪经验）：0级 0% / 1级 8% / 2级 10% / 3级 10% / 4级 13% / 5级 13% / 6级 15% / 7级 15% / 8级 18% / 9级 18% / 10级 20%">ⓘ</span>
+                              <span class="grind-info" title="好友亲密度经验加成（打怪经验）：0级 0% / 1级 8% / 2级 10% / 3级 10% / 4级 13% / 5级 13% / 6级 15% / 7级 15% / 8级 18% / 9级 18% / 10级 20%"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <select class="grind-select" :value="grindConfig.intimacyLevel" @change="setGrindInt('intimacyLevel', Number(($event.target as HTMLSelectElement).value))">
                               <option v-for="n in 11" :key="n - 1" :value="n - 1">{{ n - 1 }}级</option>
@@ -1018,7 +1019,7 @@
                           </label>
                           <label class="grind-field">
                             <span class="grind-field-label">每周大疲劳
-                              <span class="grind-info" title="大疲劳：每周至多消耗 2520（吃双倍丸获得，默认满额，吃少了可调低）。系统疲劳每天 0 点发放 380、当天用不完不累积；刷怪先扣系统疲劳、扣完再扣大疲劳；疲劳耗尽后当日刷怪时长自动截断（时间上限 580 分钟/周与疲劳上限并存，取先到者）。">ⓘ</span>
+                              <span class="grind-info" title="大疲劳：每周至多消耗 2520（吃双倍丸获得，默认满额，吃少了可调低）。系统疲劳每天 0 点发放 380、当天用不完不累积；刷怪先扣系统疲劳、扣完再扣大疲劳；疲劳耗尽后当日刷怪时长自动截断（时间上限 580 分钟/周与疲劳上限并存，取先到者）。"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <div class="grind-num-wrap">
                               <input type="number" class="rate-input grind-input" v-num="grindConfig.bigFatigueCap" min="0" :max="DEFAULT_BIG_FATIGUE_CAP" step="50"
@@ -1028,7 +1029,7 @@
                           </label>
                           <label class="grind-field">
                             <span class="grind-field-label">起始日剩余系统疲劳
-                              <span class="grind-info" title="模拟第 1 天开始时已剩余的系统疲劳：每天 0 点发放 380，若今天已刷掉一部分可调低；仅影响模拟第 1 天，之后每天恢复满额 380。清空 = 满额 380。">ⓘ</span>
+                              <span class="grind-info" title="模拟第 1 天开始时已剩余的系统疲劳：每天 0 点发放 380，若今天已刷掉一部分可调低；仅影响模拟第 1 天，之后每天恢复满额 380。清空 = 满额 380。"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <div class="grind-num-wrap">
                               <input type="number" class="rate-input grind-input" v-num="grindStartSystemFatigue" min="0" :max="SYSTEM_DAILY_FATIGUE" step="10"
@@ -1038,7 +1039,7 @@
                           </label>
                           <label class="grind-field">
                             <span class="grind-field-label">起始日剩余大疲劳
-                              <span class="grind-info" title="模拟开始时本周剩余大疲劳：若本周已用掉一部分可调低；仅影响起始日所在周，每周一 0 点重置回每周大疲劳满额。清空 = 满额（= 每周大疲劳）。">ⓘ</span>
+                              <span class="grind-info" title="模拟开始时本周剩余大疲劳：若本周已用掉一部分可调低；仅影响起始日所在周，每周一 0 点重置回每周大疲劳满额。清空 = 满额（= 每周大疲劳）。"><AppIcon icon="info" :size="11" /></span>
                             </span>
                             <div class="grind-num-wrap">
                               <input type="number" class="rate-input grind-input" v-num="grindStartBigFatigue" min="0" :max="grindConfig.bigFatigueCap ?? DEFAULT_BIG_FATIGUE_CAP" step="50"
@@ -1056,8 +1057,8 @@
                 <div class="modal-overlay" v-if="segmentSettingsOpen" @click.self="segmentSettingsOpen = false">
                   <div class="modal grind-modal" style="width: 560px; max-width: 92vw; max-height: 86vh;">
                     <div class="modal-head">
-                      <h4>⚙ 等级段刷图设置<span class="grind-sec-sub">按等级段指定刷图怪物群 · 勾选即打（不做地图竞争）· 默认 = 经验表 B 表最优组合</span></h4>
-                      <button class="btn-icon" @click="segmentSettingsOpen = false">✕</button>
+                      <h4><AppIcon icon="sliders" :size="14" /> 等级段刷图设置<span class="grind-sec-sub">按等级段指定刷图怪物群 · 勾选即打（不做地图竞争）· 默认 = 经验表 B 表最优组合</span></h4>
+                      <button class="btn-icon" @click="segmentSettingsOpen = false"><AppIcon icon="x" :size="13" /></button>
                     </div>
                     <div class="modal-body grind-modal-body">
                       <div class="grind-sec">
@@ -1075,7 +1076,7 @@
                               min="1" max="200" title="本段结束等级（闭区间，含两端）" @click.stop
                               @change="setSegmentLevel(si, 'levelTo', ($event.target as HTMLInputElement).value)" />
                             <span class="grind-seg-tab-count" v-if="seg.monsterIds.length > 0">{{ seg.monsterIds.length }}</span>
-                            <button class="grind-seg-tab-del" title="删除本等级段（可用 ＋ 在缺口处补回）" @click.stop="removeSegment(si)">✕</button>
+                            <button class="grind-seg-tab-del" title="删除本等级段（可用 ＋ 在缺口处补回）" @click.stop="removeSegment(si)"><AppIcon icon="x" :size="10" /></button>
                           </div>
                           <button class="grind-seg-tab-add" title="在未覆盖的等级缺口处新增一段（删除中间段后可点此补回）" @click="addSegment()">＋</button>
                         </div>
@@ -1122,10 +1123,10 @@
                 <section class="ec-panel" :class="{ 'ec-panel--collapsed': !ecPanelOpen('items') }">
                   <div class="ec-panel-head" @click="toggleEcPanel('items')" title="点击折叠/展开">
                     <span class="ec-panel-caret">{{ ecPanelOpen('items') ? '▾' : '▸' }}</span>
-                    <span class="ec-panel-title">💊 经验道具</span>
+                    <span class="ec-panel-title"><AppIcon icon="pill" :size="12" /> 经验道具</span>
                     <span class="ec-task-sub-count">（{{ ecActiveItemCount }} 种在用）</span>
                     <span class="grind-segment-spacer"></span>
-                    <button v-if="ecActiveItemCount > 0" class="grind-head-btn" title="一键取消全部勾选（数量与列表顺序保留，重新勾选即恢复）" @click.stop="clearEcItems">✕ 清除</button>
+                    <button v-if="ecActiveItemCount > 0" class="grind-head-btn" title="一键取消全部勾选（数量与列表顺序保留，重新勾选即恢复）" @click.stop="clearEcItems"><AppIcon icon="x" :size="11" /> 清除</button>
                   </div>
                   <div class="ec-panel-body" v-show="ecPanelOpen('items')">
                     <div class="ec-task-grid">
@@ -1143,7 +1144,7 @@
                         <span class="ec-task-chip-name"
                           :title="itemDaysOf(item).length >= 7 ? itemDisplayName(item) : itemDisplayName(item) + '（只在 ' + weekDaysText(itemDaysOf(item)) + ' 能吃）'">{{ itemDisplayName(item) }}</span>
                         <span v-if="!itemDaysOf(item).includes(activityDay)" class="ec-task-chip-closed" title="该道具今天不开放，已在逐天明细中按开放日计算">休</span>
-                        <span v-if="itemPeriodOf(item) === 'weekly'" class="ec-task-chip-type">🗓 每周</span>
+                        <span v-if="itemPeriodOf(item) === 'weekly'" class="ec-task-chip-type"><AppIcon icon="calendar" :size="10" /> 每周</span>
                         <span class="ec-task-chip-rate">×{{ getItemMultiplier(item.id) }}</span>
                         <input
                           type="number"
@@ -1170,21 +1171,21 @@
                 <section class="ec-panel" :class="{ 'ec-panel--collapsed': !ecPanelOpen('bonus') }">
                   <div class="ec-panel-head" @click="toggleEcPanel('bonus')" title="点击折叠/展开">
                     <span class="ec-panel-caret">{{ ecPanelOpen('bonus') ? '▾' : '▸' }}</span>
-                    <span class="ec-panel-title">🧧 加成道具</span>
+                    <span class="ec-panel-title"><AppIcon icon="gift" :size="12" /> 加成道具</span>
                     <span class="ec-task-sub-count">（{{ activeBonusCount }} 项生效）</span>
                     <span class="grind-segment-spacer"></span>
                     <button class="grind-head-btn" title="新增自定义加成道具" @click.stop="addBonusItem">+ 新增</button>
                   </div>
                   <div class="ec-panel-body" v-show="ecPanelOpen('bonus')">
                     <div class="bonus-list">
-                      <!-- 每行一个道具：☑ 勾选启用 | 名称 + 剩余天数 + ⚙ 设置（效果/类型/数值在设置弹窗内） -->
+                      <!-- 每行一个道具：勾选框启用 | 名称 + 剩余天数 + 设置按钮（效果/类型/数值在设置弹窗内） -->
                       <div v-for="item in bonusItems" :key="item.id" class="bonus-row" :class="{ 'bonus-row--off': !bonusItemEnabled(item.id) }">
                         <input type="checkbox" class="ec-chip-checkbox bonus-enable-check" :checked="bonusItemEnabled(item.id)"
                           :title="(bonusItemEnabled(item.id) ? '停用 ' : '启用 ') + item.name + '（本方案勾选即启用，不勾不计入本方案模拟，其他方案互不影响）'"
                           @change="setBonusEnabled(item.id, ($event.target as HTMLInputElement).checked)" />
                         <span class="bonus-name" :title="bonusDesc(item)">{{ item.name }}</span>
                         <span class="bonus-summary bonus-remain">剩{{ item.startRemainDays }}/{{ item.validDays }}天</span>
-                        <button class="bonus-config-btn" title="打开加成道具设置（类型/数值/任务范围/开始天数/有效期）" @click="openBonusModal(item.id)">⚙ 设置</button>
+                        <button class="bonus-config-btn" title="打开加成道具设置（类型/数值/任务范围/开始天数/有效期）" @click="openBonusModal(item.id)"><AppIcon icon="sliders" :size="10" /> 设置</button>
                       </div>
                       <div v-if="bonusItems.length === 0" class="ec-task-empty">暂无加成道具，点击「+ 新增」添加</div>
                     </div>
@@ -1195,8 +1196,8 @@
                 <div class="modal-overlay" v-if="bonusModalItem" @click.self="bonusModalItemId = null">
                   <div class="modal grind-modal" style="width: 480px; max-width: 92vw; max-height: 86vh;">
                     <div class="modal-head">
-                      <h4>🧧 加成道具设置</h4>
-                      <button class="btn-icon" @click="bonusModalItemId = null" title="关闭">✕</button>
+                      <h4><AppIcon icon="gift" :size="14" /> 加成道具设置</h4>
+                      <button class="btn-icon" @click="bonusModalItemId = null" title="关闭"><AppIcon icon="x" :size="13" /></button>
                     </div>
                     <div class="modal-body grind-modal-body">
                       <div class="bonus-modal-row">
@@ -1292,7 +1293,7 @@
                         </div>
                       </div>
                       <div v-if="isCustomBonusItem(bonusModalItem.id)" class="bonus-modal-del">
-                        <button class="bonus-modal-del-btn" @click="deleteBonusItem(bonusModalItem.id)">✕ 删除此道具</button>
+                        <button class="bonus-modal-del-btn" @click="deleteBonusItem(bonusModalItem.id)"><AppIcon icon="x" :size="11" /> 删除此道具</button>
                       </div>
                     </div>
                   </div>
@@ -1304,7 +1305,7 @@
             <div class="modal-overlay" v-if="showRateModal" @click.self="closeRateModal">
               <div class="modal modal--rate" style="width: auto; max-width: min(960px, 94vw);">
                 <div class="modal-head">
-                  <h4>⚙ 倍率设置</h4>
+                  <h4><AppIcon icon="sliders" :size="14" /> 倍率设置</h4>
                   <div class="ec-subtabs">
                     <button
                       :class="['ec-subtab', { 'ec-subtab--active': rateSubTab === 'tasks' }]"
@@ -1315,7 +1316,7 @@
                       @click="rateSubTab = 'ranges'"
                     >等级段倍率</button>
                   </div>
-                  <button class="btn-icon" @click="closeRateModal">✕</button>
+                  <button class="btn-icon" @click="closeRateModal"><AppIcon icon="x" :size="13" /></button>
                 </div>
 
                 <!-- Tab: 任务倍率 -->
@@ -1327,16 +1328,16 @@
                     <input
                       v-model="rateFilter"
                       class="me-filter-input rate-filter-input"
-                      placeholder="🔍 搜索任务/道具名称..."
+                      placeholder="搜索任务/道具名称..."
                     />
-                    <button v-if="rateFilter" class="btn-icon" @click="rateFilter = ''" title="清除搜索">✕</button>
+                    <button v-if="rateFilter" class="btn-icon" @click="rateFilter = ''" title="清除搜索"><AppIcon icon="x" :size="13" /></button>
                   </div>
 
                   <!-- 经验加成两列：活跃任务 / 每日经验道具（打怪经验在打怪面板中配置，为等级与策略相关计算结果而非静态倍率） -->
                   <div class="rate-columns">
                     <!-- 列1 活跃任务 -->
                       <div class="rate-column">
-                      <div class="rate-column-head">🎯 活跃任务<span class="rate-column-count">{{ filteredRateTasks.length }}</span><span class="rate-drag-tip">⣿ 可拖拽排序</span></div>
+                      <div class="rate-column-head"><AppIcon icon="target" :size="12" /> 活跃任务<span class="rate-column-count">{{ filteredRateTasks.length }}</span><span class="rate-drag-tip">⣿ 可拖拽排序</span></div>
                       <div class="rate-column-body">
                         <div v-for="t in filteredRateTasks" :key="t.id" class="rate-row"
                           :class="{
@@ -1359,13 +1360,13 @@
                             @input="setMultiplier(t.id, ($event.target as HTMLInputElement).value)"
                             min="0" step="0.1" />
                         </div>
-                        <div v-if="filteredRateTasks.length === 0" class="rate-column-empty">{{ rateFilter ? '🔍 无匹配任务' : '暂无任务' }}</div>
+                        <div v-if="filteredRateTasks.length === 0" class="rate-column-empty">{{ rateFilter ? '无匹配任务' : '暂无任务' }}</div>
                       </div>
                     </div>
 
                     <!-- 列2 每日经验道具（支持新增/改名/删除自定义道具） -->
                       <div class="rate-column">
-                      <div class="rate-column-head">💊 经验道具<span class="rate-column-count">{{ filteredRateItems.length }}</span><span class="rate-drag-tip">⣿ 可拖拽排序</span>
+                      <div class="rate-column-head"><AppIcon icon="pill" :size="12" /> 经验道具<span class="rate-column-count">{{ filteredRateItems.length }}</span><span class="rate-drag-tip">⣿ 可拖拽排序</span>
                         <button class="rate-item-add-btn" @click="addExpItem" title="新增经验道具">+ 新增</button>
                       </div>
                       <div class="rate-column-body">
@@ -1397,7 +1398,7 @@
                             <template v-else>
                               <span class="rate-item-name-group">
                                 <span class="rate-task-name" :title="item.name">{{ itemDisplayName(item) }}</span>
-                                <button class="rate-item-btn" @click="startEditItemName(item.id)" title="编辑名称">✏️</button>
+                                <button class="rate-item-btn" @click="startEditItemName(item.id)" title="编辑名称"><AppIcon icon="pencil" :size="11" /></button>
                               </span>
                             </template>
                             <button
@@ -1405,7 +1406,7 @@
                               :class="{ 'rate-item-period--weekly': itemPeriodOf(item) === 'weekly' }"
                               :title="itemPeriodOf(item) === 'weekly' ? '每周道具：次数为每周可用数，逐天明细按周分摊' + (item.maxPerWeek ? '（至多 ' + item.maxPerWeek + ' 个/周）' : '') : '每日道具：每天可用该次数'"
                               @click="toggleItemPeriod(item.id)"
-                            >{{ itemPeriodOf(item) === 'weekly' ? '🗓 每周' : '每日' }}</button>
+                            >{{ itemPeriodOf(item) === 'weekly' ? '每周' : '每日' }}</button>
                             <button
                               class="rate-item-period"
                               :class="{ 'rate-item-period--weekly': editingItemDaysId === item.id }"
@@ -1416,7 +1417,7 @@
                               v-num="ecItemMultipliers[item.id] ?? item.baseMultiplier"
                               @input="setItemMultiplier(item.id, ($event.target as HTMLInputElement).value)"
                               min="0" step="0.01" />
-                            <button v-if="isCustomItem(item.id)" class="rate-item-btn rate-item-del" @click="deleteExpItem(item.id)" title="删除此道具">✕</button>
+                            <button v-if="isCustomItem(item.id)" class="rate-item-btn rate-item-del" @click="deleteExpItem(item.id)" title="删除此道具"><AppIcon icon="x" :size="13" /></button>
                           </div>
                           <div v-if="editingItemDaysId === item.id" class="rate-item-days-bar">
                             <span class="rate-item-days-hint">开放日：道具只在勾选的星期可吃（全选 = 每天都能吃）</span>
@@ -1427,7 +1428,7 @@
                             >{{ d.label.slice(1) }}</button>
                           </div>
                         </template>
-                        <div v-if="filteredRateItems.length === 0" class="rate-column-empty">{{ rateFilter ? '🔍 无匹配道具' : '暂无道具' }}</div>
+                        <div v-if="filteredRateItems.length === 0" class="rate-column-empty">{{ rateFilter ? '无匹配道具' : '暂无道具' }}</div>
                       </div>
                     </div>
 
@@ -1440,7 +1441,7 @@
                   <div class="rate-section" v-for="(def, actId) in editingLevelMults" :key="actId">
                     <div class="rate-section-head">
                       {{ def.name }}
-                      <button class="lvmult-del-act" @click="deleteLevelMultActivity(actId)" title="删除此活动">✕</button>
+                      <button class="lvmult-del-act" @click="deleteLevelMultActivity(actId)" title="删除此活动"><AppIcon icon="x" :size="13" /></button>
                     </div>
                     <div class="lvmult-table-wrap">
                       <table class="lvmult-table">
@@ -1470,7 +1471,7 @@
                                 min="0" step="0.1" />
                             </td>
                             <td class="lvmult-td-act">
-                              <button class="lvmult-del-btn" @click="deleteLevelMultRange(actId, ri)" title="删除此等级段">✕</button>
+                              <button class="lvmult-del-btn" @click="deleteLevelMultRange(actId, ri)" title="删除此等级段"><AppIcon icon="x" :size="13" /></button>
                             </td>
                           </tr>
                         </tbody>
@@ -1484,7 +1485,7 @@
                 </div>
 
                 <div class="modal-foot">
-                  <button class="task-reset-btn" @click="goToActivityCalc">📋 活跃计算器</button>
+                  <button class="task-reset-btn" @click="goToActivityCalc"><AppIcon icon="copy" :size="12" /> 活跃计算器</button>
                   <span class="modal-foot-spacer"></span>
                   <button class="task-save-btn" @click="closeRateModal">保存</button>
                 </div>
@@ -1495,8 +1496,8 @@
             <div class="modal-overlay" v-if="showAccelModal" @click.self="closeAccelModal">
               <div class="modal modal--rate">
                 <div class="modal-head">
-                  <h4>🔒 全局经验设定</h4>
-                  <button class="btn-icon" @click="closeAccelModal">✕</button>
+                  <h4><AppIcon icon="lock" :size="14" /> 全局经验设定</h4>
+                  <button class="btn-icon" @click="closeAccelModal"><AppIcon icon="x" :size="13" /></button>
                 </div>
                 <div class="modal-body rate-modal-body">
                   <div class="rate-hint">经验计算 = 基础经验 × (1 + 封印加速率 + 王城加成)。勾选启用封印加速。</div>
@@ -1505,7 +1506,7 @@
                     <span>启用封印加速</span>
                   </label>
                   <div class="rate-section" v-if="ecAccelEnabled">
-                    <div class="rate-section-head">🔒 封印加速等级段<span class="rate-level-hint">加速率填百分比，如 20 = 20%</span></div>
+                    <div class="rate-section-head"><AppIcon icon="lock" :size="12" /> 封印加速等级段<span class="rate-level-hint">加速率填百分比，如 20 = 20%</span></div>
                     <div class="lvmult-table-wrap">
                       <table class="lvmult-table">
                         <thead>
@@ -1528,7 +1529,7 @@
                               <input type="number" class="rate-input" v-model.number="tier.rate" min="0" max="500" step="1" />
                             </td>
                             <td class="lvmult-td-act">
-                              <button class="lvmult-del-btn" @click="deleteAccelTier(i)" title="删除此等级段">✕</button>
+                              <button class="lvmult-del-btn" @click="deleteAccelTier(i)" title="删除此等级段"><AppIcon icon="x" :size="13" /></button>
                             </td>
                           </tr>
                         </tbody>
@@ -1537,7 +1538,7 @@
                     </div>
                   </div>
                   <div class="rate-section">
-                    <div class="rate-section-head">🏰 跨服王城胜利经验加成</div>
+                    <div class="rate-section-head"><AppIcon icon="castle" :size="12" /> 跨服王城胜利经验加成</div>
                     <div class="rate-row">
                       <span class="rate-task-name">王城胜利加成率（%）</span>
                       <input type="number" class="rate-input"
@@ -1548,7 +1549,7 @@
                   </div>
                   <!-- 打怪衰减率：全局共享（不随方案切换，2026-08-27 起与封印加速同属全局经验设定） -->
                   <div class="rate-section">
-                    <div class="rate-section-head">🔒 打怪衰减率<span class="rate-level-hint">小X = 怪物比角色高 X 级 · 大X = 角色比怪物高 X 级 · 可编辑 · 全局共享</span></div>
+                    <div class="rate-section-head"><AppIcon icon="lock" :size="12" /> 打怪衰减率<span class="rate-level-hint">小X = 怪物比角色高 X 级 · 大X = 角色比怪物高 X 级 · 可编辑 · 全局共享</span></div>
                     <div class="grind-decay-grid">
                       <label v-for="diff in DECAY_RATE_DIFFS" :key="diff" :class="['grind-decay-cell', { same: diff === 0 }]">
                         <span class="grind-decay-label">{{ decayRateLabel(diff) }}</span>
@@ -1581,11 +1582,11 @@
                   <button class="exp-tab-btn" :class="{ active: monsterExpView === 'b' }" @click="monsterExpView = 'b'">B 最优打怪组合</button>
                   <button class="exp-tab-btn" :class="{ active: monsterExpView === 'c' }" @click="monsterExpView = 'c'">C 等级经验表</button>
                 </div>
-                <span v-if="monsterExpView === 'a'" class="exp-table-hint">💡 淡色底、值带虚线的列可双击编辑；灰字 ⚙ 列自动计算不可编辑 · 共 {{ filteredMonsterExp.length }} / {{ monsterExpData.length }} 条</span>
-                <button v-if="monsterExpView === 'a'" class="lv-btn lv-btn-add" @click="addMonsterExpRow">➕ 新增怪物</button>
+                <span v-if="monsterExpView === 'a'" class="exp-table-hint"><AppIcon icon="lightbulb" :size="12" /> 淡色底、值带虚线的列可双击编辑；灰字列自动计算不可编辑（<AppIcon icon="sliders" :size="11" />）· 共 {{ filteredMonsterExp.length }} / {{ monsterExpData.length }} 条</span>
+                <button v-if="monsterExpView === 'a'" class="lv-btn lv-btn-add" @click="addMonsterExpRow"><AppIcon icon="plus" :size="12" /> 新增怪物</button>
               </div>
               <div class="exp-table-toolbar-right">
-                <button class="lv-btn" :disabled="exportingExp" title="把 A 怪物经验表 / B 最优打怪组合 / C 等级经验表导出为一个 Excel 文件" @click="exportExpExcel">{{ exportingExp ? '⏳ 导出中…' : '📥 导出 Excel' }}</button>
+                <button class="lv-btn" :disabled="exportingExp" title="把 A 怪物经验表 / B 最优打怪组合 / C 等级经验表导出为一个 Excel 文件" @click="exportExpExcel"><AppIcon :icon="exportingExp ? 'loader' : 'download'" :size="13" :class="{ 'icon-spin': exportingExp }" />{{ exportingExp ? ' 导出中…' : ' 导出 Excel' }}</button>
               </div>
             </div>
             <!-- A 表：怪物数据（可编辑，B 表数据源） -->
@@ -1626,13 +1627,13 @@
                     </th>
                     <th class="me-th-exp">基础经验</th>
                     <th class="me-th-fatigue">疲劳消耗</th>
-                    <th class="me-th-unit me-th-ro" title="自动计算：基础经验 ÷ 疲劳消耗，不可编辑">单位经验 ⚙</th>
+                    <th class="me-th-unit me-th-ro" title="自动计算：基础经验 ÷ 疲劳消耗，不可编辑">单位经验 <AppIcon icon="sliders" :size="11" /></th>
                     <th class="me-th-mult">中十倍数</th>
-                    <th class="me-th-adj me-th-ro" title="自动计算：单位经验 × 中十加成，不可编辑">修正经验 ⚙</th>
+                    <th class="me-th-adj me-th-ro" title="自动计算：单位经验 × 中十加成，不可编辑">修正经验 <AppIcon icon="sliders" :size="11" /></th>
                     <th class="me-th-qty">数量</th>
                     <th class="me-th-respawn">刷新周期(秒)</th>
                     <th class="me-th-kill">打怪时间(秒)</th>
-                    <th class="me-th-eff me-th-ro" title="自动计算：每小时疲劳烧速 × 疲劳 × 数量，不可编辑">效率(PL/小时) ⚙</th>
+                    <th class="me-th-eff me-th-ro" title="自动计算：每小时疲劳烧速 × 疲劳 × 数量，不可编辑">效率(PL/小时) <AppIcon icon="sliders" :size="11" /></th>
                     <th class="exp-th-act"></th>
                   </tr>
                 </thead>
@@ -1685,7 +1686,7 @@
                     </td>
                     <td class="exp-td-act">
                       <button class="lv-btn-copy" @click="duplicateMonsterExpRow(row.id)" title="复制此行，新增一条相同数据">⧉</button>
-                      <button class="lv-btn-del" @click="deleteMonsterExpRow(row.id)" title="删除此行">✕</button>
+                      <button class="lv-btn-del" @click="deleteMonsterExpRow(row.id)" title="删除此行"><AppIcon icon="x" :size="13" /></button>
                     </td>
                   </tr>
                 </tbody>
@@ -1713,7 +1714,7 @@
                       <td class="be-td-area">{{ row.area }}</td>
                       <td class="be-td-group">
                         <span class="be-group-text">{{ row.group }}</span>
-                        <button class="be-edit-btn" @click="openGrindEdit(row.level)" :title="'编辑 ' + row.level + ' 级打怪群组合'">✎ 编辑</button>
+                        <button class="be-edit-btn" @click="openGrindEdit(row.level)" :title="'编辑 ' + row.level + ' 级打怪群组合'"><AppIcon icon="pencil" :size="11" /> 编辑</button>
                         <button v-if="row.overridden" class="be-reset-btn" @click="resetGrindCombo(row.level)" :title="'恢复默认组合（清除 ' + row.level + ' 级自定义）'">↺ 恢复默认</button>
                       </td>
                       <td class="be-td-week" :class="row.weekClass">{{ row.weekText }}</td>
@@ -1722,13 +1723,13 @@
                   </tbody>
                 </table>
               </div>
-              <div class="hint">💡 默认组合 = 地区内全部合格群（勾选即打）、地区间取每周经验最高（疲劳瓶颈下每小时经验高 ≠ 每周经验高，按每周经验比，2026-08-27 起），由 A 表自动计算，每级一行。可点 ✎ 编辑该级组合（勾选窗口 {{ BEST_GRIND_LEVEL_FROM }}~{{ BEST_GRIND_LEVEL_TO }} 内群怪所在地图的全部怪群，可跨地区），保存后存本机、行内重算指标，每周经验与默认组合相比增长显示红色、降低显示绿色；点 ↺ 恢复默认清除该级自定义。窗口外的怪群可提前勾选保存（升级到相邻等级后可打，本级无经验不参与统计）。指标 = 每周可获得经验：每周刷怪上限 580 分钟、疲劳容量 5180（系统 380×7 + 大疲劳 2520，默认值），取先到者 × 每小时经验；烧速 &gt; 535.9/时即疲劳瓶颈（每周 = 5180 × 每疲劳经验）。全局因子（2026-08-27 起）：打怪衰减率跟随全局经验设定弹窗的自定义值（改衰减率会同时改变最优组合与数值）；经验值含封印加速 + 王城加成总倍率（按本行等级查段，倍率 ≠ 1 时在「为什么」列标注），双倍/齐心为乘性常数不改变组合间排序、不纳入。A 表增删改或全局经验设定修改后自动刷新。</div>
+              <div class="hint"><AppIcon icon="lightbulb" :size="12" /> 默认组合 = 地区内全部合格群（勾选即打）、地区间取每周经验最高（疲劳瓶颈下每小时经验高 ≠ 每周经验高，按每周经验比，2026-08-27 起），由 A 表自动计算，每级一行。可点 <AppIcon icon="pencil" :size="11" /> 编辑该级组合（勾选窗口 {{ BEST_GRIND_LEVEL_FROM }}~{{ BEST_GRIND_LEVEL_TO }} 内群怪所在地图的全部怪群，可跨地区），保存后存本机、行内重算指标，每周经验与默认组合相比增长显示红色、降低显示绿色；点 ↺ 恢复默认清除该级自定义。窗口外的怪群可提前勾选保存（升级到相邻等级后可打，本级无经验不参与统计）。指标 = 每周可获得经验：每周刷怪上限 580 分钟、疲劳容量 5180（系统 380×7 + 大疲劳 2520，默认值），取先到者 × 每小时经验；烧速 &gt; 535.9/时即疲劳瓶颈（每周 = 5180 × 每疲劳经验）。全局因子（2026-08-27 起）：打怪衰减率跟随全局经验设定弹窗的自定义值（改衰减率会同时改变最优组合与数值）；经验值含封印加速 + 王城加成总倍率（按本行等级查段，倍率 ≠ 1 时在「为什么」列标注），双倍/齐心为乘性常数不改变组合间排序、不纳入。A 表增删改或全局经验设定修改后自动刷新。</div>
               <!-- 编辑弹层：勾选窗口内群怪所在地图的全部怪群组成自定义组合（作用于单级） -->
               <div class="modal-overlay" v-if="grindEditLevel !== null" @click.self="closeGrindEdit()">
                 <div class="modal grind-modal" style="width: 640px; max-width: 92vw; max-height: 86vh;">
                   <div class="modal-head">
-                    <h4>✎ 打怪群组合 · {{ grindEditTitle }}</h4>
-                    <button class="btn-icon" @click="closeGrindEdit()">✕</button>
+                    <h4><AppIcon icon="pencil" :size="13" /> 打怪群组合 · {{ grindEditTitle }}</h4>
+                    <button class="btn-icon" @click="closeGrindEdit()"><AppIcon icon="x" :size="13" /></button>
                   </div>
                   <div class="modal-body grind-modal-body">
                     <div class="grind-cand-tip">勾选 {{ grindEditTitle }} 衰减窗口（{{ grindEditLevel !== null ? grindEditLevel - 7 : '' }}~{{ grindEditLevel !== null ? grindEditLevel + 8 : '' }} 级）内群怪所在地图的全部怪群，可跨地区；灰显 = 窗口外（本级无经验，勾选保存、升级到相邻等级后可打）。不勾选 = 无候选。</div>
@@ -1757,10 +1758,10 @@
             <template v-else>
               <div class="exp-table-toolbar">
                 <div class="exp-table-toolbar-left">
-                  <span class="exp-table-hint">💡 双击单元格编辑，失焦自动保存 · 共 {{ expData.length }} 行</span>
+                  <span class="exp-table-hint"><AppIcon icon="lightbulb" :size="12" /> 双击单元格编辑，失焦自动保存 · 共 {{ expData.length }} 行</span>
                 </div>
                 <div class="exp-table-toolbar-right">
-                  <button class="lv-btn lv-btn-add" @click="addExpRow">➕ 新增行</button>
+                  <button class="lv-btn lv-btn-add" @click="addExpRow"><AppIcon icon="plus" :size="12" /> 新增行</button>
                 </div>
               </div>
               <div class="exp-table-scroll" v-if="expData.length > 0">
@@ -1785,7 +1786,7 @@
                         <span v-else>{{ row.standard_unit_exp.toLocaleString() }}</span>
                       </td>
                       <td class="exp-td-act">
-                        <button class="lv-btn-del" @click="deleteExpRow(row.level)" title="删除此行">✕</button>
+                        <button class="lv-btn-del" @click="deleteExpRow(row.level)" title="删除此行"><AppIcon icon="x" :size="13" /></button>
                       </td>
                     </tr>
                   </tbody>
@@ -1799,7 +1800,7 @@
         <template v-else-if="activeCat === 'dr-table'">
           <div class="dr-wrap">
             <div class="dr-section">
-              <h3 class="dr-section-title">⚔ 副本减伤要求</h3>
+              <h3 class="dr-section-title"><AppIcon icon="swords" :size="14" /> 副本减伤要求</h3>
               <div class="dr-table-wrap">
                 <table class="dr-table">
                   <thead>
@@ -1825,7 +1826,7 @@
             </div>
 
             <div class="dr-section">
-              <h3 class="dr-section-title">🗺 野外减伤标准</h3>
+              <h3 class="dr-section-title"><AppIcon icon="map" :size="14" /> 野外减伤标准</h3>
               <div class="dr-table-wrap">
                 <table class="dr-table dr-table--wild">
                   <thead>
@@ -1852,7 +1853,7 @@
           <div class="toughness-wrap">
             <div class="exp-table-toolbar">
               <div class="exp-table-toolbar-left">
-                <span class="exp-table-hint">💡 韧性等级对应「减少受到的怪物伤害」，减伤计算器查本表实时展示百分比 · 精华/五铢/活力列为升到该等级的加点消耗 · 精华单价来自物价图鉴，可直接编辑同步</span>
+                <span class="exp-table-hint"><AppIcon icon="lightbulb" :size="12" /> 韧性等级对应「减少受到的怪物伤害」，减伤计算器查本表实时展示百分比 · 精华/五铢/活力列为升到该等级的加点消耗 · 精华单价来自物价图鉴，可直接编辑同步</span>
               </div>
               <div class="exp-table-toolbar-right">
                 <span class="toughness-calc-label">从</span>
@@ -1923,6 +1924,10 @@
             </div>
           </div>
         </template>
+        <!-- 防骗黑名单 -->
+        <template v-else-if="activeCat === 'anti-scam'">
+          <BlacklistPanel />
+        </template>
         <!-- 普通攻略内容 -->
         <template v-else>
           <div class="card" v-if="currentGuides.length > 0">
@@ -1945,10 +1950,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, shallowRef, computed, watch, nextTick } from 'vue'
+import { ref, reactive, shallowRef, computed, watch, nextTick, onMounted } from 'vue'
 import levelingData from '@/data/leveling-guide.json'
 import activityCalcData from '@/data/activity-calc.json'
 import BossHandbook from '@/components/boss/BossHandbook.vue'
+import BlacklistPanel from '@/components/blacklist/BlacklistPanel.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import drData from '@/data/damage-reduction-table.json'
 import toughnessData from '@/data/toughness-table.json'
 import activityExpMultipliers from '@/data/activity-exp-multipliers.json'
@@ -1981,6 +1988,9 @@ import {
 // 数字输入框绑定：代替 :value，聚焦期间不回写 DOM（否则重渲染会顶掉正在输入的内容）
 import { vNum } from '@/utils/numInput'
 import { useAppStore } from '@/stores'
+// 托盘直达分类（答题题库 / 活跃计算）
+import { GUIDE_OPEN_EVENT, consumePendingGuideCat } from '@/utils/trayNav'
+import { appConfirm } from '@/utils/confirm'
 
 type ActivityDef = { id: string; name: string; points: number; days: number[]; minLevel: number; maxLevel?: number; maxCompletions?: number; levelPoints?: Record<number, number>; note: string; type?: 'daily' | 'some' | 'weekly' }
 type TierConfig = { target: number; tier1: number; tier2: number; tier3: number; tier1Pt?: number; tier2Pt?: number }
@@ -2121,11 +2131,16 @@ function setLevelPoint(t: ActivityDef, lv: number, raw: string) {
 }
 
 
-// 选择器状态（等级/星期/大区 2026-08-27 起持久化：改动即存、启动恢复；未保存过时星期默认今天）
-const todayJs = new Date().getDay()
+// 选择器状态（等级/大区持久化：改动即存、启动恢复；星期不持久化：每次从攻略首页点开「活跃计算」
+// 时重置为当天，见 openCat/openGuideCat 2026-09-03）
 const ACTIVITY_SEL_KEY = 'activity_selectors'
+/** 当天所在星期：1=周一 … 7=周日 */
+function todayWeekday(): number {
+  const d = new Date().getDay()
+  return d === 0 ? 7 : d
+}
 const activityLevel = ref(70)
-const activityDay = ref(todayJs === 0 ? 7 : todayJs)
+const activityDay = ref(todayWeekday())
 const activityServer = ref(allServers[0] || '')
 
 async function loadActivitySelectors() {
@@ -2134,15 +2149,16 @@ async function loadActivitySelectors() {
     if (!raw) return
     const s = JSON.parse(raw)
     if (levels.includes(s.level)) activityLevel.value = s.level
-    if (Number.isInteger(s.day) && s.day >= 1 && s.day <= 7) activityDay.value = s.day
+    // 星期不再恢复历史值：始终用当天所在星期（历史 s.day 忽略）
     if (typeof s.server === 'string' && allServers.includes(s.server)) activityServer.value = s.server
   } catch { /* use defaults */ }
 }
 
 async function saveActivitySelectors() {
   try {
+    // 只持久化等级与大区，星期每次打开重置为当天，故不写入
     await window.electronAPI.setSetting(ACTIVITY_SEL_KEY, JSON.stringify({
-      level: activityLevel.value, day: activityDay.value, server: activityServer.value,
+      level: activityLevel.value, server: activityServer.value,
     }))
   } catch { /* ignore */ }
 }
@@ -2495,7 +2511,7 @@ function toggleBonus(taskId: string) {
 
 watch([activityLevel, activityDay, activityServer], () => {
   loadCache()
-  saveActivitySelectors() // 选择器改动即持久化，下次启动恢复（2026-08-27）
+  saveActivitySelectors() // 等级/大区改动即持久化，下次启动恢复（星期不持久化，见 loadActivitySelectors）
 })
 
 const activeCat = ref('')
@@ -2637,7 +2653,7 @@ function onQuizSearch() {
 // ── 题目删除 ──
 
 async function deleteQuizItem(q: QuizRow) {
-  if (!confirm(`确定删除这道题？\n\n「${q.question}」\n\n此操作不可撤销。`)) return
+  if (!(await appConfirm({ title: '删除题目', message: `确定删除这道题？\n\n「${q.question}」\n\n此操作不可撤销。`, confirmText: '删除', danger: true }))) return
   try {
     await window.electronAPI.deleteQuizQuestion(q.id)
     quizQuestions.value = quizQuestions.value.filter(r => r.id !== q.id)
@@ -2648,37 +2664,39 @@ async function deleteQuizItem(q: QuizRow) {
   }
 }
 
+// icon 为 AppIcon 注册名（显示层静态配置；key/label 逻辑不变）
 const categories = [
-  { key: 'daily', label: '每日活动', icon: '🎯' },
-  { key: 'quiz', label: '答题题库', icon: '❓' },
-  { key: 'leveling', label: '升级攻略', icon: '📈' },
-  { key: 'activity', label: '活跃计算', icon: '📊' },
-  { key: 'boss', label: 'Boss图鉴', icon: '👹' },
-  { key: 'beasts', label: '灵宠八阵', icon: '🐉' },
-  { key: 'children', label: '子女', icon: '👶' },
-  { key: 'talisman2', label: '符咒&天书', icon: '📿' },
-  { key: 'spirits', label: '灵魄', icon: '💎' },
-  { key: 'aoyi', label: '奥义', icon: '📜' },
-  { key: 'meridian', label: '经络', icon: '☯' },
-  { key: 'lingzhu', label: '灵珠', icon: '🔮' },
-  { key: 'home', label: '家园', icon: '🏡' },
-  { key: 'dungeon', label: '副本', icon: '⚔' },
-  { key: 'legion', label: '军团', icon: '🏰' },
-  { key: 'subjob', label: '副职', icon: '🔧' },
-  { key: 'intimacy', label: '亲密度', icon: '💕' },
-  { key: 'playbook', label: '攻略&指南', icon: '📖' },
-  { key: 'misc', label: '其他', icon: '📦' },
-  { key: 'wings', label: '羽灵', icon: '🪶' },
-  { key: 'sxdp', label: '四象搭配', icon: '☯' },
-  { key: 'exp-calc', label: '升级计算器', icon: '🧮' },
-  { key: 'monster-exp', label: '经验表', icon: '👾' },
-  { key: 'dr-table', label: '减伤标准表', icon: '🛡️' },
-  { key: 'toughness', label: '韧性表', icon: '💪' },
-  { key: 'links', label: '官网攻略', icon: '🔗' },
+  { key: 'daily', label: '每日活动', icon: 'target' },
+  { key: 'quiz', label: '答题题库', icon: 'help' },
+  { key: 'leveling', label: '升级攻略', icon: 'trending-up' },
+  { key: 'activity', label: '活跃计算', icon: 'chart' },
+  { key: 'boss', label: 'Boss图鉴', icon: 'ghost' },
+  { key: 'beasts', label: '灵宠八阵', icon: 'ghost' },
+  { key: 'children', label: '子女', icon: 'baby' },
+  { key: 'talisman2', label: '符咒&天书', icon: 'circle-dot' },
+  { key: 'spirits', label: '灵魄', icon: 'gem' },
+  { key: 'aoyi', label: '奥义', icon: 'scroll' },
+  { key: 'meridian', label: '经络', icon: 'circle-dot' },
+  { key: 'lingzhu', label: '灵珠', icon: 'sparkles' },
+  { key: 'home', label: '家园', icon: 'home' },
+  { key: 'dungeon', label: '副本', icon: 'swords' },
+  { key: 'legion', label: '军团', icon: 'castle' },
+  { key: 'subjob', label: '副职', icon: 'wrench' },
+  { key: 'intimacy', label: '亲密度', icon: 'heart' },
+  { key: 'playbook', label: '攻略&指南', icon: 'book' },
+  { key: 'misc', label: '其他', icon: 'package' },
+  { key: 'wings', label: '羽灵', icon: 'feather' },
+  { key: 'sxdp', label: '四象搭配', icon: 'circle-dot' },
+  { key: 'exp-calc', label: '升级计算器', icon: 'calculator' },
+  { key: 'monster-exp', label: '经验表', icon: 'ghost' },
+  { key: 'dr-table', label: '减伤标准表', icon: 'shield' },
+  { key: 'toughness', label: '韧性表', icon: 'dumbbell' },
+  { key: 'links', label: '官网攻略', icon: 'link' },
+  { key: 'anti-scam', label: '防骗黑名单', icon: 'alert' },
 ]
 
 const toolCards = computed(() => categories.filter(c => ['daily', 'quiz', 'leveling', 'activity', 'boss'].includes(c.key)))
-const infoCards = computed(() => categories.filter(c => ['sxdp', 'exp-calc', 'monster-exp', 'dr-table', 'toughness'].includes(c.key)))
+const infoCards = computed(() => categories.filter(c => ['sxdp', 'exp-calc', 'monster-exp', 'dr-table', 'toughness', 'anti-scam'].includes(c.key)))
 
 // ── 攻略卡片拖拽排序（持久化） ──
 // 保存顺序为扁平 key 数组（全部卡片），null 表示使用默认顺序
@@ -2912,7 +2930,12 @@ function clearSxdpFilters() {
 
 const activeCatLabel = computed(() => {
   const c = categories.find(x => x.key === activeCat.value)
-  return c ? `${c.icon} ${c.label}` : ''
+  return c ? c.label : ''
+})
+
+const activeCatIcon = computed(() => {
+  const c = categories.find(x => x.key === activeCat.value)
+  return c ? c.icon : ''
 })
 
 // 详情页返回：默认回首页；从升级计算器跳入活跃计算器时，返回原处
@@ -2925,8 +2948,32 @@ function goBackFromDetail() {
 
 function openCat(cat: typeof categories[0]) {
   prevActiveCat.value = ''
+  // 从攻略首页点开「活跃计算」时，星期回到当天（2026-09-03）
+  if (cat.key === 'activity') activityDay.value = todayWeekday()
   activeCat.value = cat.key
 }
+
+// ── 托盘直达分类（答题题库 quiz / 活跃计算 activity 等） ──
+
+function openGuideCat(key: string) {
+  if (categories.some(c => c.key === key)) {
+    prevActiveCat.value = ''
+    // 托盘直达「活跃计算」同样回到当天
+    if (key === 'activity') activityDay.value = todayWeekday()
+    activeCat.value = key
+  }
+}
+
+function onGuideOpenEvent(e: Event) {
+  openGuideCat((e as CustomEvent<string>).detail)
+}
+
+onMounted(() => {
+  window.addEventListener(GUIDE_OPEN_EVENT, onGuideOpenEvent)
+  // 托盘事件早于本组件挂载时，消费暂存的分类
+  const pending = consumePendingGuideCat()
+  if (pending) openGuideCat(pending)
+})
 
 // ── 减伤标准表 ──
 
@@ -3878,7 +3925,7 @@ async function deleteMonsterExpRow(id: number) {
   const row = monsterExpData.value.find(r => r.id === id)
   // 删除是直接写数据库的破坏性操作：列出怪物信息二次确认（2026-08-27 起）
   const label = row ? `「${row.name}」（${row.level} 级 · ${row.area}）` : '该行'
-  if (!confirm(`确定删除 ${label} 的怪物数据？此操作不可恢复。`)) return
+  if (!(await appConfirm({ title: '删除怪物数据', message: `确定删除 ${label} 的怪物数据？此操作不可恢复。`, confirmText: '删除', danger: true }))) return
   try {
     await window.electronAPI.deleteMonsterExpRow(id)
     monsterExpData.value = monsterExpData.value.filter(r => r.id !== id)
@@ -5213,7 +5260,7 @@ function segmentsFromBestCombos(startLevel: number, targetLevel: number): GrindS
 }
 
 // 默认：按等级段用 B 表每级最优组合（同组合相邻等级合并为段）重置本方案的等级段配置
-function applyBestGrindCombo() {
+async function applyBestGrindCombo() {
   const from = ecStartLevel.value
   const to = ecTargetLevel.value
   const segs = segmentsFromBestCombos(from, to)
@@ -5222,7 +5269,7 @@ function applyBestGrindCombo() {
     return
   }
   const total = segs.reduce((s, x) => s + x.monsterIds.length, 0)
-  if (!confirm(`重置等级段为 B 表最优打怪群组合默认：${segs.length} 段（${segs[0].levelFrom}~${segs[segs.length - 1].levelTo} 级、共 ${total} 群），替换当前方案的等级段配置？`)) return
+  if (!(await appConfirm({ title: '重置等级段', message: `重置等级段为 B 表最优打怪群组合默认：${segs.length} 段（${segs[0].levelFrom}~${segs[segs.length - 1].levelTo} 级、共 ${total} 群），替换当前方案的等级段配置？`, confirmText: '重置', danger: true }))) return
   grindConfig.value.segments = segs
   segEditingIdx.value = 0
   saveGrindConfig()
@@ -5542,10 +5589,10 @@ function addPreset() {
   savePresets()
 }
 
-function deletePreset(idx: number) {
+async function deletePreset(idx: number) {
   if (ecPresets.value.length <= 1) return
   // 删除方案二次确认（2026-08-23 起，防止误删整份方案配置）
-  if (!confirm(`确定删除方案「${presetTitle(ecPresets.value[idx])}」？此操作不可撤销。`)) return
+  if (!(await appConfirm({ title: '删除方案', message: `确定删除方案「${presetTitle(ecPresets.value[idx])}」？此操作不可撤销。`, confirmText: '删除', danger: true }))) return
   ecPresets.value = ecPresets.value.filter((_, i) => i !== idx)
   if (ecActiveIdx.value >= ecPresets.value.length) ecActiveIdx.value = ecPresets.value.length - 1
   savePresets()
@@ -5949,13 +5996,13 @@ const ecSimLongHint = computed(() => {
 })
 
 // 点击明细行：将起始等级设为该行状态
-function setStartFromDay(row: EcDayRow) {
+async function setStartFromDay(row: EcDayRow) {
   const newLevel = row.leveledUp ? row.endLevel : row.startLevel
   const expRow = findExpRow(newLevel)
   const newProgress = expRow && expRow.exp > 0
     ? Math.min(100, Math.round((row.carryExp / expRow.exp) * 100))
     : 0
-  if (!confirm(`将起始等级设为 ${newLevel} 级 ${newProgress}%（第 ${row.day} 天）？`)) return
+  if (!(await appConfirm({ title: '设置起始等级', message: `将起始等级设为 ${newLevel} 级 ${newProgress}%（第 ${row.day} 天）？` }))) return
   ecStartLevel.value = newLevel
   ecStartProgress.value = newProgress
 }
@@ -6050,37 +6097,39 @@ watch(ecSimResultRaw, (v) => {
 <style scoped>
 .page { height: 100%; display: flex; flex-direction: column; }
 .page-head { margin-bottom: 20px; flex-shrink: 0; }
-.page-head h2 { font-size: 26px; font-weight: 650; }
-.page-head p { color: var(--color-text-secondary); font-size: 13.5px; margin-top: 4px; }
+.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
+.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 4px; }
 
 /* 每日活动入口区 */
 .daily-acts {
   padding: 14px 16px; margin-bottom: 16px; border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--color-accent-bg), var(--color-surface-1));
   border: 1px solid var(--color-accent); flex-shrink: 0;
+  box-shadow: var(--shadow-card);
 }
 .daily-acts-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-.daily-acts-title { font-size: 15px; font-weight: 650; color: var(--color-accent); }
-.daily-acts-sub { font-size: 11.5px; color: var(--color-text-tertiary); }
+.daily-acts-title { font-size: var(--text-md); font-weight: 650; color: var(--color-accent); }
+.daily-acts-sub { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .daily-act-group { margin-bottom: 10px; }
 .daily-act-group:last-child { margin-bottom: 0; }
 .daily-act-group-label {
-  display: inline-block; font-size: 10.5px; font-weight: 600;
+  display: inline-block; font-size: var(--text-micro); font-weight: 600;
   color: var(--color-text-tertiary); margin-bottom: 8px; padding-left: 2px;
 }
 .daily-act-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .daily-act-card {
   position: relative; display: flex; flex-direction: column; gap: 2px;
   padding: 10px 12px; border-radius: var(--radius-sm);
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
   text-decoration: none; color: inherit; cursor: pointer;
   transition: transform 0.12s, background 0.12s, border-color 0.12s;
 }
 .daily-act-card:hover { transform: translateY(-1px); background: var(--color-surface-2); border-color: var(--color-accent); }
-.daily-act-icon { font-size: 20px; margin-bottom: 2px; }
-.daily-act-name { font-size: 13px; font-weight: 600; color: var(--color-text); }
-.daily-act-desc { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.4; }
-.daily-act-arrow { position: absolute; top: 8px; right: 10px; font-size: 12px; color: var(--color-text-tertiary); }
+.daily-act-icon { font-size: var(--text-xl); margin-bottom: 2px; }
+.daily-act-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.daily-act-desc { font-size: var(--text-micro); color: var(--color-text-tertiary); line-height: 1.4; }
+.daily-act-arrow { position: absolute; top: 8px; right: 10px; font-size: var(--text-xs); color: var(--color-text-tertiary); }
 .daily-act-card:hover .daily-act-arrow { color: var(--color-accent); }
 @media (max-width: 700px) { .daily-act-grid { grid-template-columns: repeat(2, 1fr); } }
 
@@ -6089,19 +6138,19 @@ watch(ecSimResultRaw, (v) => {
 .daily-act-delete {
   position: absolute; top: 2px; right: 2px;
   width: 18px; height: 18px; border-radius: 3px;
-  font-size: 10px; line-height: 1;
+  font-size: var(--text-micro); line-height: 1;
   display: flex; align-items: center; justify-content: center;
   border: none; background: transparent;
   color: var(--color-text-tertiary); cursor: pointer;
   opacity: 0; transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 .daily-act-card-wrap:hover .daily-act-delete { opacity: 1; }
-.daily-act-delete:hover { color: #e74c3c; background: rgba(231, 76, 60, 0.08); }
+.daily-act-delete:hover { color: var(--color-danger); background: var(--color-danger-bg); }
 
 /* 添加链接区域 */
 .daily-act-add-section { margin-top: 10px; }
 .daily-act-add-btn {
-  font-size: 12px; font-family: inherit;
+  font-size: var(--text-xs); font-family: inherit;
   padding: 5px 14px; border-radius: 6px;
   border: 1px dashed var(--color-border-light);
   background: var(--color-surface-1); color: var(--color-text-tertiary);
@@ -6116,16 +6165,24 @@ watch(ecSimResultRaw, (v) => {
 }
 .daily-act-form-row { display: flex; gap: 6px; }
 .daily-act-input {
-  flex: 1; padding: 5px 8px; font-size: 12px; font-family: inherit;
-  border: 1px solid var(--color-border-light); border-radius: 4px;
+  flex: 1; padding: 5px 8px; font-size: var(--text-xs); font-family: inherit;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text);
   outline: none; transition: border-color 0.12s;
 }
-.daily-act-input:focus { border-color: var(--color-accent); }
+/* 分组下拉：原生 select 按 server-select 规范改造（与文本输入共用类，仅对 select 生效） */
+select.daily-act-input {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center;
+}
+select.daily-act-input option { background: var(--color-surface-1); color: var(--color-text); }
+.daily-act-input:focus { border-color: var(--color-accent-ring); }
 .daily-act-input--icon { flex: 0 0 56px; text-align: center; }
 .daily-act-form-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .daily-act-form-submit, .daily-act-form-cancel {
-  padding: 4px 14px; border-radius: 4px; font-size: 12px; font-family: inherit;
+  padding: 4px 14px; border-radius: 4px; font-size: var(--text-xs); font-family: inherit;
   cursor: pointer; transition: opacity 0.12s;
 }
 .daily-act-form-submit {
@@ -6143,12 +6200,13 @@ watch(ecSimResultRaw, (v) => {
 .grid-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px; padding: 20px 12px; border-radius: var(--radius-md);
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
-  cursor: pointer; transition: all 0.15s; min-height: 90px;
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
+  cursor: pointer; transition: all 0.12s; min-height: 90px;
 }
 .grid-card:hover { background: var(--color-surface-2); border-color: var(--color-accent); transform: translateY(-1px); }
-.grid-card-icon { font-size: 28px; }
-.grid-card-label { font-size: 12.5px; font-weight: 500; color: var(--color-text); text-align: center; }
+.grid-card-icon { font-size: var(--text-xl); }
+.grid-card-label { font-size: var(--text-xs); font-weight: 500; color: var(--color-text); text-align: center; }
 
 /* 互动工具卡片高亮 */
 .grid-card--featured {
@@ -6164,7 +6222,7 @@ watch(ecSimResultRaw, (v) => {
 }
 .grid-card-badge {
   position: absolute; top: 6px; right: 8px;
-  font-size: 9.5px; font-weight: 600; padding: 1px 6px; border-radius: 6px;
+  font-size: var(--text-micro); font-weight: 600; padding: 1px 6px; border-radius: 6px;
   background: var(--color-accent); color: #fff;
   opacity: 0.75; letter-spacing: 0.3px;
 }
@@ -6190,7 +6248,7 @@ watch(ecSimResultRaw, (v) => {
   border: none; border-radius: 50%;
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 10px; cursor: pointer;
+  font-size: var(--text-micro); cursor: pointer;
   opacity: 0; transition: all 0.1s;
 }
 .grid-card:hover .grid-card-unfav { opacity: 1; }
@@ -6202,7 +6260,7 @@ watch(ecSimResultRaw, (v) => {
   border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-tertiary);
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   text-align: center;
 }
 
@@ -6218,74 +6276,81 @@ watch(ecSimResultRaw, (v) => {
   padding: 14px 12px;
 }
 .card-grid .grid-card-icon {
-  font-size: 22px;
+  font-size: var(--text-xl);
 }
 .card-grid .grid-card-label {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 /* 展开/折叠栏 */
 .card-collapse-bar {
   display: flex; align-items: center; gap: 10px;
-  margin-top: 14px; flex-shrink: 0;
+  margin: 12px 0; flex-shrink: 0;
 }
 .card-collapse-btn {
+  display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 14px;
-  border: 0.5px dashed var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-1);
+  background: var(--color-toggle-bg);
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: all 0.12s;
 }
 .card-collapse-btn:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
   background: var(--color-accent-bg);
 }
-.card-collapse-hint { font-size: 11px; color: var(--color-text-tertiary); }
+.card-collapse-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+.card-collapse-hint { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 
 /* 详情页 */
 .detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-shrink: 0; }
-.detail-head h2 { font-size: 20px; font-weight: 650; }
+.detail-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
 .back-btn {
   background: var(--color-surface-2); border: 0.5px solid var(--color-border-light);
-  border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12.5px;
+  border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: var(--text-xs);
   color: var(--color-text-secondary); font-family: inherit; transition: all 0.1s;
 }
 .back-btn:hover { background: var(--color-accent-bg); color: var(--color-accent); }
 .content { flex: 1; overflow-y: auto; }
 .card { display: flex; flex-direction: column; gap: 10px; }
-.guide-card { padding: 16px 18px; background: var(--color-surface-1); border: 0.5px solid var(--color-border-light); border-radius: var(--radius-md); }
+.guide-card { padding: 16px 18px; background: var(--color-surface-1); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
 .guide-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.guide-card-head h4 { font-size: 14px; font-weight: 600; }
-.guide-body { font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.7; }
+.guide-card-head h4 { font-size: var(--text-md); font-weight: 600; }
+.guide-body { font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.7; }
 .guide-body :deep(a) { color: var(--color-accent); text-decoration: none; }
 .guide-body :deep(a:hover) { text-decoration: underline; }
 .guide-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.guide-tag { font-size: 10.5px; padding: 2px 8px; border-radius: 8px; background: var(--color-surface-2); color: var(--color-text-tertiary); }
+.guide-tag { font-size: var(--text-micro); padding: 2px 8px; border-radius: 8px; background: var(--color-surface-2); color: var(--color-text-tertiary); }
 
-.badge-sm { font-size: 10.5px; padding: 1px 7px; border-radius: 8px; background: var(--color-accent-bg); color: var(--color-accent); }
-.hint { color: var(--color-text-tertiary); text-align: center; padding: 48px 20px; font-size: 12.5px; }
+.badge-sm { font-size: var(--text-micro); padding: 1px 7px; border-radius: 8px; background: var(--color-accent-bg); color: var(--color-accent); }
+.hint { color: var(--color-text-tertiary); text-align: center; padding: 48px 20px; font-size: var(--text-xs); }
 
 /* 链接卡片 */
 .link-group { margin-bottom: 18px; }
-.link-group-title { font-size: 12px; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 2px; }
+.link-group-title { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left: 2px; }
 .link-card-list { display: flex; flex-direction: column; gap: 4px; }
 .link-card {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px; border-radius: var(--radius-sm);
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
   text-decoration: none; color: inherit; transition: background 0.12s, border-color 0.12s; cursor: pointer;
 }
 .link-card:hover { background: var(--color-surface-2); border-color: var(--color-accent); }
 .link-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.link-card-title { font-size: 13px; font-weight: 500; color: var(--color-text); }
-.link-card-desc { font-size: 11.5px; color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.link-card-arrow { font-size: 14px; color: var(--color-text-tertiary); flex-shrink: 0; margin-left: 12px; transition: color 0.12s; }
+.link-card-title { font-size: var(--text-sm); font-weight: 500; color: var(--color-text); }
+.link-card-desc { font-size: var(--text-micro); color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.link-card-arrow { font-size: var(--text-md); color: var(--color-text-tertiary); flex-shrink: 0; margin-left: 12px; transition: color 0.12s; }
 .link-card:hover .link-card-arrow { color: var(--color-accent); }
 
 /* ═══════════════════════════════════════════
@@ -6307,17 +6372,17 @@ watch(ecSimResultRaw, (v) => {
 .quiz-search-input {
   flex: 1; border: 1px solid var(--color-border-light);
   border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  padding: 9px 14px; font-size: 13.5px; font-family: inherit;
+  padding: 9px 14px; font-size: var(--text-sm); font-family: inherit;
   color: var(--color-text); background: var(--color-surface-1);
   outline: none; transition: border-color 0.15s;
 }
-.quiz-search-input:focus { border-color: var(--color-accent); }
-.quiz-search-input::placeholder { color: var(--color-text-tertiary); font-size: 12.5px; }
+.quiz-search-input:focus { border-color: var(--color-accent-ring); }
+.quiz-search-input::placeholder { color: var(--color-text-tertiary); font-size: var(--text-xs); }
 .quiz-search-btn {
   padding: 9px 16px; border: 1px solid var(--color-accent);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--color-accent); color: #fff;
-  font-size: 13px; font-family: inherit; font-weight: 500;
+  font-size: var(--text-sm); font-family: inherit; font-weight: 500;
   cursor: pointer; white-space: nowrap;
   transition: opacity 0.12s;
 }
@@ -6330,7 +6395,7 @@ watch(ecSimResultRaw, (v) => {
 .quiz-filter-chip {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 12px; border-radius: 14px;
-  font-size: 12px; font-family: inherit; font-weight: 500;
+  font-size: var(--text-xs); font-family: inherit; font-weight: 500;
   border: 1px solid var(--color-border-light);
   background: var(--color-surface-1);
   color: var(--color-text-secondary);
@@ -6340,19 +6405,20 @@ watch(ecSimResultRaw, (v) => {
 .quiz-filter-chip.active {
   background: var(--color-accent); color: #fff; border-color: var(--color-accent);
 }
-.quiz-filter-count { font-size: 10.5px; opacity: 0.7; }
+.quiz-filter-count { font-size: var(--text-micro); opacity: 0.7; }
 .quiz-filter-chip.active .quiz-filter-count { opacity: 0.9; }
 
 /* 统计条 */
 .quiz-stats {
-  font-size: 12.5px; color: var(--color-text-secondary); flex-shrink: 0;
+  font-size: var(--text-xs); color: var(--color-text-secondary); flex-shrink: 0;
 }
 .quiz-stats strong { color: var(--color-accent); }
 
 /* 表格 */
 .quiz-table-wrap {
-  flex: 1; overflow-y: auto; border-radius: var(--radius-sm);
+  flex: 1; overflow-y: auto; border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
 }
 .quiz-table {
   width: 100%; border-collapse: collapse; table-layout: fixed;
@@ -6361,7 +6427,7 @@ watch(ecSimResultRaw, (v) => {
   position: sticky; top: 0; z-index: 1;
 }
 .quiz-table th {
-  padding: 10px 14px; font-size: 12.5px; font-weight: 600;
+  padding: 10px 14px; font-size: var(--text-xs); font-weight: 600;
   text-align: left; color: var(--color-text-secondary);
   background: var(--color-surface-2);
   border-bottom: 1px solid var(--color-border-light);
@@ -6370,7 +6436,7 @@ watch(ecSimResultRaw, (v) => {
 .quiz-th-a { width: 32%; }
 .quiz-th-op { width: 72px; }
 .quiz-table td {
-  padding: 9px 14px; font-size: 13px; line-height: 1.55;
+  padding: 9px 14px; font-size: var(--text-sm); line-height: 1.55;
   border-bottom: 0.5px solid var(--color-border-light);
   vertical-align: top;
 }
@@ -6384,25 +6450,25 @@ watch(ecSimResultRaw, (v) => {
 .quiz-td-op { text-align: center; }
 .quiz-op-btn {
   padding: 2px 8px; border: none; background: transparent;
-  color: var(--color-text-tertiary); font-size: 11.5px; font-family: inherit;
+  color: var(--color-text-tertiary); font-size: var(--text-micro); font-family: inherit;
   border-radius: 6px; cursor: pointer; transition: all 0.1s;
 }
 .quiz-op-btn:hover { background: rgba(220, 53, 69, 0.12); color: var(--color-danger, #dc3545); }
 
 /* 空状态 */
 .quiz-empty { text-align: center; padding: 48px 20px; flex: 1; }
-.quiz-empty-icon { font-size: 36px; opacity: 0.6; display: block; margin-bottom: 12px; }
-.quiz-empty p { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
-.quiz-empty-hint { font-size: 12px; color: var(--color-text-tertiary); margin-top: 8px; }
+.quiz-empty-icon { font-size: var(--text-xl); opacity: 0.6; display: block; margin-bottom: 12px; }
+.quiz-empty p { font-size: var(--text-md); color: var(--color-text-secondary); margin: 0; }
+.quiz-empty-hint { font-size: var(--text-xs); color: var(--color-text-tertiary); margin-top: 8px; }
 
 /* 热门搜索 */
 .quiz-hot-tags {
   display: flex; align-items: center; justify-content: flex-start;
   gap: 8px; flex-wrap: wrap; margin: 2px 0 14px;
 }
-.quiz-hot-label { font-size: 12px; color: var(--color-text-tertiary); }
+.quiz-hot-label { font-size: var(--text-xs); color: var(--color-text-tertiary); }
 .quiz-hot-tag {
-  padding: 4px 12px; border-radius: 14px; font-size: 12px; font-family: inherit;
+  padding: 4px 12px; border-radius: 14px; font-size: var(--text-xs); font-family: inherit;
   border: 1px solid var(--color-border-light); background: var(--color-surface-1);
   color: var(--color-accent); cursor: pointer; transition: all 0.12s;
 }
@@ -6428,7 +6494,7 @@ watch(ecSimResultRaw, (v) => {
 .lv-sheets-tabs::-webkit-scrollbar { display: none; }
 .lv-sheet-tab {
   padding: 5px 14px; border-radius: 6px 6px 0 0;
-  font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  font-size: var(--text-xs); font-weight: 500; white-space: nowrap;
   cursor: pointer; user-select: none;
   color: var(--color-text-tertiary);
   border: 1px solid transparent;
@@ -6444,8 +6510,8 @@ watch(ecSimResultRaw, (v) => {
   border-bottom-color: transparent;
 }
 .lv-sheet-rename-input {
-  width: 140px; padding: 1px 6px; font-size: 12.5px; font-family: inherit;
-  border: 1px solid var(--color-accent); border-radius: 3px;
+  width: 140px; padding: 1px 6px; font-size: var(--text-xs); font-family: inherit;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
   color: var(--color-text); background: var(--color-surface-1);
   outline: none;
 }
@@ -6454,7 +6520,7 @@ watch(ecSimResultRaw, (v) => {
 }
 .lv-sheet-btn-add,
 .lv-sheet-btn-del {
-  width: 24px; height: 24px; border-radius: 4px; font-size: 16px;
+  width: 24px; height: 24px; border-radius: 4px; font-size: var(--text-lg);
   font-family: inherit; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--color-border-light);
@@ -6463,7 +6529,7 @@ watch(ecSimResultRaw, (v) => {
   transition: all 0.12s;
 }
 .lv-sheet-btn-add:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.lv-sheet-btn-del:hover { border-color: #e74c3c; color: #e74c3c; }
+.lv-sheet-btn-del:hover { border-color: var(--color-danger); color: var(--color-danger); }
 
 /* 空 sheet */
 .lv-empty-sheet {
@@ -6471,9 +6537,9 @@ watch(ecSimResultRaw, (v) => {
   align-items: center; justify-content: center; gap: 10px;
   padding: 40px 20px; color: var(--color-text-tertiary);
 }
-.lv-empty-icon { font-size: 36px; opacity: 0.6; }
-.lv-empty-sheet p { font-size: 13px; margin: 0; }
-.lv-empty-hint { font-size: 12px; opacity: 0.7; }
+.lv-empty-icon { font-size: var(--text-xl); opacity: 0.6; }
+.lv-empty-sheet p { font-size: var(--text-sm); margin: 0; }
+.lv-empty-hint { font-size: var(--text-xs); opacity: 0.7; }
 
 /* 工具栏 */
 .lv-toolbar {
@@ -6487,27 +6553,28 @@ watch(ecSimResultRaw, (v) => {
   display: flex; align-items: center; gap: 10px; flex-shrink: 0;
 }
 .lv-edit-hint {
-  font-size: 11.5px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   font-weight: 500; white-space: nowrap; margin-right: 4px;
 }
 .lv-stage-count {
-  font-size: 11.5px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   font-weight: 500; white-space: nowrap;
 }
 .lv-btn {
-  padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-family: inherit;
+  padding: 6px 14px; border-radius: 6px; font-size: var(--text-xs); font-family: inherit;
   font-weight: 500; border: 1px solid var(--color-border-light);
   background: var(--color-surface-1); color: var(--color-text);
   cursor: pointer; transition: all 0.12s; white-space: nowrap;
 }
 .lv-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.lv-btn-reset { color: var(--color-text-tertiary); font-size: 12px; }
+.lv-btn-reset { color: var(--color-text-tertiary); font-size: var(--text-xs); }
 .lv-btn-add { border-style: dashed; }
 
 /* 表格容器 */
 .leveling-table-wrap {
-  flex: 1; overflow: auto; border-radius: var(--radius-sm);
+  flex: 1; overflow: auto; border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
   background: var(--color-surface-1);
 }
 .leveling-table {
@@ -6517,10 +6584,10 @@ watch(ecSimResultRaw, (v) => {
   position: sticky; top: 0; z-index: 2;
 }
 .leveling-table th {
-  padding: 10px 10px; font-size: 12.5px; font-weight: 650;
-  text-align: left; color: #fff;
-  background: var(--color-accent);
-  border-right: 1px solid rgba(255,255,255,0.12);
+  padding: 10px 10px; font-size: var(--text-xs); font-weight: 600;
+  text-align: left; color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  border-right: 1px solid var(--color-border-light);
   white-space: nowrap; letter-spacing: 0.5px;
 }
 .leveling-table th:last-child { border-right: none; }
@@ -6532,7 +6599,7 @@ watch(ecSimResultRaw, (v) => {
 .lv-th-act { width: 4%; text-align: center; }
 
 .leveling-table td {
-  padding: 8px 10px; font-size: 12.5px; line-height: 1.65;
+  padding: 8px 10px; font-size: var(--text-xs); line-height: 1.65;
   border-right: 1px solid var(--color-border-light);
   border-bottom: 1px solid var(--color-border-light);
   vertical-align: top; color: var(--color-text-secondary);
@@ -6553,18 +6620,18 @@ watch(ecSimResultRaw, (v) => {
 }
 .lv-badge {
   display: inline-block; padding: 4px 12px; border-radius: 10px;
-  font-size: 12px; font-weight: 700; white-space: nowrap;
+  font-size: var(--text-xs); font-weight: 700; white-space: nowrap;
   background: var(--color-accent); color: #fff;
 }
 .lv-td-core span { color: var(--color-text); font-weight: 500; }
-.lv-td-tip span { font-size: 12px; color: var(--color-text-tertiary); font-style: italic; }
+.lv-td-tip span { font-size: var(--text-xs); color: var(--color-text-tertiary); font-style: italic; }
 
 /* 有序列表（必做事项） */
 .lv-ol {
   margin: 0; padding-left: 18px; list-style: decimal;
 }
 .lv-ol li {
-  font-size: 12.5px; line-height: 1.65; color: var(--color-text-secondary);
+  font-size: var(--text-xs); line-height: 1.65; color: var(--color-text-secondary);
   padding: 0; margin: 0;
 }
 .lv-ol li + li { margin-top: 2px; }
@@ -6573,7 +6640,7 @@ watch(ecSimResultRaw, (v) => {
 .lv-input, .lv-textarea {
   width: 100%; box-sizing: border-box; padding: 0;
   border: 1px solid transparent; border-radius: 0;
-  font-size: 12.5px; font-family: inherit; line-height: 1.65;
+  font-size: var(--text-xs); font-family: inherit; line-height: 1.65;
   color: var(--color-text-secondary); background: transparent;
   outline: none; resize: vertical;
   transition: border-color 0.15s, background 0.15s;
@@ -6587,7 +6654,7 @@ watch(ecSimResultRaw, (v) => {
 }
 .lv-input-lv {
   text-align: center; font-weight: 600; width: 70px;
-  font-size: 12px; color: #fff;
+  font-size: var(--text-xs); color: #fff;
 }
 /* 等级段输入框在编辑模式下与badge融合 */
 .lv-td-lv .lv-input-lv {
@@ -6607,19 +6674,19 @@ watch(ecSimResultRaw, (v) => {
 
 /* 删除按钮 */
 .lv-btn-del {
-  padding: 2px 7px; border-radius: 4px; font-size: 13px; font-family: inherit;
+  padding: 2px 7px; border-radius: 4px; font-size: var(--text-sm); font-family: inherit;
   border: 1px solid transparent; background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; transition: all 0.12s;
   line-height: 1;
 }
-.lv-btn-del:hover { color: #e74c3c; border-color: #e74c3c; background: #e74c3c11; }
+.lv-btn-del:hover { color: var(--color-danger); border-color: var(--color-danger); background: var(--color-danger-bg); }
 .lv-btn-copy {
-  padding: 2px 7px; border-radius: 4px; font-size: 13px; font-family: inherit;
+  padding: 2px 7px; border-radius: 4px; font-size: var(--text-sm); font-family: inherit;
   border: 1px solid transparent; background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; transition: all 0.12s;
   line-height: 1; margin-right: 2px;
 }
-.lv-btn-copy:hover { color: #3b82f6; border-color: #3b82f6; background: #3b82f611; }
+.lv-btn-copy:hover { color: var(--color-accent); border-color: var(--color-accent); background: var(--color-accent-bg); }
 .lv-td-act { text-align: center; vertical-align: middle !important; }
 
 /* 响应式 */
@@ -6637,17 +6704,18 @@ watch(ecSimResultRaw, (v) => {
   padding: 18px 22px; border-radius: var(--radius-md);
   background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, transparent), var(--color-surface-1));
   border: 1px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+  box-shadow: var(--shadow-card);
   color: var(--color-text); flex-shrink: 0;
 }
 .act-progress-header {
   display: flex; align-items: baseline; justify-content: space-between;
   margin-bottom: 12px; flex-wrap: wrap; gap: 10px;
 }
-.act-progress-label { font-size: 13.5px; color: var(--color-text-secondary); }
-.act-progress-label strong { font-size: 30px; font-weight: 700; margin: 0 4px; color: var(--color-text); }
-.act-progress-remain { font-size: 12.5px; color: var(--color-text-secondary); }
-.act-progress-remain strong { font-size: 15px; font-weight: 600; color: var(--color-text); }
-.act-progress-done { font-size: 14px; font-weight: 600; color: var(--color-success); }
+.act-progress-label { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.act-progress-label strong { font-size: var(--text-xl); font-weight: 650; letter-spacing: -0.02em; margin: 0 4px; color: var(--color-text); }
+.act-progress-remain { font-size: var(--text-xs); color: var(--color-text-secondary); }
+.act-progress-remain strong { font-size: var(--text-md); font-weight: 600; color: var(--color-text); }
+.act-progress-done { font-size: var(--text-md); font-weight: 600; color: var(--color-success); }
 .act-progress-bar-wrap {
   position: relative; height: 8px; border-radius: 4px;
   background: var(--color-surface-3); margin-bottom: 14px; overflow: visible;
@@ -6672,16 +6740,16 @@ watch(ecSimResultRaw, (v) => {
 .act-progress-tier-3 { background: var(--color-warning); opacity: 1; }
 .act-tier-marker-label {
   position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
-  font-size: 9.5px; font-weight: 600; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 600; color: var(--color-text-tertiary);
   white-space: nowrap;
 }
 
-.act-rewards { display: flex; align-items: center; gap: 6px; font-size: 12.5px; flex-wrap: wrap; }
+.act-rewards { display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); flex-wrap: wrap; }
 .act-reward { opacity: 0.5; transition: opacity 0.2s; }
 .act-reward.reached { opacity: 1; font-weight: 600; }
 .act-reward-sep { opacity: 0.25; color: var(--color-text-tertiary); }
 .act-reward-total { margin-left: 4px; opacity: 0.75; color: var(--color-text-secondary); }
-.act-reward-total strong { font-size: 14px; color: var(--color-accent); }
+.act-reward-total strong { font-size: var(--text-md); color: var(--color-accent); }
 
 /* ── 选择器栏 ── */
 .act-selectors {
@@ -6689,12 +6757,12 @@ watch(ecSimResultRaw, (v) => {
 }
 .act-selector { display: flex; flex-direction: column; gap: 4px; }
 .act-selector label {
-  font-size: 11px; font-weight: 600; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 600; color: var(--color-text-tertiary);
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 .act-selector select {
-  padding: 7px 34px 7px 12px; border-radius: 6px;
-  font-size: 13.5px; font-family: inherit; font-weight: 500;
+  padding: 7px 34px 7px 12px; border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-family: inherit; font-weight: 500;
   border: 1px solid var(--color-border-light);
   background: var(--color-surface-1); color: var(--color-text);
   cursor: pointer; outline: none; appearance: none;
@@ -6703,7 +6771,7 @@ watch(ecSimResultRaw, (v) => {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .act-selector select:hover { border-color: var(--color-text-tertiary); }
-.act-selector select:focus { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-ring); }
+.act-selector select:focus { border-color: var(--color-accent-ring); box-shadow: 0 0 0 2px var(--color-accent-ring); }
 
 /* ── 福利任务栏 ── */
 /* 工资汇总按钮 */
@@ -6711,7 +6779,7 @@ watch(ecSimResultRaw, (v) => {
   display: flex; gap: 6px;
 }
 .act-wage-btn {
-  padding: 7px 14px; border-radius: 6px; font-size: 12px; font-family: inherit; font-weight: 500;
+  padding: 7px 14px; border-radius: 6px; font-size: var(--text-xs); font-family: inherit; font-weight: 500;
   border: 1px solid var(--color-border-light); background: var(--color-surface-1);
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s;
   line-height: 1.4; white-space: nowrap;
@@ -6719,14 +6787,14 @@ watch(ecSimResultRaw, (v) => {
 .act-wage-btn:hover { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-bg); }
 
 /* 工资汇总表格 */
-.wage-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.wage-table { width: 100%; border-collapse: collapse; font-size: var(--text-xs); }
 .wage-table th {
-  padding: 8px 10px; font-size: 11px; font-weight: 600;
+  padding: 8px 10px; font-size: var(--text-micro); font-weight: 600;
   color: var(--color-text-tertiary); text-align: center;
   border-bottom: 1px solid var(--color-border-light);
 }
 .wage-table td {
-  padding: 7px 10px; text-align: center; border-bottom: 0.5px solid var(--color-border-light);
+  padding: 4px 10px; text-align: center; border-bottom: 0.5px solid var(--color-border-light);
 }
 .wage-td-lv { font-weight: 600; color: var(--color-text); }
 .wage-td-total { font-weight: 650; color: var(--color-accent); }
@@ -6737,17 +6805,17 @@ watch(ecSimResultRaw, (v) => {
 .wage-val { border-bottom: 1px dashed transparent; }
 .wage-td-editable:hover .wage-val { border-bottom-color: var(--color-text-tertiary); }
 .wage-input {
-  width: 52px; padding: 2px 4px; font-size: 12px; font-family: inherit; font-weight: 500;
+  width: 52px; padding: 2px 4px; font-size: var(--text-xs); font-family: inherit; font-weight: 500;
   text-align: center; color: var(--color-text);
   background: var(--color-surface-1);
-  border: 1px solid var(--color-accent); border-radius: 3px; outline: none;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm); outline: none;
   -moz-appearance: textfield;
 }
 .wage-input::-webkit-inner-spin-button,
 .wage-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* 小弹窗 */
-.modal--wage { max-width: 960px; width: auto; }
+.modal.modal--wage { width: min(1080px, 94vw); max-height: min(540px, 80vh); }
 
 .act-bonus-bar {
   display: flex; align-items: center; gap: 10px; flex-shrink: 0;
@@ -6756,22 +6824,22 @@ watch(ecSimResultRaw, (v) => {
   border: 1px solid color-mix(in srgb, var(--color-accent) 18%, transparent);
   flex-wrap: wrap;
 }
-.act-bonus-label { font-size: 12.5px; font-weight: 600; color: var(--color-accent); }
-.act-bonus-empty { font-size: 11.5px; color: var(--color-text-tertiary); font-style: italic; }
+.act-bonus-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-accent); }
+.act-bonus-empty { font-size: var(--text-micro); color: var(--color-text-tertiary); font-style: italic; }
 .act-bonus-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .act-bonus-tag {
   display: inline-flex; align-items: center; gap: 2px;
-  padding: 2px 10px; border-radius: 11px; font-size: 11.5px; font-weight: 500;
+  padding: 2px 10px; border-radius: 11px; font-size: var(--text-micro); font-weight: 500;
   background: var(--color-accent); color: #fff;
 }
-.act-bonus-tag em { font-style: normal; opacity: 0.7; margin-left: 2px; font-size: 10px; }
+.act-bonus-tag em { font-style: normal; opacity: 0.7; margin-left: 2px; font-size: var(--text-micro); }
 .act-bonus-remove {
   background: none; border: none; color: inherit;
-  cursor: pointer; font-size: 10px; padding: 0 0 0 4px;
+  cursor: pointer; font-size: var(--text-micro); padding: 0 0 0 4px;
   opacity: 0.55; line-height: 1;
 }
 .act-bonus-remove:hover { opacity: 1; }
-.act-bonus-hint { font-size: 11px; color: var(--color-warning); font-weight: 500; }
+.act-bonus-hint { font-size: var(--text-micro); color: var(--color-warning); font-weight: 500; }
 
 /* ── 任务网格 ── */
 .act-task-grid {
@@ -6807,22 +6875,22 @@ watch(ecSimResultRaw, (v) => {
   border-top-left-radius: 0; border-top-right-radius: 0;
 }
 .act-task-head { display: flex; align-items: center; justify-content: space-between; gap: 3px; }
-.act-task-name { font-size: 11px; font-weight: 600; color: var(--color-text); line-height: 1.3; }
+.act-task-name { font-size: var(--text-micro); font-weight: 600; color: var(--color-text); line-height: 1.3; }
 .act-task-badge {
-  font-size: 8.5px; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+  font-size: var(--text-micro); font-weight: 600; padding: 1px 5px; border-radius: 3px;
   background: var(--color-accent); color: #fff; white-space: nowrap; line-height: 1.4;
 }
 .act-task-badge--lock { background: var(--color-text-tertiary); }
 .act-task-head-right { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
 .act-star-btn {
   background: none; border: none; cursor: pointer;
-  font-size: 14px; line-height: 1; padding: 0;
+  font-size: var(--text-md); line-height: 1; padding: 0;
   color: var(--color-text-tertiary);
   opacity: 0.7; transition: opacity 0.12s, transform 0.12s, color 0.12s;
 }
 .act-star-btn:hover { opacity: 0.85; transform: scale(1.2); }
-.act-star-btn.active { opacity: 1; color: #f0c040; }
-.act-task-pts { font-size: 10.5px; font-weight: 700; color: var(--color-accent); }
+.act-star-btn.active { opacity: 1; color: var(--color-warning); }
+.act-task-pts { font-size: var(--text-micro); font-weight: 700; color: var(--color-accent); }
 .act-task-card--disabled .act-task-pts { color: var(--color-text-tertiary); }
 .act-task-bottom {
   display: flex; align-items: center; justify-content: space-between; gap: 4px;
@@ -6838,7 +6906,7 @@ watch(ecSimResultRaw, (v) => {
   border-radius: 2px;
 }
 .act-task-count {
-  font-size: 10px; font-weight: 700;
+  font-size: var(--text-micro); font-weight: 700;
   padding: 1px 5px; border-radius: 3px;
   background: var(--color-accent); color: #fff;
   white-space: nowrap; line-height: 1.4;
@@ -6851,8 +6919,8 @@ watch(ecSimResultRaw, (v) => {
   background: color-mix(in srgb, var(--color-success) 6%, transparent) !important;
 }
 .act-task-card--bonus.act-task-card--maxed {
-  border-color: color-mix(in srgb, #f0c040 55%, transparent) !important;
-  background: color-mix(in srgb, #f0c040 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-warning) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent) !important;
 }
 
 /* 空状态 */
@@ -6861,8 +6929,8 @@ watch(ecSimResultRaw, (v) => {
   align-items: center; justify-content: center; gap: 10px;
   color: var(--color-text-tertiary);
 }
-.act-empty-icon { font-size: 36px; opacity: 0.6; }
-.act-empty p { font-size: 13px; }
+.act-empty-icon { font-size: var(--text-xl); opacity: 0.6; }
+.act-empty p { font-size: var(--text-sm); }
 
 /* 响应式 */
 @media (max-width: 1000px) { .act-task-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -6871,19 +6939,27 @@ watch(ecSimResultRaw, (v) => {
 
 /* ── 弹窗（工资汇总）── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  position: fixed; inset: 0; background: rgba(5, 6, 9, 0.45);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center; z-index: 200;
+  animation: overlay-in 0.15s ease-out;
 }
+[data-theme="light"] .modal-overlay { background: rgba(30, 35, 45, 0.25); }
 .modal {
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(28px) saturate(1.5); -webkit-backdrop-filter: blur(28px) saturate(1.5);
   border-radius: var(--radius-lg); width: 420px; max-width: 90vw;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-pop);
+  animation: modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .modal { background: var(--color-surface-1); }
 }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px; border-bottom: 0.5px solid var(--color-border-light);
 }
-.modal-head h4 { font-size: 15px; font-weight: 600; }
+.modal-head h4 { font-size: var(--text-md); font-weight: 600; }
 .modal-head-actions { display: flex; align-items: center; gap: 8px; }
 .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-x: auto; }
 .modal-foot {
@@ -6893,7 +6969,7 @@ watch(ecSimResultRaw, (v) => {
 .btn-icon {
   width: 28px; height: 28px; border-radius: 4px; border: none;
   background: transparent; color: var(--color-text-tertiary);
-  font-size: 14px; cursor: pointer; display: flex; align-items: center;
+  font-size: var(--text-md); cursor: pointer; display: flex; align-items: center;
   justify-content: center; transition: all 0.1s;
 }
 .btn-icon:hover { background: var(--color-surface-2); color: var(--color-text); }
@@ -6923,7 +6999,7 @@ watch(ecSimResultRaw, (v) => {
 
 /* 展开按钮 */
 .task-expand-btn {
-  width: 22px; height: 22px; border-radius: 4px; font-size: 11px; font-family: inherit;
+  width: 22px; height: 22px; border-radius: 4px; font-size: var(--text-micro); font-family: inherit;
   border: none; background: transparent; color: var(--color-text-tertiary);
   cursor: pointer; transition: all 0.15s; padding: 0; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -6939,20 +7015,20 @@ watch(ecSimResultRaw, (v) => {
 
 /* 通用字段 input */
 .task-field {
-  padding: 4px 6px; font-size: 12.5px; font-family: inherit;
-  border: 1px solid transparent; border-radius: 4px;
+  padding: 4px 6px; font-size: var(--text-xs); font-family: inherit;
+  border: 1px solid transparent; border-radius: var(--radius-sm);
   background: transparent; color: var(--color-text); outline: none;
   transition: border-color 0.12s, background 0.12s;
 }
 .task-field:hover { background: var(--color-surface-3); }
-.task-field:focus { border-color: var(--color-accent); background: var(--color-surface-1); }
+.task-field:focus { border-color: var(--color-accent-ring); background: var(--color-surface-1); }
 
 .task-field-name { min-width: 110px; flex: 1; }
 .task-field-pts { width: 46px; text-align: center; }
-.task-field-suffix { font-size: 10.5px; color: var(--color-text-tertiary); padding-left: 2px; }
+.task-field-suffix { font-size: var(--text-micro); color: var(--color-text-tertiary); padding-left: 2px; }
 
 .task-field-sel { width: 56px; text-align: center; cursor: pointer; appearance: none; }
-.task-lv-sep { font-size: 11px; color: var(--color-text-tertiary); padding: 0 1px; }
+.task-lv-sep { font-size: var(--text-micro); color: var(--color-text-tertiary); padding: 0 1px; }
 .task-field-lv-group { gap: 0; }
 .task-field-count-group { gap: 0; }
 .task-field-count { width: 36px; text-align: center; }
@@ -6962,7 +7038,7 @@ watch(ecSimResultRaw, (v) => {
 /* 开放日 chips */
 .task-days { display: flex; gap: 2px; flex-shrink: 0; }
 .day-chip {
-  padding: 2px 5px; border-radius: 4px; font-size: 10.5px; font-family: inherit; font-weight: 500;
+  padding: 2px 5px; border-radius: 4px; font-size: var(--text-micro); font-family: inherit; font-weight: 500;
   border: 1px solid transparent; background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; transition: all 0.12s;
   line-height: 1.5; min-width: 20px; text-align: center;
@@ -6974,30 +7050,30 @@ watch(ecSimResultRaw, (v) => {
 
 /* 删除按钮 */
 .task-del-btn {
-  width: 24px; height: 24px; border-radius: 4px; font-size: 12px; font-family: inherit;
+  width: 24px; height: 24px; border-radius: 4px; font-size: var(--text-xs); font-family: inherit;
   border: none; background: transparent; color: var(--color-text-tertiary);
   cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   transition: all 0.12s;
 }
-.task-del-btn:hover { color: #e74c3c; background: rgba(231,76,60,0.08); }
+.task-del-btn:hover { color: var(--color-danger); background: var(--color-danger-bg); }
 
 /* 等级活跃子行 */
 .task-level-row {
   padding: 8px 0 12px 32px; display: flex; flex-direction: column; gap: 8px;
   border-top: 1px dashed var(--color-border-light);
 }
-.task-level-hint { font-size: 10.5px; color: var(--color-text-tertiary); }
+.task-level-hint { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .task-level-inputs { display: flex; gap: 6px; flex-wrap: wrap; }
 .task-level-item {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
 }
 .task-level-lv {
-  font-size: 10px; font-weight: 650; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 650; color: var(--color-text-tertiary);
 }
 .task-level-input {
   width: 44px; height: 26px; text-align: center;
-  padding: 2px 4px; font-size: 12px; font-family: inherit;
-  border: 1px solid var(--color-border-light); border-radius: 4px;
+  padding: 2px 4px; font-size: var(--text-xs); font-family: inherit;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text); outline: none;
   transition: border-color 0.12s;
   -moz-appearance: textfield;
@@ -7005,29 +7081,29 @@ watch(ecSimResultRaw, (v) => {
 .task-level-input::-webkit-inner-spin-button,
 .task-level-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .task-level-input:hover { border-color: var(--color-text-tertiary); }
-.task-level-input:focus { border-color: var(--color-accent); }
-.task-level-input::placeholder { color: var(--color-text-tertiary); font-size: 10.5px; }
+.task-level-input:focus { border-color: var(--color-accent-ring); }
+.task-level-input::placeholder { color: var(--color-text-tertiary); font-size: var(--text-micro); }
 
 /* footer */
 .task-add-btn {
-  padding: 5px 14px; border-radius: 6px; font-size: 12px; font-family: inherit; font-weight: 500;
+  padding: 5px 14px; border-radius: 6px; font-size: var(--text-xs); font-family: inherit; font-weight: 500;
   border: 1px dashed var(--color-accent); background: transparent;
   color: var(--color-accent); cursor: pointer; transition: all 0.15s;
 }
 .task-add-btn:hover { background: var(--color-accent-bg); border-style: solid; }
 .task-save-btn {
-  padding: 6px 20px; border-radius: 6px; font-size: 13px; font-family: inherit; font-weight: 550;
+  padding: 6px 20px; border-radius: 6px; font-size: var(--text-sm); font-family: inherit; font-weight: 550;
   border: none; background: var(--color-accent); color: #fff;
   cursor: pointer; transition: opacity 0.15s;
 }
 .task-save-btn:hover { opacity: 0.85; }
 .task-reset-btn {
-  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-family: inherit;
+  padding: 6px 14px; border-radius: 6px; font-size: var(--text-xs); font-family: inherit;
   border: 1px solid var(--color-border-light); background: transparent;
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s;
 }
 .task-reset-btn:hover { border-color: var(--color-text-tertiary); color: var(--color-text); }
-.task-mgr-count { font-size: 12px; color: var(--color-text-tertiary); }
+.task-mgr-count { font-size: var(--text-xs); color: var(--color-text-tertiary); }
 .modal-foot-spacer { flex: 1; }
 .modal-head-actions { display: flex; align-items: center; gap: 8px; }
 
@@ -7045,8 +7121,9 @@ watch(ecSimResultRaw, (v) => {
   display: flex; align-items: center; gap: 8px;
 }
 .sxdp-table-wrap {
-  flex: 1; overflow: auto; border-radius: var(--radius-sm);
+  flex: 1; overflow: auto; border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
   background: var(--color-surface-1);
 }
 .sxdp-table {
@@ -7057,15 +7134,15 @@ watch(ecSimResultRaw, (v) => {
   position: sticky; top: 0; z-index: 2;
 }
 .sxdp-table th {
-  padding: 10px 8px; font-size: 13px; font-weight: 700;
-  text-align: center; color: #fff;
-  background: #1a1a1a;
-  border-right: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 8px; font-size: var(--text-xs); font-weight: 600;
+  text-align: center; color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  border-right: 1px solid var(--color-border-light);
   white-space: nowrap;
 }
 .sxdp-table th:last-child { border-right: none; }
 .sxdp-table td {
-  padding: 10px 8px; font-size: 13px; font-weight: 600;
+  padding: 10px 8px; font-size: var(--text-sm); font-weight: 600;
   text-align: center; line-height: 1.5;
   border-right: 1px solid var(--color-border-light);
   border-bottom: 1px solid var(--color-border-light);
@@ -7080,14 +7157,17 @@ watch(ecSimResultRaw, (v) => {
 }
 .sxdp-table tbody tr:last-child td { border-bottom: none; }
 .sxdp-th-label { margin-bottom: 5px; }
-/* 表头筛选：深色表头内的下拉，选中值时高亮描边 */
+/* 表头筛选：深色表头内的下拉，选中值时高亮描边（原生 select 按 server-select 规范改造） */
 .sxdp-filter-select {
-  width: 100%; padding: 2px 4px; border-radius: 4px;
-  font-size: 11.5px; font-family: inherit; font-weight: 600;
-  text-align: center; cursor: pointer;
+  width: 100%; padding: 2px 16px 2px 4px; border-radius: var(--radius-sm);
+  font-size: var(--text-micro); font-family: inherit; font-weight: 600;
+  text-align: left; cursor: pointer;
   color: rgba(255,255,255,0.55);
   border: 1px solid rgba(255,255,255,0.18);
   background: rgba(255,255,255,0.06);
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A8ADB5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 3px center;
   outline: none; transition: border-color 0.12s, background 0.12s;
 }
 .sxdp-filter-select:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.12); }
@@ -7097,7 +7177,7 @@ watch(ecSimResultRaw, (v) => {
 .sxdp-filter-select option { color: var(--color-text); background: var(--color-surface-1); font-weight: 600; }
 .sxdp-td-nomatch {
   padding: 28px 12px !important; text-align: center;
-  font-size: 13px; font-weight: 500; color: var(--color-text-tertiary);
+  font-size: var(--text-sm); font-weight: 500; color: var(--color-text-tertiary);
 }
 .sxdp-td-nomatch .lv-btn { margin-left: 10px; }
 
@@ -7122,7 +7202,7 @@ watch(ecSimResultRaw, (v) => {
 .exp-tab-btn {
   padding: 4px 10px; border: none; border-radius: 5px;
   background: transparent; color: var(--color-text-secondary);
-  font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer;
+  font-size: var(--text-xs); font-weight: 600; font-family: inherit; cursor: pointer;
   transition: all 0.12s;
 }
 .exp-tab-btn:hover { color: var(--color-text); }
@@ -7131,11 +7211,12 @@ watch(ecSimResultRaw, (v) => {
   display: flex; align-items: center; gap: 6px;
 }
 .exp-table-hint {
-  font-size: 11.5px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
 }
 .exp-table-scroll {
-  flex: 1; overflow: auto; border-radius: var(--radius-sm);
+  flex: 1; overflow: auto; border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
   background: var(--color-surface-1);
 }
 .exp-table {
@@ -7146,16 +7227,16 @@ watch(ecSimResultRaw, (v) => {
   position: sticky; top: 0; z-index: 2;
 }
 .exp-table th {
-  padding: 10px 6px; font-size: 12.5px; font-weight: 700;
-  text-align: center; color: #2e7d32;
-  background: #e8f5e9;
-  border-right: 1px solid rgba(0,0,0,0.06);
-  border-bottom: 2px solid #c8e6c9;
+  padding: 10px 6px; font-size: var(--text-xs); font-weight: 600;
+  text-align: center; color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  border-right: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 .exp-table th:last-child { border-right: none; }
 .exp-table td {
-  padding: 6px 6px; font-size: 12px;
+  padding: 6px 6px; font-size: var(--text-xs);
   text-align: center; line-height: 1.5;
   border-right: 1px solid var(--color-border-light);
   border-bottom: 0.5px solid var(--color-border-light);
@@ -7186,9 +7267,9 @@ watch(ecSimResultRaw, (v) => {
 /* Inline edit input */
 .exp-input {
   width: 100%; box-sizing: border-box; padding: 2px 4px;
-  font-size: 12px; font-family: inherit; text-align: center;
+  font-size: var(--text-xs); font-family: inherit; text-align: center;
   color: var(--color-text); background: var(--color-surface-1);
-  border: 1px solid var(--color-accent); border-radius: 3px;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
   outline: none;
 }
 
@@ -7199,12 +7280,12 @@ watch(ecSimResultRaw, (v) => {
 /* ── 怪物基础经验表 ── */
 
 .me-filter-input {
-  width: 180px; padding: 4px 8px; font-size: 12px;
+  width: 180px; padding: 4px 8px; font-size: var(--text-xs);
   color: var(--color-text); background: var(--color-surface-1);
-  border: 1px solid var(--color-border-light); border-radius: 4px;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   outline: none; transition: border-color 0.12s;
 }
-.me-filter-input:focus { border-color: var(--color-accent); }
+.me-filter-input:focus { border-color: var(--color-accent-ring); }
 .me-filter-input::placeholder { color: var(--color-text-tertiary); }
 
 .me-th-name { width: 10%; }
@@ -7215,26 +7296,26 @@ watch(ecSimResultRaw, (v) => {
 .me-th-area:hover { color: #1b5e20; }
 .me-th-area--filtered { color: #c62828 !important; }
 .me-th-area--filtered .me-area-caret { color: #c62828; }
-.me-area-dot { margin-right: 3px; font-size: 9px; color: #c62828; vertical-align: 1px; }
-.me-area-caret { font-size: 10px; margin-left: 2px; opacity: 0.75; }
+.me-area-dot { margin-right: 3px; font-size: var(--text-micro); color: #c62828; vertical-align: 1px; }
+.me-area-caret { font-size: var(--text-micro); margin-left: 2px; opacity: 0.75; }
 .me-area-menu { position: absolute; top: 100%; left: 0; z-index: 30; }
 .me-area-backdrop { position: fixed; inset: 0; }
 .me-area-items {
   position: relative; min-width: 150px; max-height: 300px; overflow-y: auto;
-  background: var(--color-surface-3); border: 0.5px solid var(--color-border);
-  border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); padding: 4px;
+  background: var(--color-surface-3); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-pop); padding: 4px;
   display: flex; flex-direction: column; gap: 1px;
 }
 .me-area-item {
   display: flex; align-items: center; gap: 6px; width: 100%;
   padding: 5px 9px; border: none; border-radius: 4px;
   background: transparent; color: var(--color-text-secondary);
-  font-size: 12px; font-family: inherit; text-align: left; cursor: pointer;
+  font-size: var(--text-xs); font-family: inherit; text-align: left; cursor: pointer;
   white-space: nowrap;
 }
 .me-area-item:hover { background: var(--color-hover); color: var(--color-text); }
 .me-area-item--active { background: var(--color-accent-bg); color: var(--color-accent); font-weight: 600; }
-.me-area-count { margin-left: auto; font-size: 10.5px; color: var(--color-text-tertiary); font-weight: 400; }
+.me-area-count { margin-left: auto; font-size: var(--text-micro); color: var(--color-text-tertiary); font-weight: 400; }
 /* B 表（每级最高效率打怪群，只读）：等级 / 地区 / 最高效率打怪群 */
 .be-th-lv { width: 6%; }
 .be-th-area { width: 12%; }
@@ -7246,31 +7327,31 @@ watch(ecSimResultRaw, (v) => {
 .be-td-group { text-align: left; padding-left: 12px; color: var(--color-text); }
 .be-td-week { font-weight: 700; color: var(--color-accent, var(--color-text)); }
 /* 手动编辑组合的每周经验与默认组合比较：增长红色、降低绿色（2026-08-27 用户要求） */
-.be-td-week.up { color: #e74c3c; }
+.be-td-week.up { color: var(--color-danger); }
 .be-td-week.down { color: #27ae60; }
-.be-td-why { text-align: left; padding-left: 12px; font-size: 12px; color: var(--color-text-secondary); line-height: 1.4; }
+.be-td-why { text-align: left; padding-left: 12px; font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.4; }
 .be-group-text { margin-right: 8px; }
 .be-edit-btn, .be-reset-btn {
-  padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-family: inherit;
+  padding: 2px 8px; border-radius: 4px; font-size: var(--text-micro); font-family: inherit;
   border: 1px solid var(--color-border-light); background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; transition: all 0.12s;
 }
 .be-edit-btn:hover { color: var(--color-accent); border-color: var(--color-accent); }
-.be-reset-btn:hover { color: #e74c3c; border-color: #e74c3c; }
-.be-tr--edited .be-td-lv { color: var(--color-accent, #3b82f6); }
-.grind-cand-tip { font-size: 12px; color: var(--color-text-secondary); }
+.be-reset-btn:hover { color: var(--color-danger); border-color: var(--color-danger); }
+.be-tr--edited .be-td-lv { color: var(--color-accent, var(--color-accent)); }
+.grind-cand-tip { font-size: var(--text-xs); color: var(--color-text-secondary); }
 .grind-cand-area { display: flex; flex-direction: column; gap: 4px; }
-.grind-cand-area-name { font-size: 12px; font-weight: 600; color: var(--color-accent, var(--color-text)); border-bottom: 0.5px solid var(--color-border-light); padding-bottom: 2px; margin-top: 4px; }
-.grind-cand-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12.5px; }
+.grind-cand-area-name { font-size: var(--text-xs); font-weight: 600; color: var(--color-accent, var(--color-text)); border-bottom: 0.5px solid var(--color-border-light); padding-bottom: 2px; margin-top: 4px; }
+.grind-cand-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: var(--text-xs); }
 .grind-cand-item:hover { background: var(--color-surface-2); }
 .grind-cand-item--checked { background: var(--color-surface-2); }
 /* 窗口外怪群（本级无经验）：灰显可勾选，升级到相邻等级后可打 */
 .grind-cand-item--off-window { opacity: 0.62; }
 .grind-cand-item--off-window .grind-cand-name { color: var(--color-text-tertiary); }
-.grind-cand-off { flex: 0 0 auto; font-size: 10px; padding: 0 4px; border-radius: 8px; border: 0.5px solid var(--color-border-light); color: var(--color-text-tertiary); }
+.grind-cand-off { flex: 0 0 auto; font-size: var(--text-micro); padding: 0 4px; border-radius: 8px; border: 0.5px solid var(--color-border-light); color: var(--color-text-tertiary); }
 .grind-cand-name { flex: 0 0 auto; color: var(--color-text); }
-.grind-cand-meta { color: var(--color-text-tertiary); font-size: 11.5px; }
-.grind-cand-count { font-size: 12px; color: var(--color-text-secondary); align-self: center; margin-right: auto; }
+.grind-cand-meta { color: var(--color-text-tertiary); font-size: var(--text-micro); }
+.grind-cand-count { font-size: var(--text-xs); color: var(--color-text-secondary); align-self: center; margin-right: auto; }
 
 .me-th-lv { width: 6%; }
 .me-th-exp { width: 10%; }
@@ -7284,7 +7365,7 @@ watch(ecSimResultRaw, (v) => {
 .me-th-eff { width: 11%; }
 
 /* 可编辑列 vs 只读列区分（2026-08-27）：可编辑列 = 淡色底 + 值下虚线 + 文本光标，
-   双击进入编辑；只读列（单位经验/修正经验/效率，自动计算）表头灰显带 ⚙ 标记 */
+   双击进入编辑；只读列（单位经验/修正经验/效率，自动计算）表头灰显带自动计算标记 */
 .me-td-editable {
   cursor: text;
   background: rgba(94, 106, 210, 0.05);
@@ -7305,7 +7386,7 @@ watch(ecSimResultRaw, (v) => {
   font-weight: 700; color: var(--color-text);
 }
 .me-td-exp-zero span {
-  color: #e74c3c;
+  color: var(--color-danger);
   font-weight: 700;
 }
 .me-td-unit, .me-td-adj, .me-td-eff {
@@ -7336,7 +7417,7 @@ watch(ecSimResultRaw, (v) => {
 .ec-preset-tabs::-webkit-scrollbar { display: none; }
 .ec-preset-tab {
   padding: 4px 12px; border-radius: 6px 6px 0 0;
-  font-size: 12px; font-weight: 500; white-space: nowrap;
+  font-size: var(--text-xs); font-weight: 500; white-space: nowrap;
   cursor: pointer; user-select: none;
   color: var(--color-text-tertiary); border: 1px solid transparent;
   transition: all 0.12s;
@@ -7349,7 +7430,7 @@ watch(ecSimResultRaw, (v) => {
 }
 .ec-preset-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .ec-preset-btn-add, .ec-preset-btn-del {
-  width: 22px; height: 22px; border-radius: 4px; font-size: 14px;
+  width: 22px; height: 22px; border-radius: 4px; font-size: var(--text-md);
   font-family: inherit; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--color-border-light);
@@ -7357,7 +7438,7 @@ watch(ecSimResultRaw, (v) => {
   transition: all 0.12s;
 }
 .ec-preset-btn-add:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.ec-preset-btn-del:hover { border-color: #e74c3c; color: #e74c3c; }
+.ec-preset-btn-del:hover { border-color: var(--color-danger); color: var(--color-danger); }
 
 /* 控制栏 */
 .ec-toolbar {
@@ -7371,31 +7452,38 @@ watch(ecSimResultRaw, (v) => {
   min-width: 0; flex: 0 1 auto;
 }
 .ec-level-label {
-  font-size: 12px; font-weight: 650; color: var(--color-text-secondary);
+  font-size: var(--text-xs); font-weight: 650; color: var(--color-text-secondary);
   white-space: nowrap; flex-shrink: 0;
 }
 .ec-level-input {
-  width: 72px; padding: 4px 6px; border-radius: 4px; font-size: 13px; font-family: inherit;
+  width: 72px; padding: 4px 6px; border-radius: var(--radius-sm); font-size: var(--text-sm); font-family: inherit;
   border: 1px solid var(--color-border-light); background: var(--color-surface-2);
   color: var(--color-text); outline: none; transition: border-color 0.12s;
   text-align: center; -moz-appearance: textfield; flex-shrink: 0;
 }
 .ec-level-input::-webkit-inner-spin-button,
 .ec-level-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-/* 起始星期选择：与左侧标签拉开间隔（原提示文案已移除） */
-.ec-start-weekday-select { margin-left: 8px; }
+/* 起始星期选择：与左侧标签拉开间隔（原提示文案已移除）；原生 select 按 server-select 规范改造 */
+.ec-start-weekday-select {
+  margin-left: 8px;
+  appearance: none; -webkit-appearance: none;
+  padding-right: 22px; text-align: left;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 5px center;
+}
+.ec-start-weekday-select option { background: var(--color-surface-1); color: var(--color-text); }
 .ec-task-chip-type {
-  font-size: 9.5px; color: var(--color-text-tertiary); font-weight: 400;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); font-weight: 400;
   padding: 0 5px; border: 0.5px solid var(--color-border-light); border-radius: 8px;
   background: var(--color-surface-2); white-space: nowrap; flex-shrink: 0;
 }
 .ec-task-chip-closed {
-  font-size: 9px; color: var(--color-text-tertiary); opacity: 0.85;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); opacity: 0.85;
   border: 0.5px dashed var(--color-border-light); border-radius: 8px;
   padding: 0 5px; white-space: nowrap; flex-shrink: 0;
 }
 .ec-level-input:hover { border-color: var(--color-text-tertiary); }
-.ec-level-input:focus { border-color: var(--color-accent); }
+.ec-level-input:focus { border-color: var(--color-accent-ring); }
 
 /* 起始等级进度 */
 .ec-level-start-group {
@@ -7405,52 +7493,53 @@ watch(ecSimResultRaw, (v) => {
   flex-shrink: 0;
 }
 .ec-progress-label {
-  font-size: 10.5px; color: var(--color-text-tertiary); font-weight: 500;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); font-weight: 500;
 }
 .ec-progress-input {
   width: 44px; padding: 3px 4px; text-align: center;
-  font-size: 13px; font-family: inherit; font-weight: 550;
-  border: 1px solid var(--color-border-light); border-radius: 3px;
+  font-size: var(--text-sm); font-family: inherit; font-weight: 550;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text);
   outline: none; transition: border-color 0.12s;
   -moz-appearance: textfield; flex-shrink: 0;
 }
 .ec-progress-input::-webkit-inner-spin-button,
 .ec-progress-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.ec-progress-input:focus { border-color: var(--color-accent); }
+.ec-progress-input:focus { border-color: var(--color-accent-ring); }
 .ec-progress-unit {
-  font-size: 11px; color: var(--color-text-tertiary); font-weight: 500;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); font-weight: 500;
 }
 
 .ec-level-arrow {
-  font-size: 14px; color: var(--color-text-tertiary); font-weight: 600; flex-shrink: 0;
+  font-size: var(--text-md); color: var(--color-text-tertiary); font-weight: 600; flex-shrink: 0;
 }
 .ec-level-warn {
-  font-size: 11px; color: #e8a030; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+  font-size: var(--text-micro); color: #e8a030; font-weight: 500; white-space: nowrap; flex-shrink: 0;
 }
 .ec-level-range {
-  font-size: 12.5px; color: var(--color-text-secondary); white-space: nowrap; flex-shrink: 0;
+  font-size: var(--text-xs); color: var(--color-text-secondary); white-space: nowrap; flex-shrink: 0;
 }
 .ec-total-days {
-  font-size: 13px; color: var(--color-accent); white-space: nowrap;
+  font-size: var(--text-sm); color: var(--color-accent); white-space: nowrap;
   margin-left: 8px; font-weight: 500;
 }
-.ec-total-days strong { font-size: 16px; font-weight: 700; }
+.ec-total-days strong { font-size: var(--text-lg); font-weight: 700; }
 /* 未达目标等级（5 年上限耗尽）警示 */
 /* 超长期摘要（超过 5 年仍未达标 / 经验表数据不足，不展开逐天明细） */
-.ec-days-summary-note { margin-left: 8px; font-size: 11px; font-weight: 400; color: var(--color-text-tertiary); }
+.ec-days-summary-note { margin-left: 8px; font-size: var(--text-micro); font-weight: 400; color: var(--color-text-tertiary); }
 .ec-days-summary {
   display: flex; flex-direction: column; gap: 8px;
   padding: 12px 14px; border-radius: var(--radius-md);
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
 }
-.ec-days-summary-route { font-size: 13px; font-weight: 600; color: var(--color-text); }
-.ec-days-summary-est { font-size: 13px; font-weight: 600; color: var(--color-accent); line-height: 1.5; }
+.ec-days-summary-route { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.ec-days-summary-est { font-size: var(--text-sm); font-weight: 600; color: var(--color-accent); line-height: 1.5; }
 /* 超长期提醒 */
 .ec-days-remind {
   padding: 8px 12px; border-radius: 6px;
   background: rgba(255, 191, 0, 0.10); border: 0.5px solid rgba(255, 191, 0, 0.45);
-  color: var(--color-text-secondary); font-size: 12px; line-height: 1.6;
+  color: var(--color-text-secondary); font-size: var(--text-xs); line-height: 1.6;
 }
 .ec-toolbar-btns { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -7469,44 +7558,52 @@ watch(ecSimResultRaw, (v) => {
 /* ── 打怪经验面板 ── */
 /* 输入框与下拉框样式统一（border/圆角/背景/高度一致，保证队伍与加成区各项对齐） */
 input.grind-input {
-  width: 100%; padding: 4px 6px; font-size: 11.5px; box-sizing: border-box;
-  border: 1px solid var(--color-border-light); border-radius: 4px;
+  width: 100%; padding: 4px 6px; font-size: var(--text-micro); box-sizing: border-box;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text); min-width: 0;
 }
-.grind-select { width: 100%; padding: 4px 6px; font-size: 11.5px; border: 1px solid var(--color-border-light); border-radius: 4px; background: var(--color-surface-1); color: var(--color-text); min-width: 0; }
-.grind-check { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--color-text-secondary); cursor: pointer; user-select: none; }
+.grind-select {
+  width: 100%; padding: 4px 24px 4px 6px; font-size: var(--text-micro);
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+  background: var(--color-surface-1); color: var(--color-text); min-width: 0;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 5px center;
+}
+.grind-select:focus { outline: none; border-color: var(--color-accent-ring); }
+.grind-check { display: inline-flex; align-items: center; gap: 3px; font-size: var(--text-micro); color: var(--color-text-secondary); cursor: pointer; user-select: none; }
 .grind-segment-spacer { flex: 1; }
 .grind-areas { display: flex; flex-direction: column; gap: 4px; }
 .grind-area-head {
-  font-size: 10px; font-weight: 600; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 600; color: var(--color-text-tertiary);
   padding: 2px 4px; cursor: pointer; user-select: none;
   display: flex; align-items: center; gap: 3px; border-radius: 4px;
 }
 .grind-area-head:hover { background: var(--color-surface-2); color: var(--color-text-secondary); }
-.grind-area-caret { font-size: 9px; width: 10px; flex-shrink: 0; }
+.grind-area-caret { font-size: var(--text-micro); width: 10px; flex-shrink: 0; }
 .grind-area-name { flex: 1; min-width: 0; }
 .grind-area-checked-count {
-  font-size: 9px; font-weight: 600; color: var(--color-accent);
+  font-size: var(--text-micro); font-weight: 600; color: var(--color-accent);
   background: var(--color-accent-bg); border-radius: 8px; padding: 0 5px; line-height: 1.4;
 }
-.grind-area-seg { font-size: 9.5px; color: var(--color-text-tertiary); padding-left: 6px; margin-top: 1px; opacity: 0.8; }
+.grind-area-seg { font-size: var(--text-micro); color: var(--color-text-tertiary); padding-left: 6px; margin-top: 1px; opacity: 0.8; }
 .grind-area-groups { display: flex; flex-wrap: wrap; gap: 3px; }
-.grind-info { font-size: 11px; color: var(--color-text-tertiary); cursor: help; flex-shrink: 0; line-height: 1.2; }
+.grind-info { font-size: var(--text-micro); color: var(--color-text-tertiary); cursor: help; flex-shrink: 0; line-height: 1.2; }
 .grind-info:hover { color: var(--color-accent); }
-.grind-group-chip { padding: 2px 6px; font-size: 10.5px; border-radius: 3px; border: 1px solid var(--color-border-light); background: var(--color-surface-1); color: var(--color-text-secondary); cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 3px; }
+.grind-group-chip { padding: 2px 6px; font-size: var(--text-micro); border-radius: 3px; border: 1px solid var(--color-border-light); background: var(--color-surface-1); color: var(--color-text-secondary); cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 3px; }
 .grind-group-chip:hover { border-color: var(--color-accent); }
 .grind-group-chip.checked { background: var(--color-accent-bg); border-color: var(--color-accent); color: var(--color-accent); }
 .grind-checkbox { accent-color: var(--color-accent); margin: 0; cursor: pointer; }
-.grind-head-btn { padding: 1px 6px; font-size: 11px; border: 1px solid var(--color-border-light); border-radius: 3px; background: var(--color-surface-1); color: var(--color-text-tertiary); cursor: pointer; line-height: 1.4; white-space: nowrap; flex-shrink: 0; }
+.grind-head-btn { padding: 1px 6px; font-size: var(--text-micro); border: 1px solid var(--color-border-light); border-radius: 3px; background: var(--color-surface-1); color: var(--color-text-tertiary); cursor: pointer; line-height: 1.4; white-space: nowrap; flex-shrink: 0; }
 .grind-head-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.grind-empty-tip { font-size: 10.5px; color: var(--color-text-tertiary); padding: 4px 2px; }
+.grind-empty-tip { font-size: var(--text-micro); color: var(--color-text-tertiary); padding: 4px 2px; }
 
 /* 等级段：切换行（每段一行内编辑起止等级，点击切换）+ 下方当前段勾选列表（复用 grind-areas） */
 .grind-segments { display: flex; flex-direction: column; gap: 4px; }
 .grind-seg-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .grind-seg-tab {
   display: inline-flex; align-items: center; gap: 2px;
-  padding: 1px 3px 1px 4px; font-size: 10.5px;
+  padding: 1px 3px 1px 4px; font-size: var(--text-micro);
   border: 1px solid var(--color-border-light); border-radius: 3px;
   background: var(--color-surface-1); color: var(--color-text-secondary);
   cursor: pointer; user-select: none;
@@ -7514,33 +7611,33 @@ input.grind-input {
 .grind-seg-tab:hover { border-color: var(--color-accent); }
 .grind-seg-tab.active { background: var(--color-accent-bg); border-color: var(--color-accent); color: var(--color-accent); font-weight: 600; }
 .grind-seg-tab-input {
-  width: 30px; padding: 1px 1px; text-align: center; font-size: 10.5px;
+  width: 30px; padding: 1px 1px; text-align: center; font-size: var(--text-micro);
   border: none; background: transparent; color: inherit; -moz-appearance: textfield;
 }
 .grind-seg-tab-input::-webkit-outer-spin-button, .grind-seg-tab-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .grind-seg-tab-input:focus { outline: 1px solid var(--color-accent); border-radius: 2px; background: var(--color-surface-1); }
-.grind-seg-tab-tilde { font-size: 9px; color: var(--color-text-tertiary); }
+.grind-seg-tab-tilde { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .grind-seg-tab-count {
-  font-size: 9px; font-weight: 600; color: var(--color-accent);
+  font-size: var(--text-micro); font-weight: 600; color: var(--color-accent);
   background: var(--color-accent-bg); border-radius: 8px; padding: 0 4px; line-height: 1.4;
 }
 .grind-seg-tab-del {
-  padding: 0 2px; font-size: 9px; line-height: 1.4; border: none; background: transparent;
+  padding: 0 2px; font-size: var(--text-micro); line-height: 1.4; border: none; background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; border-radius: 2px;
 }
 .grind-seg-tab-del:hover { color: var(--color-danger, #e05); background: var(--color-surface-2); }
 .grind-seg-tab-add {
-  padding: 1px 7px; font-size: 11px; line-height: 1.5;
+  padding: 1px 7px; font-size: var(--text-micro); line-height: 1.5;
   border: 1px dashed var(--color-border-light); border-radius: 3px;
   background: transparent; color: var(--color-text-tertiary); cursor: pointer;
 }
 .grind-seg-tab-add:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.grind-seg-hint { font-size: 9.5px; color: var(--color-text-tertiary); }
+.grind-seg-hint { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 
 /* 分段模式主面板摘要（只读）：每段一行 起止等级 + 勾选地图群数，点击行打开设置弹窗 */
 .grind-seg-summary {
   display: flex; flex-wrap: wrap; align-items: center; gap: 3px 5px;
-  padding: 3px 5px; font-size: 10.5px;
+  padding: 3px 5px; font-size: var(--text-micro);
   border: 1px solid var(--color-border-light); border-radius: 3px;
   background: var(--color-surface-1); color: var(--color-text-secondary);
   cursor: pointer; user-select: none;
@@ -7552,14 +7649,14 @@ input.grind-input {
 }
 .grind-seg-summary-maps { display: inline-flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
 .grind-seg-summary-map {
-  font-size: 9.5px; padding: 0 4px; border-radius: 8px;
+  font-size: var(--text-micro); padding: 0 4px; border-radius: 8px;
   background: var(--color-surface-2); border: 0.5px solid var(--color-border-light);
 }
-.grind-seg-summary-empty { font-size: 9.5px; color: var(--color-text-tertiary); }
+.grind-seg-summary-empty { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .grind-seg-summary-actions { display: inline-flex; gap: 2px; margin-left: auto; }
-.grind-seg-summary-hint { font-size: 9.5px; color: var(--color-text-tertiary); }
+.grind-seg-summary-hint { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .grind-seg-edit-btn {
-  align-self: flex-start; padding: 2px 8px; font-size: 10.5px;
+  align-self: flex-start; padding: 2px 8px; font-size: var(--text-micro);
   border: 1px solid var(--color-border-light); border-radius: 3px;
   background: var(--color-surface-1); color: var(--color-text-secondary);
   cursor: pointer;
@@ -7571,17 +7668,17 @@ input.grind-input {
 /* ── 设置弹窗：统一分区（左侧强调线标题 + 内容列） ── */
 .grind-sec { display: flex; flex-direction: column; gap: 7px; }
 .grind-sec-title {
-  font-size: 12px; font-weight: 650; color: var(--color-text);
+  font-size: var(--text-xs); font-weight: 650; color: var(--color-text);
   border-left: 3px solid var(--color-accent); padding-left: 8px;
   display: flex; align-items: baseline; gap: 6px; line-height: 1.3;
 }
-.grind-sec-sub { font-size: 10px; font-weight: 400; color: var(--color-text-tertiary); }
+.grind-sec-sub { font-size: var(--text-micro); font-weight: 400; color: var(--color-text-tertiary); }
 .grind-modal { display: flex; flex-direction: column; }
 
 /* 打怪面板首日结果条：有效分钟 / 开齐心 / 疲劳消耗明细 */
 .grind-result-strip {
   display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline;
-  font-size: 10.5px; color: var(--color-text-secondary);
+  font-size: var(--text-micro); color: var(--color-text-secondary);
   background: var(--color-surface-2); border: 0.5px solid var(--color-border-light);
   border-radius: 8px; padding: 5px 8px; margin-bottom: 6px; line-height: 1.5;
 }
@@ -7593,42 +7690,42 @@ input.grind-input {
 /* 队伍与经验加成区：5 列网格（10 项恰好 2 行），label 预留两行高度使控件行对齐 */
 .grind-pair-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .grind-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.grind-field-label { font-size: 10.5px; color: var(--color-text-secondary); display: inline-flex; align-items: center; gap: 3px; line-height: 1.3; min-height: 28px; }
-.grind-field .grind-info { font-size: 10px; }
+.grind-field-label { font-size: var(--text-micro); color: var(--color-text-secondary); display: inline-flex; align-items: center; gap: 3px; line-height: 1.3; min-height: 28px; }
+.grind-field .grind-info { font-size: var(--text-micro); }
 
 /* 带 % 后缀的数字输入 */
 .grind-num-wrap { position: relative; display: flex; align-items: center; }
 .grind-num-wrap .grind-input { padding-right: 16px; }
-.grind-num-unit { position: absolute; right: 5px; font-size: 9.5px; color: var(--color-text-tertiary); pointer-events: none; }
+.grind-num-unit { position: absolute; right: 5px; font-size: var(--text-micro); color: var(--color-text-tertiary); pointer-events: none; }
 .grind-day-table { display: flex; flex-direction: column; gap: 4px; background: var(--color-surface-2); border: 0.5px solid var(--color-border-light); border-radius: 8px; padding: 8px 10px; }
 .grind-day-row { display: grid; grid-template-columns: 64px repeat(7, 1fr); gap: 4px; align-items: center; }
-.grind-day-param { font-size: 10.5px; color: var(--color-text-secondary); font-weight: 500; }
+.grind-day-param { font-size: var(--text-micro); color: var(--color-text-secondary); font-weight: 500; }
 .grind-day-head .grind-day-weekday { font-weight: 600; color: var(--color-text-secondary); padding-bottom: 2px; }
-.grind-day-weekday { font-size: 10.5px; color: var(--color-text-tertiary); text-align: center; }
+.grind-day-weekday { font-size: var(--text-micro); color: var(--color-text-tertiary); text-align: center; }
 .grind-day-cell { display: flex; justify-content: center; align-items: center; }
 .grind-day-cell .grind-input { width: 100%; min-width: 0; text-align: center; }
 .grind-day-check { accent-color: var(--color-accent); margin: 0; cursor: pointer; }
 .grind-day-sums { display: flex; flex-wrap: wrap; gap: 6px; }
 .grind-sum-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 10.5px; padding: 3px 9px; border-radius: 10px;
+  font-size: var(--text-micro); padding: 3px 9px; border-radius: 10px;
   background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
   color: var(--color-text-secondary); line-height: 1.4;
 }
 .grind-sum-chip.over { background: rgba(255, 69, 58, 0.08); border-color: var(--color-danger); color: var(--color-danger); }
-.grind-sum-cap { font-size: 9.5px; color: var(--color-text-tertiary); }
+.grind-sum-cap { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 .grind-sum-chip.over .grind-sum-cap { color: var(--color-danger); opacity: 0.8; }
 .grind-decay-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px 8px; }
 .grind-decay-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.grind-decay-label { font-size: 9.5px; color: var(--color-text-tertiary); text-align: center; line-height: 1.2; }
+.grind-decay-label { font-size: var(--text-micro); color: var(--color-text-tertiary); text-align: center; line-height: 1.2; }
 .grind-decay-cell.same { background: var(--color-accent-bg); border-radius: 4px; padding: 2px 0; }
 .grind-decay-cell.same .grind-decay-label { color: var(--color-accent); font-weight: 650; }
 /* 打怪衰减率输入框：与封印加速等级段输入框同尺寸同风格（右侧留白给 % 单位） */
 .grind-decay-cell .rate-input {
   width: 70px; padding: 4px 16px 4px 6px;
-  font-size: 12px; font-family: inherit;
+  font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   text-align: center;
 }
 .grind-decay-cell .rate-input:focus {
@@ -7641,8 +7738,8 @@ input.grind-input {
   display: flex; flex-direction: column;
   border-radius: var(--radius-sm);
   background: var(--color-surface-1);
-  border: 0.5px solid var(--color-border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); /* 与页面背景拉开层次，独立卡片感 */
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card); /* 与页面背景拉开层次，独立卡片感 */
   overflow: hidden;
 }
 .ec-panel--collapsed { flex: 0 0 auto; }
@@ -7657,11 +7754,11 @@ input.grind-input {
 }
 .ec-panel-head:hover { background: var(--color-surface-3); }
 .ec-panel-caret {
-  font-size: 10px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   width: 12px; flex-shrink: 0;
 }
 .ec-panel-title {
-  font-size: 11.5px; font-weight: 650; color: var(--color-text);
+  font-size: var(--text-micro); font-weight: 650; color: var(--color-text);
 }
 .ec-panel-body {
   flex: 1; min-height: 0;
@@ -7671,7 +7768,7 @@ input.grind-input {
 }
 
 .ec-rate-btn {
-  padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-family: inherit;
+  padding: 3px 8px; border-radius: 4px; font-size: var(--text-micro); font-family: inherit;
   border: 1px solid var(--color-border-light); background: var(--color-surface-2);
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s;
   white-space: nowrap; flex-shrink: 0;
@@ -7697,15 +7794,15 @@ input.grind-input {
   accent-color: var(--color-accent); margin: 0; cursor: pointer; flex-shrink: 0;
 }
 .ec-task-chip-name {
-  flex: 1; font-size: 11.5px; color: var(--color-text);
+  flex: 1; font-size: var(--text-micro); color: var(--color-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 .ec-task-chip-rate {
-  font-size: 10px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   background: var(--color-surface-1); padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
 }
 .ec-task-chip-count-label {
-  font-size: 10px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   background: var(--color-surface-1); padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
 }
 .ec-task-chip-count-label.maxed {
@@ -7716,41 +7813,41 @@ input.grind-input {
 }
 .ec-item-count-input {
   width: 44px; padding: 1px 3px; text-align: center; flex-shrink: 0;
-  font-size: 11px; font-family: inherit; font-weight: 600;
-  border: 1px solid var(--color-border-light); border-radius: 3px;
+  font-size: var(--text-micro); font-family: inherit; font-weight: 600;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text);
   outline: none; transition: border-color 0.12s;
   -moz-appearance: textfield;
 }
 .ec-item-count-input::-webkit-inner-spin-button,
 .ec-item-count-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.ec-item-count-input:focus { border-color: var(--color-accent); }
+.ec-item-count-input:focus { border-color: var(--color-accent-ring); }
 .ec-task-sub-count {
-  font-weight: 400; font-size: 9.5px; color: var(--color-text-tertiary);
+  font-weight: 400; font-size: var(--text-micro); color: var(--color-text-tertiary);
 }
 .ec-items-toggle {
   margin-top: 4px; text-align: center;
 }
 .ec-items-toggle-btn {
-  font-size: 10.5px; font-family: inherit; padding: 2px 10px; border-radius: 3px;
+  font-size: var(--text-micro); font-family: inherit; padding: 2px 10px; border-radius: 3px;
   border: 1px solid var(--color-border-light); background: transparent;
   color: var(--color-text-tertiary); cursor: pointer; transition: all 0.12s;
 }
 .ec-items-toggle-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
 .ec-task-empty {
-  font-size: 12.5px; color: var(--color-text-tertiary);
+  font-size: var(--text-xs); color: var(--color-text-tertiary);
   text-align: center; padding: 20px;
 }
 
 /* ── 加成道具面板（2026-08-21，时效型） ──
-   每行一个道具，仅 名称 | 剩余天数 | ⚙ 设置 三列（固定列各行对齐）；
+   每行一个道具，仅 名称 | 剩余天数 | 设置 三列（固定列各行对齐）；
    启用/类型/数值/任务范围/开始天数/有效期 均在设置弹窗内编辑。 */
 .bonus-list {
   display: flex; flex-direction: column; gap: 5px;
 }
 .bonus-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto; /* ☑ | 名称 | 剩X/Y天 | ⚙：后两列各行对齐 */
+  grid-template-columns: auto minmax(0, 1fr) auto auto; /* 勾选框 | 名称 | 剩X/Y天 | 设置按钮：后两列各行对齐 */
   align-items: center; gap: 4px;
   padding: 5px 8px; border-radius: 4px;
   border: 1px solid var(--color-border-light);
@@ -7761,11 +7858,11 @@ input.grind-input {
 .bonus-row--off { opacity: 0.62; } /* 未启用（面板行取消勾选）变暗提示 */
 .bonus-name {
   min-width: 0; /* 与 ec-task-chip-name 一致：占满剩余宽度、超长省略 */
-  font-size: 11.5px; color: var(--color-text); font-weight: 500;
+  font-size: var(--text-micro); color: var(--color-text); font-weight: 500;
   line-height: 20px; /* 行高与徽标/按钮统一，保证文本与徽标文字同一水平线 */
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* 效果/剩余天数徽标 + ⚙ 按钮：固定等高 20px、文字垂直居中 */
+/* 效果/剩余天数徽标 + 设置按钮：固定等高 20px、文字垂直居中 */
 .bonus-summary,
 .bonus-config-btn {
   display: inline-flex; align-items: center;
@@ -7775,13 +7872,13 @@ input.grind-input {
 .bonus-remain {
   justify-self: start; /* 作为独立列，与各行"剩X/Y天"左对齐 */
 }
-/* 效果/剩余天数徽标：与经验道具 chip 的 ×倍率 / 休 / 🗓 徽标同款 */
+/* 效果/剩余天数徽标：与经验道具 chip 的 ×倍率 / 休 / 每周 徽标同款 */
 .bonus-summary {
-  font-size: 10px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   background: var(--color-surface-1); padding: 0 4px; border-radius: 3px;
 }
 .bonus-config-btn {
-  font-size: 10px; font-family: inherit; padding: 0 6px; border-radius: 3px;
+  font-size: var(--text-micro); font-family: inherit; padding: 0 6px; border-radius: 3px;
   border: 1px solid var(--color-border-light); background: transparent;
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s;
 }
@@ -7800,14 +7897,14 @@ input.grind-input {
   flex-direction: column; align-items: flex-start; gap: 6px;
 }
 .bonus-modal-label {
-  width: 72px; flex-shrink: 0; font-size: 12px; color: var(--color-text-secondary);
+  width: 72px; flex-shrink: 0; font-size: var(--text-xs); color: var(--color-text-secondary);
 }
 .bonus-modal-input { width: 96px; flex-shrink: 0; }
-.bonus-modal-hint { font-size: 11px; color: var(--color-text-tertiary); }
+.bonus-modal-hint { font-size: var(--text-micro); color: var(--color-text-tertiary); }
 /* 类型切换：与 ec-subtab 同款 */
 .bonus-type-toggle { display: flex; gap: 6px; }
 .bonus-type-btn {
-  padding: 4px 12px; border-radius: 4px; font-size: 11.5px; font-family: inherit;
+  padding: 4px 12px; border-radius: 4px; font-size: var(--text-micro); font-family: inherit;
   border: 1px solid var(--color-border-light); background: var(--color-surface-2);
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s;
 }
@@ -7821,7 +7918,7 @@ input.grind-input {
   border-top: 0.5px solid var(--color-border-light);
 }
 .bonus-modal-del-btn {
-  padding: 3px 10px; font-size: 11px; font-family: inherit;
+  padding: 3px 10px; font-size: var(--text-micro); font-family: inherit;
   border: 1px solid var(--color-border-light); border-radius: 4px;
   background: transparent; color: var(--color-danger, #dc3545); cursor: pointer; transition: all 0.12s;
 }
@@ -7839,10 +7936,11 @@ input.grind-input {
   border-radius: var(--radius-md);
   background: var(--color-surface-1);
   border: 1px solid var(--color-accent);
+  box-shadow: var(--shadow-card);
   overflow: hidden; /* 标题与表格共用圆角，成一体卡片 */
 }
 .ec-result-head {
-  padding: 10px 14px; font-size: 14px; font-weight: 650; color: var(--color-text);
+  padding: 10px 14px; font-size: var(--text-md); font-weight: 650; color: var(--color-text);
   background: var(--color-accent-bg);
   border-bottom: 1px solid var(--color-accent);
   flex-shrink: 0;
@@ -7852,12 +7950,12 @@ input.grind-input {
   overflow: auto; flex: 1; min-height: 0;
 }
 .ec-detail-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
+  width: 100%; border-collapse: collapse; font-size: var(--text-xs);
   font-variant-numeric: tabular-nums; /* 数字等宽，列对齐不跳动 */
 }
 .ec-detail-table th {
   position: sticky; top: 0; z-index: 1; /* 滚动时表头固定 */
-  padding: 7px 6px; font-size: 11px; font-weight: 650;
+  padding: 7px 6px; font-size: var(--text-micro); font-weight: 650;
   text-align: right; color: var(--color-text-secondary);
   background: var(--color-surface-2);
   border-bottom: 1px solid var(--color-border-light);
@@ -7906,7 +8004,7 @@ input.grind-input {
   transition: width 0.2s;
 }
 .ec-progress-pct {
-  font-size: 10px; font-weight: 500; line-height: 1;
+  font-size: var(--text-micro); font-weight: 500; line-height: 1;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -7917,14 +8015,14 @@ input.grind-input {
   max-height: 60vh; overflow-y: auto;
 }
 .rate-hint {
-  font-size: 11.5px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   margin-bottom: 12px; padding: 6px 10px;
   background: var(--color-accent-bg); border-radius: 4px;
 }
 .rate-section { margin-bottom: 16px; }
 .rate-section:last-child { margin-bottom: 0; }
 .rate-section-head {
-  font-size: 12px; font-weight: 650; color: var(--color-text);
+  font-size: var(--text-xs); font-weight: 650; color: var(--color-text);
   margin-bottom: 8px; padding-bottom: 6px;
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -7947,29 +8045,29 @@ input.grind-input {
 .rate-drag-handle {
   flex-shrink: 0; cursor: grab;
   color: var(--color-text-tertiary);
-  font-size: 11px; line-height: 1;
+  font-size: var(--text-micro); line-height: 1;
   padding: 0 2px; user-select: none;
 }
 .rate-drag-tip {
   margin-left: auto;
-  font-size: 10px; font-weight: 400; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 400; color: var(--color-text-tertiary);
 }
 .rate-row--dragging { opacity: 0.45; }
 .rate-row--dragover { border-color: var(--color-accent); background: var(--color-accent-bg); }
 .rate-task-name {
-  font-size: 13px; color: var(--color-text); font-weight: 500;
+  font-size: var(--text-sm); color: var(--color-text); font-weight: 500;
 }
 .rate-input {
   width: 80px; padding: 5px 8px; text-align: center;
-  font-size: 13px; font-family: inherit;
-  border: 1px solid var(--color-border-light); border-radius: 4px;
+  font-size: var(--text-sm); font-family: inherit;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text);
   outline: none; transition: border-color 0.12s;
   -moz-appearance: textfield;
 }
 .rate-input::-webkit-inner-spin-button,
 .rate-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.rate-input:focus { border-color: var(--color-accent); }
+.rate-input:focus { border-color: var(--color-accent-ring); }
 
 /* ── 任务倍率 tab：两列布局（活跃任务 / 每日经验道具；打怪经验在打怪面板配置） ── */
 .rate-modal-body--cols {
@@ -7989,20 +8087,20 @@ input.grind-input {
 }
 .rate-column-head {
   display: flex; align-items: center; gap: 6px;
-  padding: 7px 10px; font-size: 12px; font-weight: 650; color: var(--color-text);
+  padding: 7px 10px; font-size: var(--text-xs); font-weight: 650; color: var(--color-text);
   background: var(--color-surface-1);
   border-bottom: 0.5px solid var(--color-border-light);
   flex-shrink: 0;
 }
 .rate-column-count {
-  font-size: 10.5px; font-weight: 500; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 500; color: var(--color-text-tertiary);
 }
 .rate-column-body {
   overflow-y: auto; max-height: 56vh; min-height: 120px;
   padding: 6px; display: flex; flex-direction: column; gap: 4px;
 }
 .rate-column-empty {
-  margin: 6px; padding: 22px 10px; text-align: center; font-size: 11.5px;
+  margin: 6px; padding: 22px 10px; text-align: center; font-size: var(--text-micro);
   color: var(--color-text-tertiary); line-height: 1.6;
   border: 1px dashed var(--color-border); border-radius: 6px;
 }
@@ -8019,7 +8117,7 @@ input.grind-input {
 .rate-item-btn {
   width: 18px; height: 18px; flex-shrink: 0;
   border: none; border-radius: 4px; background: transparent;
-  color: var(--color-text-tertiary); font-size: 10px; cursor: pointer;
+  color: var(--color-text-tertiary); font-size: var(--text-micro); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: all 0.12s;
 }
@@ -8027,7 +8125,7 @@ input.grind-input {
 .rate-item-del:hover { background: rgba(220, 53, 69, 0.12); color: var(--color-danger, #dc3545); }
 /* 道具周期切换（每天/每周） */
 .rate-item-period {
-  flex-shrink: 0; padding: 2px 6px; font-size: 9.5px; font-family: inherit;
+  flex-shrink: 0; padding: 2px 6px; font-size: var(--text-micro); font-family: inherit;
   border: 1px solid var(--color-border-light); border-radius: 3px;
   background: transparent; color: var(--color-text-tertiary); cursor: pointer;
   white-space: nowrap; transition: all 0.12s;
@@ -8045,16 +8143,16 @@ input.grind-input {
   border: 0.5px dashed var(--color-border-light); border-radius: 4px;
 }
 .rate-item-days-hint {
-  font-size: 10px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   margin-right: 2px; flex-shrink: 0;
 }
 .rate-item-name-input {
-  flex: 1; min-width: 0; padding: 3px 6px; font-size: 12px; font-family: inherit;
-  border: 1px solid var(--color-accent); border-radius: 4px;
+  flex: 1; min-width: 0; padding: 3px 6px; font-size: var(--text-xs); font-family: inherit;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
   background: var(--color-surface-1); color: var(--color-text); outline: none;
 }
 .rate-item-add-btn {
-  margin-left: auto; padding: 2px 8px; font-size: 10.5px; font-family: inherit;
+  margin-left: auto; padding: 2px 8px; font-size: var(--text-micro); font-family: inherit;
   border: 1px dashed var(--color-border); border-radius: 4px;
   background: transparent; color: var(--color-text-secondary); cursor: pointer;
   transition: all 0.12s;
@@ -8072,7 +8170,7 @@ input.grind-input {
 .ec-accel-toggle {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 0; margin-bottom: 8px;
-  font-size: 13px; color: var(--color-text); cursor: pointer; user-select: none;
+  font-size: var(--text-sm); color: var(--color-text); cursor: pointer; user-select: none;
 }
 .ec-accel-toggle input[type="checkbox"] {
   accent-color: var(--color-accent); width: 16px; height: 16px; cursor: pointer;
@@ -8080,7 +8178,7 @@ input.grind-input {
 
 /* 等级段倍率提示 */
 .rate-level-hint {
-  font-size: 10.5px; color: var(--color-success); font-weight: 500;
+  font-size: var(--text-micro); color: var(--color-success); font-weight: 500;
   margin-left: 6px; white-space: nowrap;
 }
 
@@ -8089,10 +8187,10 @@ input.grind-input {
   overflow-x: auto; margin-top: 6px;
 }
 .lvmult-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
+  width: 100%; border-collapse: collapse; font-size: var(--text-xs);
 }
 .lvmult-table th {
-  padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 550;
+  padding: 6px 10px; text-align: left; font-size: var(--text-micro); font-weight: 550;
   color: var(--color-text-secondary); background: var(--color-surface-2);
   border-bottom: 0.5px solid var(--color-border-light);
 }
@@ -8107,9 +8205,9 @@ input.grind-input {
 }
 .lvmult-table .rate-input {
   width: 70px; padding: 4px 6px;
-  font-size: 12px; font-family: inherit;
+  font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
 }
 .lvmult-table .rate-input:focus {
   outline: none; border-color: var(--color-accent-ring);
@@ -8121,7 +8219,7 @@ input.grind-input {
   background: var(--color-surface-2); border-radius: 6px; padding: 2px;
 }
 .ec-subtab {
-  padding: 4px 14px; font-size: 12px; font-weight: 500; font-family: inherit;
+  padding: 4px 14px; font-size: var(--text-xs); font-weight: 500; font-family: inherit;
   border: none; border-radius: 5px; cursor: pointer;
   background: transparent; color: var(--color-text-secondary);
   transition: all 0.12s;
@@ -8142,7 +8240,7 @@ input.grind-input {
 .lvmult-del-btn, .lvmult-del-act {
   width: 22px; height: 22px; border-radius: 4px;
   border: none; background: transparent;
-  color: var(--color-text-tertiary); font-size: 12px;
+  color: var(--color-text-tertiary); font-size: var(--text-xs);
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   transition: all 0.12s;
 }
@@ -8150,11 +8248,11 @@ input.grind-input {
   background: rgba(220, 53, 69, 0.12); color: var(--color-danger, #dc3545);
 }
 .lvmult-del-act {
-  margin-left: auto; font-size: 11px;
+  margin-left: auto; font-size: var(--text-micro);
 }
 
 .lvmult-add-btn {
-  margin-top: 8px; padding: 5px 14px; font-size: 11.5px; font-weight: 500; font-family: inherit;
+  margin-top: 8px; padding: 5px 14px; font-size: var(--text-micro); font-weight: 500; font-family: inherit;
   border: 1px dashed var(--color-border); border-radius: 4px;
   background: transparent; color: var(--color-text-secondary); cursor: pointer;
   transition: all 0.12s;
@@ -8185,13 +8283,14 @@ input.grind-input {
   display: flex; flex-direction: column; gap: 8px;
 }
 .dr-section-title {
-  font-size: 14px; font-weight: 700; margin: 0;
+  font-size: var(--text-md); font-weight: 700; margin: 0;
   color: var(--color-text);
 }
 .dr-table-wrap {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
   background: var(--color-surface-1);
+  box-shadow: var(--shadow-card);
   overflow: auto;
 }
 .dr-table {
@@ -8202,16 +8301,16 @@ input.grind-input {
   position: sticky; top: 0; z-index: 2;
 }
 .dr-table th {
-  padding: 10px 8px; font-size: 13px; font-weight: 700;
-  text-align: center; color: #2e7d32;
-  background: #e8f5e9;
-  border-right: 1px solid rgba(0,0,0,0.06);
-  border-bottom: 2px solid #c8e6c9;
+  padding: 10px 8px; font-size: var(--text-xs); font-weight: 600;
+  text-align: center; color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  border-right: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 .dr-table th:last-child { border-right: none; }
 .dr-table td {
-  padding: 8px 8px; font-size: 13px;
+  padding: 8px 8px; font-size: var(--text-sm);
   text-align: center; line-height: 1.5;
   border-right: 1px solid var(--color-border-light);
   border-bottom: 0.5px solid var(--color-border-light);
@@ -8233,19 +8332,20 @@ input.grind-input {
 
 /* ── 韧性表 ── */
 .toughness-wrap { display: flex; flex-direction: column; gap: 10px; }
-.toughness-calc-label { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
+.toughness-calc-label { font-size: var(--text-xs); color: var(--color-text-secondary); white-space: nowrap; }
 /* 区间计算结果卡片：属性变化 / 加点消耗 / 市场成本 分段展示 */
 .toughness-calc {
   display: flex; flex-direction: column; gap: 6px;
   padding: 10px 12px; border-radius: var(--radius-sm);
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
 }
 .toughness-calc-line {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-size: 12.5px; line-height: 1.6;
+  font-size: var(--text-xs); line-height: 1.6;
 }
 .toughness-calc-line-label {
-  font-size: 12px; color: var(--color-text-tertiary);
+  font-size: var(--text-xs); color: var(--color-text-tertiary);
   white-space: nowrap; flex-shrink: 0;
 }
 .toughness-calc-value { color: var(--color-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -8255,7 +8355,7 @@ input.grind-input {
 .toughness-calc-err {
   padding: 10px 12px; border-radius: var(--radius-sm);
   border: 0.5px dashed var(--color-danger);
-  color: var(--color-danger); font-size: 12.5px;
+  color: var(--color-danger); font-size: var(--text-xs);
 }
 .toughness-price-input { width: 60px; }
 .toughness-table.toughness-table { min-width: 720px; }

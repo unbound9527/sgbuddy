@@ -5,6 +5,27 @@
       <p>装备材料价格查询 · 成本利润管理</p>
     </div>
 
+    <!-- OCR 引擎提示（录入截图识别依赖，未安装时展示） -->
+    <div class="ocr-engine-hint ocr-banner" v-if="!ocrEngineInstalled && !ocrEngineGiteeConfigured">
+      <span class="ocr-engine-hint-text"><AppIcon icon="alert" :size="12" /> 高精度 OCR 引擎未安装，且下载源未配置</span>
+    </div>
+    <div class="ocr-engine-hint ocr-banner" v-else-if="!ocrEngineInstalled && ocrEngineState === 'downloading'">
+      <span class="ocr-engine-hint-text"><AppIcon icon="loader" :size="12" class="icon-spin" /> 正在下载 OCR 引擎 {{ Math.round(ocrEngineProgress * 100) }}%</span>
+      <button class="ocr-engine-hint-btn" @click="showOcrEngineModal = true">查看详情</button>
+    </div>
+    <div class="ocr-engine-hint ocr-banner" v-else-if="!ocrEngineInstalled && ocrEngineState === 'extracting'">
+      <span class="ocr-engine-hint-text"><AppIcon icon="loader" :size="12" class="icon-spin" /> 正在解压 OCR 引擎…（约 1 分钟）</span>
+      <button class="ocr-engine-hint-btn" @click="showOcrEngineModal = true">查看详情</button>
+    </div>
+    <div class="ocr-engine-hint ocr-engine-hint--error ocr-banner" v-else-if="!ocrEngineInstalled && ocrEngineState === 'error'">
+      <span class="ocr-engine-hint-text"><AppIcon icon="circle-x" :size="12" /> OCR 引擎下载失败，点击重试</span>
+      <button class="ocr-engine-hint-btn" @click="showOcrEngineModal = true">重试</button>
+    </div>
+    <div class="ocr-engine-hint ocr-banner" v-else-if="!ocrEngineInstalled">
+      <span class="ocr-engine-hint-text"><AppIcon icon="alert" :size="12" /> 高精度 OCR 引擎未安装，截图识别精度受限（下载约 55MB，一次安装永久使用）</span>
+      <button class="ocr-engine-hint-btn" @click="showOcrEngineModal = true">下载引擎</button>
+    </div>
+
     <div class="card">
 
       <div class="card-head">
@@ -25,7 +46,7 @@
                 @keydown.escape="sugVisible = false; showRecent = false"
                 @input="onSearchInput"
               />
-              <button v-if="searchText" class="search-clear-btn" @click="clearSearch" title="清除">✕</button>
+              <button v-if="searchText" class="search-clear-btn" @click="clearSearch" title="清除"><AppIcon icon="x" :size="12" /></button>
               <ul class="sug-dropdown" v-if="sugVisible && sugItems.length > 0">
                 <li
                   v-for="(item, idx) in sugItems"
@@ -61,10 +82,10 @@
               <option value="">全部分类</option>
               <option v-for="c in priceCategories" :key="c" :value="c">{{ c }}</option>
             </select>
-            <div class="multi-select-wrap" ref="rangeDropdownRef">
+            <div class="multi-select-wrap" :class="{ 'multi-select-wrap--open': showRangeDropdown }" ref="rangeDropdownRef">
               <button class="select-sm multi-select-trigger" @click="showRangeDropdown = !showRangeDropdown">
                 <span class="multi-select-label">{{ priceRangeLabel }}</span>
-                <span class="multi-select-arrow">▼</span>
+                <AppIcon icon="chevron-down" :size="12" class="multi-select-arrow" />
               </button>
               <div class="multi-select-dropdown" v-if="showRangeDropdown">
                 <label v-for="r in priceRangeOptions" :key="r.value" class="range-check-label">
@@ -79,12 +100,13 @@
             <label class="hot-filter-label shop-filter-label">
               <input type="checkbox" v-model="shopItemsOnly" /> 仅显示商行物品
             </label>
-            <button class="btn-calc" @click="openCalculator" title="打开计算器">🧮 计算器</button>
+            <button class="btn-ghost-xs" @click="exportPrices" title="导出当前筛选结果为 Excel"><AppIcon icon="download" :size="12" /> 导出</button>
+            <button class="btn-ghost-xs" @click="importPrices" title="从同表头 Excel 导入物价数据"><AppIcon icon="upload" :size="12" /> 导入</button>
           </div>
 
           <div class="result-count" v-if="totalResultCount > 0">共 <strong>{{ totalResultCount }}</strong> 条结果<template v-if="totalResultCount > 500">（显示前500条）</template></div>
 
-          <div class="table-wrap" v-if="mergedList.length > 0">
+          <div class="table-wrap" v-if="mergedList.length > 0" ref="tableWrapRef" @scroll.passive="onTableScroll">
             <table class="table">
               <thead>
                 <tr>
@@ -111,13 +133,13 @@
                 </tr>
               </thead>
               <tbody>
-                <template v-for="p in mergedList" :key="p._key">                <tr :class="{ 'row-flash': flashKey === p._key }">
+                <template v-for="p in displayList" :key="p._key">                <tr :class="{ 'row-flash': flashKey === p._key }">
 	                  <td class="td-name" :class="qualityColorClass(p)">
 	                    <div class="td-name-row">
 	                    <span class="td-name-text" @click="onItemNameClick(p._baseName)" title="点击查看图片/复制名称">{{ p._baseName }}</span>
 	                    <span v-if="p.craft_level" class="td-craft-lv">{{ p.craft_level }}</span>
 	                    <button class="btn-icon copy-name-btn" @click.stop="copyName(p._baseName)" title="复制名称"><span class="copy-icon"></span></button>
-                    <button class="btn-icon img-btn" v-if="hasImage(p.price_id, p._baseName)" @click.stop="openImageViewer(p.price_id, p._baseName)" title="查看图片">🖼</button>
+                    <button class="btn-icon img-btn" v-if="hasImage(p.price_id, p._baseName)" @click.stop="openImageViewer(p.price_id, p._baseName)" title="查看图片"><AppIcon icon="image" :size="14" /></button>
 	                    </div>
 	                  </td>
                   <td class="td-attr" @click="startAttrEdit(p)">
@@ -213,17 +235,17 @@
                     <span v-if="p.profit_margin !== null" :class="p.profit_margin >= 0 ? 'text-success' : 'text-danger'">{{ p.profit_margin }}%</span>
                     <span v-else class="td-muted">-</span>
                   </td>
-                  <td class="td-muted" style="font-size:11px">{{ formatTime(p.updated_at) }}</td>
+                  <td class="td-muted" style="font-size:var(--text-micro)">{{ formatTime(p.updated_at) }}</td>
                   <td class="td-actions">
-                    <button class="btn-icon" @click.stop="editPriceById(p)" title="编辑">✎</button>
-                    <button class="btn-icon" @click.stop="copyItem(p)" title="复制">⧉</button>
+                    <button class="btn-icon" @click.stop="editPriceById(p)" title="编辑"><AppIcon icon="pencil" :size="13" /></button>
+                    <button class="btn-icon" @click.stop="copyItem(p)" title="复制"><AppIcon icon="copy" :size="13" /></button>
                     <button class="hot-toggle" :class="{ 'hot-toggle--on': p.is_hot }"
-                      @click.stop="toggleHotOrAdd(p)" title="热门">★</button>
+                      @click.stop="toggleHotOrAdd(p)" title="热门"><AppIcon icon="star" :size="15" /></button>
                     <template v-if="confirmingDelete === p._key">
-                      <button class="btn-icon btn-icon--warn" @click.stop="confirmDeleteItem(p)" title="确认删除">✓</button>
-                      <button class="btn-icon" @click.stop="confirmingDelete = null" title="取消">✕</button>
+                      <button class="btn-icon btn-icon--warn" @click.stop="confirmDeleteItem(p)" title="确认删除"><AppIcon icon="check" :size="13" /></button>
+                      <button class="btn-icon" @click.stop="confirmingDelete = null" title="取消"><AppIcon icon="x" :size="13" /></button>
                     </template>
-                    <button v-else class="btn-icon btn-icon--danger" @click.stop="confirmingDelete = p._key" title="删除">✕</button>
+                    <button v-else class="btn-icon btn-icon--danger" @click.stop="confirmingDelete = p._key" title="删除"><AppIcon icon="x" :size="13" /></button>
                   </td>
                 </tr>
                 </template>
@@ -233,11 +255,11 @@
           <div class="hint" v-else>正在加载图鉴数据...</div>
 
           <!-- 录入/编辑弹层（保持不变） -->
-          <div class="modal-overlay" v-if="showPriceForm" @keydown.enter.prevent="savePrice">
+          <div class="modal-overlay" v-if="showPriceForm" @click.self="showPriceForm = false" @keydown.enter.prevent="savePrice">
             <div class="modal">
               <div class="modal-head">
                 <h4>{{ editingPrice ? '编辑物价' : (priceForm.item_name ? '复制物价' : '录入物价') }}</h4>
-                <button class="btn-icon" @click="showPriceForm = false">✕</button>
+                <button class="btn-icon" @click="showPriceForm = false"><AppIcon icon="x" :size="13" /></button>
               </div>
               <div class="modal-body">
                 <div class="form-row">
@@ -333,11 +355,11 @@
                   <div class="image-upload-row">
                     <div v-for="(img, idx) in formImages" :key="img.id || idx" class="image-thumb-wrap">
                       <img :src="img.path" class="image-thumb" @click="viewImage(img.path)" />
-                      <button v-if="!ocrBusy" class="image-thumb-ocr" @click="ocrThumbnail(img)" title="识别图片">🔍</button>
-                      <button class="image-thumb-del" @click="removeFormImage(idx)" title="删除">✕</button>
+                      <button v-if="!ocrBusy" class="image-thumb-ocr" @click="ocrThumbnail(img)" title="识别图片"><AppIcon icon="search" :size="10" /></button>
+                      <button class="image-thumb-del" @click="removeFormImage(idx)" title="删除"><AppIcon icon="x" :size="10" /></button>
                     </div>
                     <button class="image-add-btn" @click="addImage" title="添加图片">+</button>
-                    <button class="image-add-btn image-add-btn--sm" @click="pasteFromClipboard()" title="粘贴剪贴板内容（图片自动识别 / 文字填入名称）">📋</button>
+                    <button class="image-add-btn image-add-btn--sm" @click="pasteFromClipboard()" title="粘贴剪贴板内容（图片自动识别 / 文字填入名称）"><AppIcon icon="copy" :size="18" /></button>
                   </div>
                   <!-- OCR 状态 -->
                   <div class="ocr-status" v-if="ocrBusy || ocrError || ocrText || ocrSimilar.length">
@@ -353,7 +375,7 @@
                       <button v-if="lastOcrThumb" class="btn btn-ghost btn-sm" @click="ocrThumbnail(lastOcrThumb)">重试</button>
                     </template>
                     <template v-else>
-                      <span class="ocr-done">✔ 已识别，字段已预填</span>
+                      <span class="ocr-done"><AppIcon icon="check" :size="12" /> 已识别，字段已预填</span>
                       <span v-if="ocrSimilar.length" class="ocr-similar">已存在类似记录：{{ ocrSimilar.join(' / ') }}</span>
                       <details class="ocr-raw"><summary>查看识别文本</summary><pre>{{ ocrText }}</pre></details>
                     </template>
@@ -361,9 +383,58 @@
                 </div>
               </div>
               <div class="modal-foot">
-                <span class="text-danger" v-if="saveError" style="flex:1;font-size:12px">{{ saveError }}</span>
+                <span class="text-danger" v-if="saveError" style="flex:1;font-size:var(--text-xs)">{{ saveError }}</span>
                 <button class="btn btn-ghost" @click="showPriceForm = false">取消</button>
                 <button class="btn btn-accent" @click="savePrice">保存</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OCR 引擎下载弹窗 -->
+          <div class="modal-overlay" v-if="showOcrEngineModal" @click.self="showOcrEngineModal = false">
+            <div class="modal modal--ocr">
+              <div class="modal-head">
+                <h4>下载高精度 OCR 引擎</h4>
+                <button class="btn-icon" @click="showOcrEngineModal = false"><AppIcon icon="x" :size="13" /></button>
+              </div>
+              <div class="modal-body">
+                <p class="ocr-dl-desc">
+                  装备截图高精度识别（PaddleOCR-json）。从 Gitee 自动下载约 55MB 分卷并解压安装，一次安装永久使用，后续无需再下载。
+                </p>
+
+                <template v-if="ocrEngineState === 'downloading'">
+                  <div class="update-progress">
+                    <div class="update-progress-bar" :style="{ width: Math.round(ocrEngineProgress * 100) + '%' }"></div>
+                    <span class="update-progress-text">{{ Math.round(ocrEngineProgress * 100) }}%</span>
+                  </div>
+                  <div class="ocr-dl-meta">
+                    <span>已下载 {{ formatBytes(ocrEngineReceived) }} / {{ formatBytes(ocrEngineTotal) }}</span>
+                    <span v-if="ocrEngineSpeed > 0">速度 {{ formatBytes(ocrEngineSpeed) }}/s</span>
+                  </div>
+                </template>
+
+                <div class="ocr-extracting" v-else-if="ocrEngineState === 'extracting'">
+                  <span class="ocr-extracting-icon"><AppIcon icon="loader" :size="14" class="icon-spin" /></span>
+                  <span>下载完成，正在解压引擎…（约 240MB，可能需要 1 分钟，请耐心等待，不要关闭应用）</span>
+                </div>
+
+                <div class="ocr-done" v-else-if="ocrEngineState === 'done'">
+                  <AppIcon icon="circle-check" :size="13" /> 引擎安装完成，识别已升级为高精度
+                </div>
+
+                <template v-else-if="ocrEngineState === 'error'">
+                  <div class="update-error">下载失败：{{ ocrEngineError }}</div>
+                </template>
+
+                <div class="ocr-dl-actions">
+                  <template v-if="ocrEngineState === 'idle' || ocrEngineState === 'error'">
+                    <button class="btn btn-accent" @click="downloadOcrEngine">{{ ocrEngineState === 'error' ? '重试' : '开始下载' }}</button>
+                    <button class="btn btn-ghost" @click="showOcrEngineModal = false">{{ ocrEngineState === 'error' ? '关闭' : '取消' }}</button>
+                  </template>
+                  <button v-else class="btn btn-ghost" @click="showOcrEngineModal = false">
+                    {{ ocrEngineState === 'done' ? '完成' : '后台运行' }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -373,7 +444,7 @@
             <div class="modal modal--wide">
               <div class="modal-head">
                 <h4>{{ historyItemName }} — 价格变化历史</h4>
-                <button class="btn-icon" @click="showHistoryModal = false">✕</button>
+                <button class="btn-icon" @click="showHistoryModal = false"><AppIcon icon="x" :size="13" /></button>
               </div>
               <div class="modal-body">
                 <!-- 折线图 -->
@@ -510,6 +581,7 @@ import { ref, reactive, computed, onMounted, onActivated, onUnmounted, watch, ne
 import { convertToPinyin } from 'tiny-pinyin'
 import { useAppStore } from '@/stores'
 import ImageViewer from '@/components/ImageViewer.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { parseOcrText } from '@/utils/fieldParser'
 
 const appStore = useAppStore()
@@ -1003,6 +1075,17 @@ function onDocumentClick(e: MouseEvent) {
   }
 }
 // ── 预计算名称索引：从 price_params 实时查名字并去重（同主搜索一致，按当前大区过滤）
+// 名字→拼音是确定且与大区无关的：跨大区切换/多次重建 nameIndex 时复用缓存，
+// 避免每次都对整库名字重复跑 tiny-pinyin（切大区主线程卡顿主因之一）。
+const namePyCache = new Map<string, { py: string; fullPy: string }>()
+function pinyinOf(name: string) {
+  let hit = namePyCache.get(name)
+  if (!hit) {
+    hit = { py: toPinyinInitials(name), fullPy: toFullPinyin(name) }
+    namePyCache.set(name, hit)
+  }
+  return hit
+}
 const nameIndex = computed(() => {
   const result: Array<{ name: string; slot: string; py: string; fullPy: string }> = []
   const seen = new Set<string>()
@@ -1011,7 +1094,8 @@ const nameIndex = computed(() => {
     if (sid > 0 && p.server_id !== sid) continue
     if (seen.has(p.item_name)) continue
     seen.add(p.item_name)
-    result.push({ name: p.item_name, slot: p.category, py: toPinyinInitials(p.item_name), fullPy: toFullPinyin(p.item_name) })
+    const pyp = pinyinOf(p.item_name)
+    result.push({ name: p.item_name, slot: p.category, py: pyp.py, fullPy: pyp.fullPy })
   }
   return result
 })
@@ -1166,27 +1250,28 @@ function parseLevelSlot(name: string): string {
   return ''
 }
 
+// 图鉴索引（装备/特殊/材料 按 name 分组）仅依赖静态图鉴数据，与大区/筛选无关：
+// 提到组件级缓存，避免每次切换大区/筛选时都在 mergedList 里重建这份 Map。
+const ENCYC_EQUIP_SLOTS = ['武器','头盔','上装','下装','护手','鞋子','面具','项链','戒指']
+const ENCYC_SPECIAL_SLOTS = ['翅膀','符咒','灵魄','八阵图','子女','灵兽','元神','灵珠','奥义','羽灵']
+const encycIndex = computed(() => {
+  const idx = new Map<string, { name: string; slot: string; level: number; job_limit: string; category: string; grade?: number; drop_sources?: string; _source: string }>()
+  for (const e of encycData.value) {
+    const isEquip = ENCYC_EQUIP_SLOTS.includes(e.slot)
+    const isSpecial = ENCYC_SPECIAL_SLOTS.includes(e.slot)
+    const k = isEquip ? `装备:${e.name}` : (isSpecial ? `${e.slot}:${e.name}` : `材料:${e.name}`)
+    if (!idx.has(k)) idx.set(k, e)
+    if (isSpecial) {
+      const k2 = `其他:${e.name}`
+      if (!idx.has(k2)) idx.set(k2, e)
+    }
+  }
+  return idx
+})
+
   const mergedList = computed(() => {
     const cat = priceCategoryFilter.value
     let items: Array<{ _key: string; _baseName: string; item_name: string; category: string; _detail: string; quality: string; craft_level: string; attr_notes: string; benchmark_price: number; market_price: number; profit_margin: number | null; updated_at: string; is_hot: number; price_id: number }> = []
-
-    const EQUIP_SLOTS = ['武器','头盔','上装','下装','护手','鞋子','面具','项链','戒指']
-    const SPECIAL_SLOTS = ['翅膀','符咒','灵魄','八阵图','子女','灵兽','元神','灵珠','奥义','羽灵']
-
-    // ── 构建图鉴索引（按 name 快速查找） ──
-    const encycByKey = new Map<string, { name: string; slot: string; level: number; job_limit: string; category: string; grade?: number; drop_sources?: string; _source: string }>()
-    for (const e of encycData.value) {
-      const isEquip = EQUIP_SLOTS.includes(e.slot)
-      const isSpecial = SPECIAL_SLOTS.includes(e.slot)
-      // 装备 → 装备:name，特殊 → slot:name + 其他:name，材料 → 材料:name
-      const k = isEquip ? `装备:${e.name}` : (isSpecial ? `${e.slot}:${e.name}` : `材料:${e.name}`)
-      if (!encycByKey.has(k)) encycByKey.set(k, e)
-      // 特殊品类额外挂到"其他"索引
-      if (isSpecial) {
-        const k2 = `其他:${e.name}`
-        if (!encycByKey.has(k2)) encycByKey.set(k2, e)
-      }
-    }
 
     // ── 分类映射：旧分类 → 新三分类
     const knownCats = new Set(['装备', '材料', '灵魄', '八阵图', '子女', '奥义', '灵珠', '羽灵', '元神', '灵兽'])
@@ -1200,6 +1285,7 @@ function parseLevelSlot(name: string): string {
       return !cat || mapCat(p.category) === cat
     })
 
+    const encycByKey = encycIndex.value
     for (const p of filteredPrices) {
 
       // 查找匹配的图鉴条目
@@ -1221,7 +1307,7 @@ function parseLevelSlot(name: string): string {
           const storedLv = (p as any).equip_level || 0
           const storedJob = (p as any).equip_job || ''
           if (encyc) {
-            if (EQUIP_SLOTS.includes(encyc.slot)) {
+            if (ENCYC_EQUIP_SLOTS.includes(encyc.slot)) {
               let detail = `${storedLv || encyc.level}级 / ${encyc.slot}`
               const jobLabel = storedJob || encyc.job_limit || ''
               if (jobLabel) detail += ` · ${jobLabel}`
@@ -1750,8 +1836,196 @@ function clearFilters() {
   hotFilterOnly.value = false
 }
 
-function openCalculator() {
-  window.electronAPI.launchApp('calc.exe')
+// ── 表格动态分页：切大区 / 筛选 / 排序只先渲染首屏，滚动到底才逐批追加，
+// 避免整份大区列表一次性挂载（几百行 input + SVG 走势图）造成卡顿 ──
+const RENDER_STEP = 120
+const visibleCount = ref(RENDER_STEP)
+const tableWrapRef = ref<HTMLElement | null>(null)
+let pageRafId = 0
+
+const displayList = computed(() => mergedList.value.slice(0, visibleCount.value))
+const hasMoreRows = computed(() => visibleCount.value < mergedList.value.length)
+
+function growPage() {
+  const list = mergedList.value
+  if (visibleCount.value < list.length) {
+    visibleCount.value = Math.min(visibleCount.value + RENDER_STEP, list.length)
+  }
+}
+
+// 一屏铺不满（列表较大但首屏未出现滚动条）时，逐帧补行直到可滚动或到底，
+// 避免"看着像被截断"；一旦可滚动即停，其余交给滚动加载，控制 DOM 常驻规模。
+function ensureScrollable() {
+  const el = tableWrapRef.value
+  if (!el || pageRafId) return
+  const list = mergedList.value
+  if (visibleCount.value >= list.length) return
+  if (el.scrollHeight <= el.clientHeight) {
+    growPage()
+    pageRafId = requestAnimationFrame(() => { pageRafId = 0; ensureScrollable() })
+  }
+}
+
+// 滚动接近底部 → 追加一批
+function onTableScroll() {
+  const el = tableWrapRef.value
+  if (!el || !hasMoreRows.value || pageRafId) return
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 160) {
+    pageRafId = requestAnimationFrame(() => { pageRafId = 0; growPage() })
+  }
+}
+
+// 查询上下文（大区 + 搜索/分类/热门/区间 + 排序）变化 → 整批内容更换，回到首屏重新分页
+const queryContext = computed(() =>
+  [effectiveServerId.value, priceSearch.value, priceCategoryFilter.value,
+   priceRangeFilter.value.join(','), hotFilterOnly.value, shopItemsOnly.value,
+   sortField.value ?? '', sortDir.value].join('|')
+)
+watch(queryContext, () => {
+  // 大区/筛选/排序切换 = 换一批数据，回到首屏从 RENDER_STEP 开始分页
+  visibleCount.value = mergedList.value.length
+    ? Math.min(RENDER_STEP, mergedList.value.length)
+    : RENDER_STEP
+  requestAnimationFrame(ensureScrollable)
+}, { immediate: true })
+
+// 数据本身变化但查询上下文未变（如某行价格保存后重载、删行）：保持已渲染规模，
+// 列表变短时回落，避免只显示到旧截断位置之后露出空白。
+watch(mergedList, (list) => {
+  if (visibleCount.value > list.length) {
+    visibleCount.value = Math.max(RENDER_STEP, list.length)
+  }
+  requestAnimationFrame(ensureScrollable)
+})
+
+// ── Excel 导出 / 导入（表头：物品名称 | 分类 | 品质 | 备注 | 成本价(万) | 市场价(万) | 热门） ──
+async function exportPrices() {
+  const rows = mergedList.value.map(r => ({
+    item_name: r.item_name,
+    category: r.category || '',
+    quality: r.quality || '',
+    attr_notes: r.attr_notes || '',
+    benchmark_wan: Number((r.benchmark_price * 10000).toFixed(4)),
+    market_wan: Number((r.market_price * 10000).toFixed(4)),
+    hot: !!r.is_hot,
+  }))
+  const r = await window.electronAPI.exportPrices(rows)
+  if (!r.ok && r.error !== '已取消') alert('导出失败：' + (r.error || '未知错误'))
+}
+
+async function importPrices() {
+  const r = await window.electronAPI.importPrices()
+  if (!r.ok) {
+    if (r.error !== '已取消') alert('导入失败：' + (r.error || '未知错误'))
+    return
+  }
+  const rows = r.rows || []
+  if (rows.length === 0) { alert('文件中没有可导入的数据行'); return }
+
+  let added = 0, updated = 0, skipped = 0
+  for (const row of rows) {
+    if (!row.item_name) { skipped++; continue }
+    // 单位换算：Excel 存「万」，库中存「亿」（约定见 AGENTS.md）
+    const bench = Number(row.benchmark_wan) || 0
+    const mark = Number(row.market_wan) || 0
+    const hot = row.hot ? 1 : 0
+    const exist = prices.value.find(p =>
+      p.item_name === row.item_name &&
+      (p.category || '') === (row.category || '') &&
+      (p.quality || '') === (row.quality || '')
+    )
+    try {
+      if (exist) {
+        await window.electronAPI.dbQuery(
+          `UPDATE price_params SET benchmark_price=?, market_price=?, attr_notes=?, is_hot=?, updated_at=datetime('now','localtime') WHERE id=?`,
+          [bench / 10000, mark / 10000, row.attr_notes || '', hot, exist.id]
+        )
+        updated++
+      } else {
+        await window.electronAPI.dbQuery(
+          `INSERT INTO price_params (item_name, category, server_id, quality, attr_notes, benchmark_price, market_price, is_hot, updated_at)
+           VALUES (?,?,?,?,?,?,?,?,datetime('now','localtime'))`,
+          [row.item_name, row.category || '', appStore.currentServerId, row.quality || '', row.attr_notes || '', bench / 10000, mark / 10000, hot]
+        )
+        added++
+      }
+    } catch { skipped++ }
+  }
+  await loadPrices()
+  alert(`导入完成：更新 ${updated} 条，新增 ${added} 条${skipped ? `，跳过 ${skipped} 条无效行` : ''}`)
+}
+
+// ── OCR 高精度引擎（下载/安装状态，提示横幅 + 弹窗） ──
+const ocrEngineInstalled = ref(true)
+const ocrEngineGiteeConfigured = ref(true)
+const showOcrEngineModal = ref(false)
+const ocrEngineState = ref<'idle' | 'downloading' | 'extracting' | 'done' | 'error'>('idle')
+const ocrEngineProgress = ref(0)
+const ocrEngineReceived = ref(0)
+const ocrEngineTotal = ref(0)
+const ocrEngineSpeed = ref(0)
+const ocrEngineError = ref('')
+// 速度计算用：上一次进度回调的时间戳与已下载字节数（EMA 平滑）
+let ocrSpeedSample = { t: 0, bytes: 0 }
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return '0 MB'
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+async function checkOcrEngine() {
+  try {
+    const st = await window.electronAPI.ocrEngineStatus()
+    ocrEngineInstalled.value = st.installed
+    ocrEngineGiteeConfigured.value = st.giteeConfigured
+  } catch { /* ignore */ }
+}
+
+async function downloadOcrEngine() {
+  if (ocrEngineState.value === 'downloading' || ocrEngineState.value === 'extracting') return
+  ocrEngineState.value = 'downloading'
+  ocrEngineError.value = ''
+  ocrEngineProgress.value = 0
+  ocrEngineReceived.value = 0
+  ocrEngineTotal.value = 0
+  ocrEngineSpeed.value = 0
+  ocrSpeedSample = { t: 0, bytes: 0 }
+  const res = await window.electronAPI.downloadOcrEngine()
+  if (res.ok) {
+    ocrEngineState.value = 'done'
+    ocrEngineInstalled.value = true
+    // 展示完成状态后自动关闭
+    setTimeout(() => { showOcrEngineModal.value = false }, 1500)
+  } else {
+    ocrEngineState.value = 'error'
+    ocrEngineError.value = res.error || '未知错误，请稍后重试'
+  }
+}
+
+function onOcrEngineProgress(p: { stage: 'downloading' | 'extracting'; received: number; total: number }) {
+  if (p.stage === 'downloading') {
+    ocrEngineState.value = 'downloading'
+    ocrEngineReceived.value = p.received
+    ocrEngineTotal.value = p.total
+    ocrEngineProgress.value = p.total > 0 ? p.received / p.total : 0
+    // 瞬时速度（EMA 平滑），用于提示网速
+    const now = Date.now()
+    if (ocrSpeedSample.t > 0 && now > ocrSpeedSample.t) {
+      const v = (p.received - ocrSpeedSample.bytes) / ((now - ocrSpeedSample.t) / 1000)
+      ocrEngineSpeed.value = ocrEngineSpeed.value === 0 ? v : ocrEngineSpeed.value * 0.7 + v * 0.3
+    }
+    ocrSpeedSample = { t: now, bytes: p.received }
+  } else if (p.stage === 'extracting') {
+    ocrEngineState.value = 'extracting'
+  }
+}
+
+// ESC 依次关闭页面内弹窗
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  if (showPriceForm.value) showPriceForm.value = false
+  else if (showOcrEngineModal.value) showOcrEngineModal.value = false
+  else if (showHistoryModal.value) showHistoryModal.value = false
 }
 
 function toggleSort(field: 'market_price' | 'profit_margin' | 'updated_at') {
@@ -2234,8 +2508,12 @@ onMounted(() => {
   loadInventoryNames()
   loadImageCache()
   document.addEventListener('click', onDocumentClick)
+  window.addEventListener('keydown', onGlobalKeydown)
   // OCR 进度（语言包下载 / 识别），仅在 ocrBusy 时更新避免进度显示残留
   window.electronAPI.onOcrProgress(p => { if (ocrBusy.value) ocrProgress.value = p })
+  // 高精度引擎状态与下载进度
+  checkOcrEngine()
+  window.electronAPI.onOcrEngineProgress(onOcrEngineProgress)
 })
 
 // keep-alive 切回时刷新物价列表（配号中心等页面可能新增了物品）
@@ -2251,20 +2529,22 @@ watch(() => appStore.currentServerId, () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', onDocumentClick)
+  window.removeEventListener('keydown', onGlobalKeydown)
 })
 </script>
 
 <style scoped>
 .page { height: 100%; display: flex; flex-direction: column; }
 .page-head { margin-bottom: 22px; }
-.page-head h2 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
-.page-head p { color: var(--color-text-secondary); font-size: 13.5px; margin-top: 4px; }
+.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
+.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 4px; }
 
 /* ── 卡片 ── */
 .card {
   flex: 1; background: var(--color-surface-1);
-  border: 0.5px solid var(--color-border-light);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   padding: 18px 20px; display: flex; flex-direction: column;
   overflow: visible;
 }
@@ -2272,13 +2552,13 @@ onUnmounted(() => {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 14px; flex-shrink: 0; gap: 12px; flex-wrap: wrap;
 }
-.card-head h3 { font-size: 14px; font-weight: 600; }
+.card-head h3 { font-size: var(--text-md); font-weight: 600; }
 .head-actions { display: flex; align-items: center; gap: 8px; }
 
 /* ── Segmented ── */
 .segmented { display: flex; border-radius: 5px; overflow: hidden; border: 0.5px solid var(--color-border); }
 .seg-btn {
-  padding: 5px 12px; font-size: 12px; border: none; cursor: pointer;
+  padding: 5px 12px; font-size: var(--text-xs); border: none; cursor: pointer;
   background: transparent; color: var(--color-text-secondary);
   font-family: inherit; transition: all 0.1s;
 }
@@ -2287,16 +2567,16 @@ onUnmounted(() => {
 
 /* ── 表格 ── */
 .table-wrap { flex: 1; overflow-y: auto; min-height: 0; }
-.table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-xs); }
 .table th {
-  text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600;
+  text-align: left; padding: 8px 10px; font-size: var(--text-micro); font-weight: 600;
   color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.03em;
   border-bottom: 0.5px solid var(--color-border-light); position: sticky; top: 0;
   background: var(--color-surface-1); user-select: none;
 }
 .th-sort { cursor: pointer; transition: color 0.1s; }
 .th-sort:hover { color: var(--color-accent); }
-.sort-arrow { font-size: 9px; margin-left: 2px; color: var(--color-accent); }
+.sort-arrow { font-size: var(--text-micro); margin-left: 2px; color: var(--color-accent); }
 .sort-arrow--inactive { color: var(--color-text-tertiary); opacity: 0.3; }
 .table td { padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-light); }
 .table tbody tr:hover { background: var(--color-surface-2); }
@@ -2310,14 +2590,14 @@ onUnmounted(() => {
 .td-name-text { cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .td-name-text:hover { color: var(--color-accent); }
 .td-craft-lv {
-  font-size: 11px; font-weight: 400; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 400; color: var(--color-text-tertiary);
   white-space: nowrap; flex-shrink: 0;
 }
 .td-craft-lv::before {
   content: '·';
   margin-right: 1px;
 }
-.copy-name-btn { font-size: 11px; opacity: 0; transition: opacity 0.12s; display: inline-flex; align-items: center; }
+.copy-name-btn { font-size: var(--text-micro); opacity: 0; transition: opacity 0.12s; display: inline-flex; align-items: center; }
 .table tbody tr:hover .copy-name-btn { opacity: 1; }
 .copy-icon {
   display: inline-block; width: 10px; height: 10px;
@@ -2341,38 +2621,31 @@ onUnmounted(() => {
 .td-muted { color: var(--color-text-tertiary); }
 
 .badge-sm {
-  font-size: 10.5px; font-weight: 500; padding: 1px 7px; border-radius: 8px;
+  font-size: var(--text-micro); font-weight: 500; padding: 1px 7px; border-radius: 8px;
   background: var(--color-accent-bg); color: var(--color-accent);
 }
 
 /* ── 热门切换 ── */
 .hot-toggle {
-  background: none; border: none; cursor: pointer; font-size: 15px;
-  color: var(--color-text-tertiary); transition: all 0.1s; padding: 2px 4px;
+  background: none; border: none; cursor: pointer; font-size: var(--text-md);
+  color: var(--color-text-tertiary); opacity: 0.4; transition: all 0.1s; padding: 2px 4px;
 }
-.hot-toggle:hover { color: var(--color-warning); }
-.hot-toggle--on { color: var(--color-warning); }
+.hot-toggle:hover { color: var(--color-warning); opacity: 0.8; }
+.hot-toggle--on { color: var(--color-warning); opacity: 1; }
+.hot-toggle--on :deep(svg) { fill: currentColor; filter: drop-shadow(0 0 3px rgba(232, 163, 61, 0.45)); }
 
 /* ── 按钮 ── */
 .btn {
   border: none; border-radius: 5px; cursor: pointer;
-  font-size: 12.5px; font-weight: 500; padding: 5px 12px;
+  font-size: var(--text-xs); font-weight: 500; padding: 5px 12px;
   transition: all 0.12s ease; font-family: inherit; white-space: nowrap;
 }
 .btn-accent { background: var(--color-accent); color: #fff; }
 .btn-accent:hover { background: var(--color-accent-hover); }
 .btn-ghost { background: transparent; color: var(--color-text-secondary); }
 .btn-ghost:hover { background: var(--color-hover); color: var(--color-text); }
-.btn-calc {
-  border: 0.5px solid var(--color-border); border-radius: 5px; cursor: pointer;
-  font-size: 12px; font-weight: 500; padding: 4px 10px;
-  background: var(--color-surface-2); color: var(--color-text-secondary);
-  font-family: inherit; transition: all 0.12s; white-space: nowrap;
-  display: inline-flex; align-items: center; gap: 4px;
-}
-.btn-calc:hover { background: var(--color-accent-bg); color: var(--color-accent); border-color: var(--color-accent); }
 .btn-icon {
-  background: none; border: none; cursor: pointer; font-size: 13px;
+  background: none; border: none; cursor: pointer; font-size: var(--text-sm);
   color: var(--color-text-tertiary); padding: 2px 6px; border-radius: 3px; transition: all 0.12s;
 }
 .btn-icon:hover { background: var(--color-surface-2); color: var(--color-text); transform: scale(1.15); }
@@ -2382,32 +2655,47 @@ onUnmounted(() => {
 .btn-icon--warn:hover { background: rgba(226,192,68,0.15); transform: scale(1.15); }
 
 .select-sm {
-  padding: 5px 8px; font-size: 12px; font-family: inherit;
+  padding: 5px 8px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 5px; cursor: pointer;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;
 }
 .select-sm:focus { outline: none; border-color: var(--color-accent-ring); }
+/* 原生 select：appearance:none + 自定义 chevron（参照 global.css .server-select） */
+select.select-sm,
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+select.select-sm option,
+select.input option {
+  background: var(--color-surface-1);
+  color: var(--color-text);
+}
 
 /* ── 输入框 ── */
 .input {
-  width: 100%; padding: 7px 10px; font-size: 12.5px; font-family: inherit;
+  width: 100%; padding: 7px 10px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 5px;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
   transition: border-color 0.1s;
 }
 .input:focus { outline: none; border-color: var(--color-accent-ring); }
 
 .inline-input {
-  width: 70px; padding: 3px 6px; font-size: 12px; font-family: inherit;
+  width: 70px; padding: 3px 6px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid transparent; border-radius: 4px; text-align: right;
+  border: 0.5px solid transparent; border-radius: var(--radius-sm); text-align: right;
   transition: border-color 0.1s;
   -moz-appearance: textfield;
 }
 .inline-input::-webkit-inner-spin-button,
 .inline-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .inline-input:focus { outline: none; border-color: var(--color-accent-ring); background: var(--color-surface-1); }
-.inline-input::placeholder { color: var(--color-text-tertiary); font-size: 11px; }
+.inline-input::placeholder { color: var(--color-text-tertiary); font-size: var(--text-micro); }
 .inline-input--wide { width: 110px; text-align: left; }
 .inline-input--price { width: 60px; }
 
@@ -2425,7 +2713,7 @@ onUnmounted(() => {
 
 /* ── 筛选行 ── */
 .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-.result-count { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 10px; }
+.result-count { font-size: var(--text-xs); color: var(--color-text-tertiary); margin-bottom: 10px; }
 .result-count strong { color: var(--color-text); }
 .search-input { width: 320px !important; flex-shrink: 0; }
 
@@ -2433,37 +2721,37 @@ onUnmounted(() => {
 .search-sug-wrap { position: relative; display: inline-block; }
 .search-clear-btn {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; cursor: pointer; font-size: 12px;
+  background: none; border: none; cursor: pointer; font-size: var(--text-xs);
   color: var(--color-text-tertiary); padding: 2px 4px; border-radius: 3px;
   line-height: 1; z-index: 1;
 }
 .search-clear-btn:hover { color: var(--color-text); background: var(--color-surface-2); }
 .sug-dropdown {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border);
-  border-radius: 6px; list-style: none; margin: 4px 0 0; padding: 4px 0;
-  max-height: 260px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm); list-style: none; margin: 4px 0 0; padding: 4px 0;
+  max-height: 260px; overflow-y: auto; box-shadow: var(--shadow-card);
 }
 .sug-dropdown li {
-  padding: 6px 12px; cursor: pointer; font-size: 12.5px;
+  padding: 6px 12px; cursor: pointer; font-size: var(--text-xs);
   display: flex; justify-content: space-between; align-items: center;
   transition: background 0.08s;
 }
 .sug-dropdown li:hover,
 .sug-item--active { background: var(--color-accent-bg); }
 .sug-overflow {
-  padding: 6px 12px; font-size: 11px; color: var(--color-text-tertiary);
+  padding: 6px 12px; font-size: var(--text-micro); color: var(--color-text-tertiary);
   text-align: center; border-top: 0.5px solid var(--color-border-light);
   cursor: default; pointer-events: none;
 }
 .sug-name { color: var(--color-text); }
-.sug-slot { color: var(--color-text-tertiary); font-size: 11px; }
+.sug-slot { color: var(--color-text-tertiary); font-size: var(--text-micro); }
 
 /* ── 最近搜索下拉 ── */
 .recent-dropdown {
   position: absolute; top: 100%; left: 0; z-index: 100;
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border);
-  border-radius: 6px; margin: 4px 0 0; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm); margin: 4px 0 0; box-shadow: var(--shadow-card);
   min-width: 640px; padding: 10px 12px 12px;
 }
 .recent-head {
@@ -2471,11 +2759,11 @@ onUnmounted(() => {
   margin-bottom: 8px;
 }
 .recent-head-title {
-  font-size: 11.5px; font-weight: 550; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); font-weight: 550; color: var(--color-text-tertiary);
 }
 .recent-head-clear {
   background: none; border: none; cursor: pointer;
-  font-size: 11px; color: var(--color-text-tertiary); font-family: inherit;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); font-family: inherit;
   padding: 2px 6px; border-radius: 3px;
 }
 .recent-head-clear:hover { background: var(--color-surface-2); color: var(--color-danger); }
@@ -2485,7 +2773,7 @@ onUnmounted(() => {
   gap: 6px;
 }
 .recent-chip {
-  padding: 6px 8px; font-size: 12px; font-family: inherit;
+  padding: 6px 8px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
   border: 0.5px solid var(--color-border-light); border-radius: 5px;
   cursor: pointer; text-align: center; overflow: hidden;
@@ -2497,7 +2785,7 @@ onUnmounted(() => {
   color: var(--color-accent);
 }
 .hot-filter-label {
-  display: flex; align-items: center; gap: 5px; font-size: 12px;
+  display: flex; align-items: center; gap: 5px; font-size: var(--text-xs);
   color: var(--color-text-secondary); cursor: pointer; user-select: none;
   padding: 4px 8px; border-radius: 5px; border: 0.5px solid var(--color-border);
   transition: all 0.1s; white-space: nowrap;
@@ -2512,16 +2800,21 @@ onUnmounted(() => {
   display: flex; align-items: center; gap: 6px; min-width: 110px;
 }
 .multi-select-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.multi-select-arrow { font-size: 8px; opacity: 0.5; }
+.multi-select-arrow {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+}
+.multi-select-wrap--open .multi-select-arrow { transform: rotate(180deg); }
 .multi-select-dropdown {
   position: absolute; top: 100%; left: 0; z-index: 100;
   margin-top: 3px; background: var(--color-surface-2);
-  border: 0.5px solid var(--color-border); border-radius: 6px;
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
   padding: 6px 4px; display: flex; flex-direction: column; gap: 1px;
-  min-width: 120px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  min-width: 120px; box-shadow: var(--shadow-card);
 }
 .range-check-label {
-  display: flex; align-items: center; gap: 6px; font-size: 12px;
+  display: flex; align-items: center; gap: 6px; font-size: var(--text-xs);
   color: var(--color-text-secondary); cursor: pointer; user-select: none;
   padding: 4px 8px; border-radius: 4px; transition: background 0.08s;
   white-space: nowrap;
@@ -2531,7 +2824,7 @@ onUnmounted(() => {
 
 .btn-ghost-xs {
   background: transparent; border: 0.5px solid var(--color-border);
-  color: var(--color-text-tertiary); font-size: 11px; padding: 4px 10px;
+  color: var(--color-text-tertiary); font-size: var(--text-micro); padding: 4px 10px;
   border-radius: 5px; cursor: pointer; font-family: inherit; transition: all 0.12s;
 }
 .btn-ghost-xs:hover { color: var(--color-text); border-color: var(--color-text-secondary); }
@@ -2540,24 +2833,36 @@ onUnmounted(() => {
 .form-row { display: flex; flex-direction: column; gap: 4px; }
 .form-row--2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-row--3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.form-label { font-size: 11.5px; font-weight: 500; color: var(--color-text-secondary); }
+.form-label { font-size: var(--text-micro); font-weight: 500; color: var(--color-text-secondary); }
 
 /* ── 弹层 ── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  position: fixed; inset: 0; background: rgba(5,6,9,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center; z-index: 200;
+  animation: overlay-in 0.15s ease-out;
 }
 .modal {
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border);
-  border-radius: var(--radius-lg); width: 420px; max-width: 90vw;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border-radius: var(--radius-lg); width: 420px; max-width: 92vw;
+  box-shadow: var(--shadow-pop);
+  animation: modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+  /* 适配小屏（笔记本）：整体不超出视口，头部固定、内容区滚动 */
+  display: flex; flex-direction: column;
+  max-height: min(680px, 90vh);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .modal { background: var(--color-surface-1); }
 }
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px; border-bottom: 0.5px solid var(--color-border-light);
 }
-.modal-head h4 { font-size: 15px; font-weight: 600; }
-.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-head h4 { font-size: var(--text-md); font-weight: 600; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
 .modal-foot {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 14px 20px; border-top: 0.5px solid var(--color-border-light);
@@ -2566,7 +2871,7 @@ onUnmounted(() => {
 /* ── 通用 ── */
 .hint {
   color: var(--color-text-tertiary); text-align: center;
-  padding: 48px 20px; font-size: 12.5px;
+  padding: 48px 20px; font-size: var(--text-xs);
   flex: 1; display: flex; align-items: center; justify-content: center;
 }
 .text-success { color: var(--color-success); }
@@ -2574,7 +2879,7 @@ onUnmounted(() => {
 .text-warning { color: var(--color-warning); }
 
 /* ── 趋势箭头（内联） ── */
-.trend-inline { font-size: 10px; margin-left: 3px; vertical-align: middle; }
+.trend-inline { font-size: var(--text-micro); margin-left: 3px; vertical-align: middle; }
 .trend-up { color: var(--color-danger); }
 .trend-down { color: var(--color-success); }
 .trend-flat { color: var(--color-text-tertiary); }
@@ -2589,7 +2894,7 @@ onUnmounted(() => {
 }
 .sparkline-svg:hover { background: var(--color-surface-2); }
 .sparkline-empty {
-  font-size: 11px; color: var(--color-text-tertiary);
+  font-size: var(--text-micro); color: var(--color-text-tertiary);
   cursor: pointer; padding: 2px 6px; border-radius: 3px;
   transition: color 0.12s, background 0.12s;
 }
@@ -2597,15 +2902,22 @@ onUnmounted(() => {
 
 /* ── 宽弹层 ── */
 .modal--wide { width: 680px; max-width: 92vw; }
+.modal--ocr { width: 440px; }
+.ocr-dl-desc { font-size: var(--text-xs); line-height: 1.6; color: var(--color-text-tertiary); }
+.ocr-dl-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* OCR 引擎横幅（页面级，替代原侧边栏提示） */
+.ocr-banner { margin: 0 0 12px; flex-direction: row; align-items: center; gap: 10px; }
+.ocr-banner .ocr-engine-hint-text { flex: 1; }
 
 /* ── 历史图表 ── */
 .history-chart-wrap { margin-bottom: 16px; }
 .chart { width: 100%; height: auto; display: block; }
-.chart-label { font-size: 10px; fill: var(--color-text-tertiary); font-family: inherit; }
-.chart-legend { font-size: 10px; fill: var(--color-text-secondary); font-family: inherit; }
-.chart-extreme-label { font-size: 9.5px; font-weight: 600; font-family: inherit; pointer-events: none; paint-order: stroke fill; stroke: var(--color-surface-1); stroke-width: 2.5px; stroke-linecap: round; stroke-linejoin: round; }
-.chart-tooltip-date { font-size: 10px; fill: var(--color-text-tertiary); font-family: inherit; }
-.chart-tooltip-value { font-size: 12px; font-weight: 650; font-family: inherit; }
+.chart-label { font-size: var(--text-micro); fill: var(--color-text-tertiary); font-family: inherit; }
+.chart-legend { font-size: var(--text-micro); fill: var(--color-text-secondary); font-family: inherit; }
+.chart-extreme-label { font-size: var(--text-micro); font-weight: 600; font-family: inherit; pointer-events: none; paint-order: stroke fill; stroke: var(--color-surface-1); stroke-width: 2.5px; stroke-linecap: round; stroke-linejoin: round; }
+.chart-tooltip-date { font-size: var(--text-micro); fill: var(--color-text-tertiary); font-family: inherit; }
+.chart-tooltip-value { font-size: var(--text-xs); font-weight: 650; font-family: inherit; }
 .chart-tooltip-group { pointer-events: none; }
 
 /* ── 历史表格 ── */
@@ -2624,7 +2936,7 @@ onUnmounted(() => {
   display: inline-block;
   max-width: 100%;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .attr-text-inner {
   display: block;
@@ -2641,14 +2953,14 @@ onUnmounted(() => {
   width: max-content;
   padding: 8px 12px;
   background: var(--color-surface-1);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-all;
   z-index: 50;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-card);
   color: var(--color-text);
 }
 .attr-text:hover .attr-tooltip {
@@ -2658,41 +2970,41 @@ onUnmounted(() => {
 .image-upload-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .image-thumb-wrap { position: relative; width: 64px; height: 64px; border-radius: 4px; overflow: hidden; border: 1px solid var(--color-border); }
 .image-thumb { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
-.image-thumb-del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.image-thumb-del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: var(--text-micro); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .td-name-row { display: flex; align-items: center; gap: 4px; }
 .note-picker-wrap { position: relative; display: flex; gap: 4px; }
 .note-picker-btn { flex-shrink: 0; width: 28px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface-2); color: var(--color-text-secondary); cursor: pointer; }
 .note-picker-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
 .note-picker { position: absolute; top: calc(100% + 4px); right: 0; z-index: 60; width: 240px; max-height: 220px; display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface-1); box-shadow: 0 4px 16px rgba(0,0,0,0.18); overflow: hidden; }
-.note-picker-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--color-border-light); font-size: 12px; color: var(--color-text-secondary); }
+.note-picker-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--color-border-light); font-size: var(--text-xs); color: var(--color-text-secondary); }
 .note-picker-list { overflow-y: auto; padding: 4px 0; }
-.note-picker-item { display: flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; }
+.note-picker-item { display: flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: var(--text-xs); cursor: pointer; }
 .note-picker-item:hover { background: var(--color-hover); }
-.note-picker-empty { padding: 12px 10px; font-size: 12px; color: var(--color-text-tertiary); }
-.attr-arrow { cursor: pointer; color: var(--color-text-tertiary); font-size: 11px; transition: transform 0.12s; user-select: none; flex-shrink: 0; }
+.note-picker-empty { padding: 12px 10px; font-size: var(--text-xs); color: var(--color-text-tertiary); }
+.attr-arrow { cursor: pointer; color: var(--color-text-tertiary); font-size: var(--text-micro); transition: transform 0.12s; user-select: none; flex-shrink: 0; }
 .attr-arrow:hover { color: var(--color-accent); }
 .attr-arrow--open { transform: rotate(90deg); color: var(--color-accent); }
 /* 展开行：colspan 合并整行，属性横向平铺自动换行 */
 .td-attrs-row { padding: 6px 12px 8px !important; background: var(--color-surface-2); }
 .td-attrs-list { display: flex; flex-wrap: wrap; gap: 5px; width: 100%; }
 /* 每个属性一个输入框样式的格子，可点击编辑 */
-.td-attr-item { font-size: 12px; line-height: 1.5; padding: 2px 9px; border-radius: 4px; background: var(--color-surface-1); border: 1px solid var(--color-border); color: var(--color-text); white-space: nowrap; cursor: text; }
+.td-attr-item { font-size: var(--text-xs); line-height: 1.5; padding: 2px 9px; border-radius: 4px; background: var(--color-surface-1); border: 1px solid var(--color-border); color: var(--color-text); white-space: nowrap; cursor: text; }
 .td-attr-item:hover { border-color: var(--color-accent); }
-.td-attr-input { width: 120px; font-size: 12px; padding: 2px 8px; border: 1px solid var(--color-accent); border-radius: 4px; background: var(--color-surface-1); color: var(--color-text); }
-.td-attr-add { width: 26px; border: 1px dashed var(--color-border); border-radius: 4px; background: transparent; color: var(--color-text-tertiary); font-size: 14px; cursor: pointer; align-self: center; }
+.td-attr-input { width: 120px; font-size: var(--text-xs); padding: 2px 8px; border: 1px solid var(--color-accent); border-radius: 4px; background: var(--color-surface-1); color: var(--color-text); }
+.td-attr-add { width: 26px; border: 1px dashed var(--color-border); border-radius: 4px; background: transparent; color: var(--color-text-tertiary); font-size: var(--text-md); cursor: pointer; align-self: center; }
 .td-attr-add:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.image-add-btn { width: 64px; height: 64px; border-radius: 4px; border: 1px dashed var(--color-border); background: var(--color-surface-2); color: var(--color-text-tertiary); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.image-add-btn { width: 64px; height: 64px; border-radius: 4px; border: 1px dashed var(--color-border); background: var(--color-surface-2); color: var(--color-text-tertiary); font-size: var(--text-xl); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .image-add-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.image-add-btn--sm { width: 40px; height: 64px; font-size: 18px; }
-.image-thumb-ocr { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.image-add-btn--sm { width: 40px; height: 64px; font-size: var(--text-lg); }
+.image-thumb-ocr { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: #fff; font-size: var(--text-micro); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .image-thumb-ocr:hover { background: var(--color-accent); }
-.ocr-badge { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background: var(--color-accent); color: #fff; font-size: 10px; line-height: 14px; vertical-align: 1px; }
-.ocr-status { margin-top: 6px; font-size: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ocr-badge { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background: var(--color-accent); color: #fff; font-size: var(--text-micro); line-height: 14px; vertical-align: 1px; }
+.ocr-status { margin-top: 6px; font-size: var(--text-xs); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ocr-spinner { width: 12px; height: 12px; border: 2px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: ocr-spin 0.8s linear infinite; display: inline-block; }
 @keyframes ocr-spin { to { transform: rotate(360deg); } }
 .ocr-done { color: var(--color-success, #4caf50); }
 .ocr-similar { color: var(--color-warning, #f59e0b); }
 .ocr-raw summary { cursor: pointer; color: var(--color-text-secondary); user-select: none; }
-.ocr-raw pre { max-height: 140px; overflow: auto; margin: 4px 0 0; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface-2); font-size: 11px; white-space: pre-wrap; word-break: break-all; }
-.btn-icon.img-btn { font-size: 14px; padding: 0 4px; }
+.ocr-raw pre { max-height: 140px; overflow: auto; margin: 4px 0 0; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface-2); font-size: var(--text-micro); white-space: pre-wrap; word-break: break-all; }
+.btn-icon.img-btn { font-size: var(--text-md); padding: 0 4px; }
 </style>

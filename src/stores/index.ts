@@ -11,7 +11,13 @@ export const useThemeStore = defineStore('theme', () => {
   const theme = ref<Theme>(saved === 'light' ? 'light' : 'dark')
 
   function toggle() {
+    // 切换瞬间挂上 theme-switching：整页一次性重绘，不做全量颜色过渡动画（否则明显卡顿）
+    const root = document.documentElement
+    root.classList.add('theme-switching')
     theme.value = theme.value === 'dark' ? 'light' : 'dark'
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => root.classList.remove('theme-switching'))
+    })
   }
 
   function set(t: Theme) {
@@ -34,20 +40,18 @@ export const useAppStore = defineStore('app', () => {
   const servers = ref<Array<{ id: number; name: string }>>([])
   const currencyRate = ref(0)
   const currencyRateUpdatedAt = ref('')
+  // 淘宝对未登录会话打码币价：置位后侧栏显示「登录淘宝」引导（启动/切区/手动刷新任一路径触发）
+  const taobaoNeedLogin = ref(false)
   // 物价数据版本号：录入/修改/删除价格后递增，供其他页面（配号中心等）实时刷新参考数据
   const priceDataVersion = ref(0)
   function bumpPriceDataVersion() {
     priceDataVersion.value++
   }
 
-  // 默认币价（元/亿），按大区估算
-  const DEFAULT_RATES: Record<string, number> = {
-    '得陇望蜀': 260, '群雄逐鹿': 265, '桃园结义': 230, '牛刀小试': 340,
-    '铜台锁梦': 350, '翩若惊鸿': 420, '山海风云': 400, '故地重游': 290,
-    '巧借东风': 240, '皇榜征兵': 300, '杜康解忧': 235, '天下归心': 310,
-    '十八诸侯': 305, '云骑长歌': 330, '三足鼎立': 225, '一代枭雄': 245,
-    '暗度陈仓': 250, '单刀赴会': 255, '抚琴退敌': 220, '诗酒江陵': 285,
-    '百骑劫营': 270, '威震江东': 275, '一生所爱': 360, '青梅拾酒': 300,
+  // 配装方案数据版本号：配号中心增删改方案后递增，供养成宝典等页面实时刷新方案列表
+  const schemeDataVersion = ref(0)
+  function bumpSchemeDataVersion() {
+    schemeDataVersion.value++
   }
 
   function setCurrentServer(id: number, name: string) {
@@ -59,6 +63,7 @@ export const useAppStore = defineStore('app', () => {
     window.electronAPI?.setClueServer?.(name)
     // 切换大区时自动同步抓取当前大区币价
     window.electronAPI?.scrapeOne?.(name).then(async (result) => {
+      taobaoNeedLogin.value = !!result?.needLogin
       if (result?.price && currentServerId.value === id) {
         await reloadCurrencyRate(id, name)
       }
@@ -82,12 +87,13 @@ export const useAppStore = defineStore('app', () => {
         currencyRateUpdatedAt.value = hist[0]?.recorded_at ?? ''
         return
       }
-    } catch { /* fallback */ }
-    // DB 无数据：先用默认值，等抓取器完成后自动刷新
-    currencyRate.value = DEFAULT_RATES[name] ?? 0
-    currencyRateUpdatedAt.value = '抓取中...'
+    } catch { /* fallthrough：DB 异常时也按「未获取」处理 */ }
 
-    // 延迟重新查询（等初始抓取完成）
+    // DB 无真实价：不填任何默认值（避免把估算价当真实市场价误导），一律显示「未获取」，等抓取落地后由下方轮询刷新为真实价
+    currencyRate.value = 0
+    currencyRateUpdatedAt.value = '未获取'
+
+    // 延迟重新查询（等抓取器完成后刷新为真实入库价）
     const DELAYS = [3000, 10000, 30000, 60000, 120000]
     for (const ms of DELAYS) {
       await new Promise(r => setTimeout(r, ms))
@@ -105,6 +111,8 @@ export const useAppStore = defineStore('app', () => {
         }
       } catch { /* keep waiting */ }
     }
+    // 轮询结束仍无真实价 → 维持「未获取」
+    currencyRate.value = 0
     currencyRateUpdatedAt.value = '未获取'
   }
 
@@ -112,12 +120,13 @@ export const useAppStore = defineStore('app', () => {
     const rounded = Math.round(rate * 100) / 100
     currencyRate.value = rounded
     if (!currentServerId.value || rounded <= 0) return
-    const now = new Date().toLocaleString('zh-CN', { hour12: false })
-    currencyRateUpdatedAt.value = now
-    // 更新数据库和记录历史
+    // 仅用于 UI 展示的"更新时间"文案；不参与写库（写库时间统一交给 DB 的 datetime('now','localtime')，避免混入歧义格式导致缓存判断与走势排序错乱）
+    currencyRateUpdatedAt.value = new Date().toLocaleString('zh-CN', { hour12: false })
+    // 更新数据库
     window.electronAPI.dbQuery(
       'UPDATE servers SET currency_rate=? WHERE id=?', [rounded, currentServerId.value]
     ).catch(() => {})
+    // 记录历史：不传 recorded_at，走表默认 datetime('now','localtime')，保证与抓取侧格式一致(YYYY-MM-DD HH:MM:SS)
     window.electronAPI.dbQuery(
       'INSERT INTO currency_rate_history (server_id, rate) VALUES (?,?)',
       [currentServerId.value, rounded]
@@ -147,7 +156,9 @@ export const useAppStore = defineStore('app', () => {
         // 首次加载后触发币价抓取（仅一次）
         if (currentServerName.value) {
           await window.electronAPI?.setClueServer?.(currentServerName.value)
-          window.electronAPI?.scrapeRates?.()
+          window.electronAPI?.scrapeRates?.().then((r) => {
+            if (r?.needLogin) taobaoNeedLogin.value = true
+          }).catch(() => {})
         }
       }
     } catch (e) {
@@ -161,8 +172,11 @@ export const useAppStore = defineStore('app', () => {
     servers,
     currencyRate,
     currencyRateUpdatedAt,
+    taobaoNeedLogin,
     priceDataVersion,
     bumpPriceDataVersion,
+    schemeDataVersion,
+    bumpSchemeDataVersion,
     setCurrentServer,
     setCurrencyRate,
     reloadCurrencyRate,

@@ -1,64 +1,174 @@
 ﻿<template>
   <div class="page">
-    <!-- 顶栏 -->
-    <div class="topbar">
-      <div class="topbar-left">
-        <h2>配号中心</h2>
+    <!-- ══ 首屏就绪前只显示加载态：等「上次编辑的方案」解析完再决定进列表还是详情，避免先闪一下列表 ══ -->
+    <div v-if="!schemesReady" class="boot-loading">
+      <AppIcon icon="loader" :size="18" class="icon-spin" />
+      <span>正在载入方案…</span>
+    </div>
+
+    <!-- ══ 方案列表模式：只显示方案卡片，点卡片进入详情 ══ -->
+    <template v-else-if="!detailMode || !currentScheme">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2>配号中心</h2>
+          <span class="list-server" v-if="app.currentServerName" title="方案按大区隔离，只显示当前大区的方案">{{ app.currentServerName }}</span>
+        </div>
       </div>
-      <div class="topbar-center">
-        <select v-model="selectedSchemeId" class="scheme-select" @change="onSchemeSelect">
-          <option v-if="!currentScheme" :value="-1">请选择方案...</option>
-          <option
+
+      <!-- 筛选栏：关键词 / 职业 / 等级 / 大区范围 -->
+      <div class="scheme-filter">
+        <div class="sf-search">
+          <AppIcon icon="search" :size="13" />
+          <input
+            v-model="schemeFilter.keyword"
+            class="sf-search-input"
+            placeholder="搜索方案名 / 角色名（支持拼音）"
+          />
+          <button v-if="schemeFilter.keyword" class="sf-search-clear" @click="schemeFilter.keyword = ''" title="清除关键词"><AppIcon icon="x" :size="12" /></button>
+        </div>
+
+        <div class="sf-menu-wrap">
+          <button class="sf-trigger" :class="{ 'sf-trigger--on': schemeFilter.jobs.length }" @click="toggleFilterMenu('job')">
+            {{ filterJobLabel }} <AppIcon icon="chevron-down" :size="12" />
+          </button>
+          <div class="sf-menu" v-if="openFilterMenu === 'job'">
+            <label v-for="j in jobOptions" :key="j" class="sf-opt">
+              <input type="checkbox" :checked="schemeFilter.jobs.includes(j)" @change="toggleFilterJob(j)" /> {{ j }}
+            </label>
+            <div class="sf-menu-empty" v-if="jobOptions.length === 0">暂无方案</div>
+          </div>
+        </div>
+
+        <div class="sf-menu-wrap">
+          <button class="sf-trigger" :class="{ 'sf-trigger--on': schemeFilter.levels.length }" @click="toggleFilterMenu('level')">
+            {{ filterLevelLabel }} <AppIcon icon="chevron-down" :size="12" />
+          </button>
+          <div class="sf-menu" v-if="openFilterMenu === 'level'">
+            <label v-for="l in levelOptions" :key="l" class="sf-opt">
+              <input type="checkbox" :checked="schemeFilter.levels.includes(l)" @change="toggleFilterLevel(l)" /> Lv.{{ l }}
+            </label>
+            <div class="sf-menu-empty" v-if="levelOptions.length === 0">暂无方案</div>
+          </div>
+        </div>
+
+        <div class="sf-menu-wrap" v-if="powerOptions.length">
+          <button class="sf-trigger" :class="{ 'sf-trigger--on': schemeFilter.powers.length }" @click="toggleFilterMenu('power')">
+            {{ filterPowerLabel }} <AppIcon icon="chevron-down" :size="12" />
+          </button>
+          <div class="sf-menu sf-menu--power" v-if="openFilterMenu === 'power'">
+            <label class="sf-opt sf-opt--hint">已设置战力的方案按以下档位筛选：</label>
+            <label v-for="o in powerOptions" :key="o.value" class="sf-opt sf-opt--pw" :style="powerCssVarsByQuality(o.quality)">
+              <input type="checkbox" :checked="schemeFilter.powers.includes(o.value)" @change="toggleFilterPower(o.value)" />
+              <span class="pw-swatch" aria-hidden="true"></span>{{ o.label }}
+            </label>
+            <div class="sf-menu-empty" v-if="powerOptions.length === 0">暂无方案</div>
+          </div>
+        </div>
+
+        <label class="sf-check" title="默认只显示当前大区的方案；取消勾选可查看其他大区的方案（灰卡，切换大区后可选）">
+          <input type="checkbox" v-model="schemeFilter.onlyCurrentServer" /> 仅当前大区
+        </label>
+
+        <span class="sf-count">共 <strong>{{ listedSchemes.length }}</strong> 个</span>
+        <button v-if="hasSchemeFilter" class="sf-reset" @click="resetSchemeFilter" title="恢复默认筛选">清除筛选</button>
+      </div>
+
+      <div class="scheme-list-scroll">
+        <div class="scheme-card-grid">
+          <div
             v-for="s in listedSchemes"
             :key="s.id"
-            :value="s.id"
-            :disabled="!isSchemeSelectable(s)"
-          >{{ schemeLabel(s) }}</option>
-        </select>
-        <template v-if="currentScheme">
-          <span v-if="currentScheme.character_name" class="badge badge--char">👤 {{ currentScheme.character_name }}</span>
-          <span class="badge">{{ currentScheme.job }} Lv.{{ currentScheme.level_num }}</span>
-        </template>
-        <button class="btn btn-sm btn-ghost" :disabled="!currentScheme" @click="copyScheme" title="复制方案">⧉</button>
-        <button class="btn btn-sm btn-ghost" :disabled="!currentScheme" @click="currentScheme && editScheme(currentScheme)" title="编辑方案">✎</button>
-        <button class="btn btn-sm btn-ghost" :disabled="!currentScheme" @click="currentScheme && deleteScheme(currentScheme.id)" title="删除方案">✕</button>
-        <button class="btn btn-sm btn-ghost" @click="openNewScheme" title="新增方案">+</button>
+            class="scheme-card"
+            :class="{ 'scheme-card--active': currentScheme?.id === s.id, 'scheme-card--disabled': !isSchemeSelectable(s) }"
+            :title="isSchemeSelectable(s) ? '' : `该方案属于「${serverNameOf(s.server_id)}」，切换大区后可选择`"
+            @click="selectScheme(s)"
+          >
+            <div class="scc-top">
+              <span class="scc-name" :title="s.name">{{ s.name }}</span>
+              <span v-if="currentScheme?.id === s.id" class="scc-current">上次编辑</span>
+            </div>
+            <div class="scc-power" v-if="parsePower(s.power)" :style="powerCssVars(s.power)" :title="`战力：${powerDisplay(s.power)}`">
+              <span class="scc-power-swatch" aria-hidden="true"></span>
+              <span class="scc-power-txt">战力 {{ powerDisplay(s.power) }}</span>
+            </div>
+            <div class="scc-meta">
+              <span class="badge badge--server" v-if="s.server_id" :title="`该方案属于大区「${serverNameOf(s.server_id)}」`"><AppIcon icon="globe" :size="10" /> {{ serverNameOf(s.server_id) }}</span>
+              <span class="badge">{{ s.job }} Lv.{{ s.level_num }}</span>
+              <span v-if="s.character_name" class="badge badge--char"><AppIcon icon="user" :size="10" /> {{ s.character_name }}</span>
+            </div>
+            <div class="scc-foot">
+              <span class="scc-budget" title="方案内物品金额总和（即预算）"><AppIcon icon="coins" :size="12" /> {{ formatWan(schemeTotalWan(s)) }}</span>
+              <span class="scc-actions" v-if="isSchemeSelectable(s)">
+                <button class="scc-btn" title="复制方案" @click.stop="copyScheme(s)"><AppIcon icon="copy" :size="12" /></button>
+                <button class="scc-btn" title="编辑方案" @click.stop="editScheme(s)"><AppIcon icon="edit" :size="12" /></button>
+                <button class="scc-btn" title="删除方案" @click.stop="deleteScheme(s.id)"><AppIcon icon="x" :size="12" /></button>
+              </span>
+            </div>
+          </div>
+          <!-- 创建方案（虚卡片） -->
+          <div class="scheme-card scheme-card--create" @click="openNewScheme" title="新建方案">
+            <AppIcon icon="plus" :size="20" />
+            <span class="scc-create-text">创建方案</span>
+          </div>
+        </div>
+        <div class="hint" v-if="schemes.length === 0">当前大区还没有方案，点击「创建方案」开始</div>
+        <div class="hint" v-else-if="listedSchemes.length === 0">
+          {{ hasSchemeFilter ? '没有符合筛选条件的方案' : '当前大区还没有方案' }}
+          <button v-if="hasSchemeFilter" class="sf-reset-inline" @click="resetSchemeFilter">清除筛选</button>
+        </div>
       </div>
-      <div class="topbar-right">
-        <button class="btn btn-sm" @click="exportToExcel" :disabled="!currentScheme">📥 导出 Excel</button>
-      </div>
-    </div>
+    </template>
 
-    <!-- 方案信息 -->
-    <!-- 进度仪表盘 -->
-    <div class="dashboard" v-if="currentScheme">
-      <div class="dash-row">
-        <div class="dash-item dash-item--wide">
-          <span class="dash-label">💰 预算 {{ (currentTotalWan / 10000).toFixed(1) }}/{{ currentScheme.total_budget }} 亿</span>
-          <div class="dash-bar"><div class="dash-bar-fill" :class="currentTotalWan > currentScheme.total_budget * 10000 ? 'dash-bar-fill--over' : 'dash-bar-fill--budget'" :style="{ width: dashBudgetPercent + '%' }"></div></div>
-          <span class="dash-pct" :class="{ 'text-danger': currentTotalWan > currentScheme.total_budget * 10000 }">{{ dashBudgetPercent }}%</span>
+    <!-- ══ 方案详情模式：整页展示当前方案内容 ══ -->
+    <template v-else>
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="btn btn-sm btn-back" @click="backToList" title="返回方案列表"><AppIcon icon="chevron-left" :size="14" /> 方案</button>
+          <h2 class="detail-name" :title="currentScheme.name">{{ currentScheme.name }}</h2>
+          <span class="badge">{{ currentScheme.job }} Lv.{{ currentScheme.level_num }}</span>
+          <span v-if="currentScheme.character_name" class="badge badge--char"><AppIcon icon="user" :size="12" /> {{ currentScheme.character_name }}</span>
+          <span
+            v-if="parsePower(currentScheme.power)"
+            class="scc-power scc-power--inline"
+            :style="powerCssVars(currentScheme.power)"
+            :title="`战力：${powerDisplay(currentScheme.power)}`"
+          >
+            <span class="scc-power-swatch" aria-hidden="true"></span>
+            <span class="scc-power-txt">战力 {{ powerDisplay(currentScheme.power) }}</span>
+          </span>
         </div>
-        <div class="dash-item">
-          <span class="dash-label" title="未锁定槽位金额合计（可继续调整的部分）">🔓 可调 {{ (unlockedTotalWan / 10000).toFixed(1) }} 亿</span>
+        <div class="topbar-right">
+          <button class="btn btn-sm" @click="exportToExcel"><AppIcon icon="download" :size="12" /> 导出 Excel</button>
         </div>
       </div>
-    </div>
-    <div class="hint" v-else>选择一个方案或新建后开始</div>
+
+      <!-- 进度仪表盘 -->
+      <div class="dashboard">
+        <div class="dash-row">
+          <div class="dash-item dash-item--wide">
+            <span class="dash-label" title="预算 = 方案内物品金额总和，随槽位选择自动计算"><AppIcon icon="coins" :size="14" /> 预算（物品合计）{{ (currentTotalWan / 10000).toFixed(1) }} 亿</span>
+          </div>
+          <div class="dash-item">
+            <span class="dash-label" title="未锁定槽位金额合计（可继续调整的部分）"><AppIcon icon="unlock" :size="14" /> 可调 {{ (unlockedTotalWan / 10000).toFixed(1) }} 亿</span>
+          </div>
+        </div>
+      </div>
+    </template>
 
 	    <!-- Tab 栏 -->
-    <div class="tab-bar" v-if="currentScheme">
+    <div class="tab-bar" v-if="detailMode && currentScheme">
       <button v-for="t in tabs" :key="t.key" class="tab" :class="{ 'tab--active': activeTab === t.key }" @click="switchTab(t.key)">
-        {{ t.icon }} {{ t.label }}
+        <AppIcon :icon="t.icon" :size="14" /> {{ t.label }}
         <span class="tab-total" v-if="getTabTotal(t.key) > 0">{{ formatWan(getTabTotal(t.key)) }}</span>
       </button>
     </div>
 
     <!-- Tab 内容 -->
-    <div class="tab-content" v-if="currentScheme">
+    <div class="tab-content" v-if="detailMode && currentScheme">
       <!-- 装备 -->
       <div class="slot-grid-2col" v-if="activeTab === 'equip'">
         <div v-for="g in equipGroups" :key="g.key" class="slot-section-card">
-          <div class="sec-head">{{ g.icon }} {{ g.label }}</div>
+          <div class="sec-head"><AppIcon :icon="g.icon" :size="14" /> {{ g.label }}</div>
           <div class="sec-slots">
             <div v-for="s in g.slots" :key="s"
               class="slot-card"
@@ -69,21 +179,21 @@
               }"
               @click.stop="toggleSlotDropdown(s)"
             >
-              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)">{{ isSlotLocked(s) ? '🔒' : '🔓' }}</span>
+              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)"><AppIcon :icon="isSlotLocked(s) ? 'lock' : 'unlock'" :size="14" /></span>
               <span v-if="isSlotLocked(s)" class="sc-lock-time" :title="getLockTitle(s)">{{ getLockTimeShort(s) }}</span>
               <span class="sc-label">{{ s }}</span>
               <span class="sc-val" :style="{ color: getQualityColor(getSlotQuality(s)) }">{{ getDetail(s) || '—' }}</span>
               <span v-if="getDetail(s) && catalogNotes[getDetail(s)]" class="sc-notes">{{ catalogNotes[getDetail(s)] }}</span>
               <span class="sc-price">{{ getPrice(s) }}</span>
-              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片">🖼</span>
-              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除">✕</span>
-              <span class="sc-arrow" v-if="!isSlotLocked(s)">▾</span>
+              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
+              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除"><AppIcon icon="x" :size="12" /></span>
+              <span class="sc-arrow" v-if="!isSlotLocked(s)"><AppIcon icon="chevron-down" :size="12" /></span>
               <!-- 下拉面板 -->
               <div v-if="expandedSlot === s && !isSlotLocked(s)" class="slot-dropdown" @click.stop>
                 <input
                   v-model="slotSearch[s]"
                   class="slot-dropdown-search"
-                  :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '🔍 识别中…' : '搜索物品...'"
+                  :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '识别中…' : '搜索物品...'"
                 />
                 <!-- OCR 识别反馈 -->
                 <div v-if="ocrSearchSlot === s" class="ocr-search-hint">
@@ -91,8 +201,8 @@
                     <span class="ocr-spinner-sm"></span> 识别中…
                   </template>
                   <template v-else>
-                    📋 OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
-                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭">✕</button>
+                    <AppIcon icon="copy" :size="12" /> OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
+                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭"><AppIcon icon="x" :size="12" /></button>
                   </template>
                 </div>
                 <div class="slot-dropdown-list">
@@ -107,7 +217,7 @@
                       <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
                       <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
                       <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : (item._hint || '—') }}</span>
-                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片">🖼</span>
+                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
                     </div>
                   </template>
                   <div v-if="getSlotOptions(s).length === 0" class="slot-dropdown-empty">
@@ -120,8 +230,8 @@
                     <div class="qa-form">
                       <div class="qa-row">
                         <input v-model="quickAddForm.item_name" class="qa-input" placeholder="物品名称" style="flex:1" @keydown.enter.prevent="submitQuickAdd(s)" />
-                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'">{{ quickAddOcrBusy ? '⏳' : '📋' }}</button>
-                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别">📁</button>
+                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'"><AppIcon :icon="quickAddOcrBusy ? 'loader' : 'copy'" :size="14" :class="quickAddOcrBusy ? 'icon-spin' : ''" /></button>
+                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别"><AppIcon icon="folder" :size="14" /></button>
                       </div>
                       <div class="qa-row">
                         <span class="qa-price-wrap"><input v-model.number="quickAddForm.market_price" class="qa-input qa-input--price" type="number" step="0.01" min="0" placeholder="价格" @keydown.enter.prevent="submitQuickAdd(s)" /><span class="qa-unit">万</span></span>
@@ -141,8 +251,8 @@
                   </template>
                   <template v-else>
                     <div class="qa-trigger" @click="openQuickAdd(s)">
-                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0">⚡ 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
-                      <span v-else>+ 快速录入新物品</span>
+                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0"><AppIcon icon="zap" :size="12" /> 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
+                      <span v-else><AppIcon icon="plus" :size="12" /> 快速录入新物品</span>
                     </div>
                   </template>
                 </div>
@@ -155,7 +265,7 @@
       <!-- 灵魄 -->
       <div class="slot-grid-2col" v-if="activeTab === 'spirit'">
         <div class="slot-section-card" v-for="g in spiritGroups" :key="g.key">
-          <div class="sec-head">{{ g.icon }} {{ g.label }}</div>
+          <div class="sec-head"><AppIcon :icon="g.icon" :size="14" /> {{ g.label }}</div>
           <div class="sec-slots">
             <div v-for="s in g.slots" :key="s"
               class="slot-card"
@@ -166,25 +276,25 @@
               }"
               @click.stop="toggleSlotDropdown(s)"
             >
-              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)">{{ isSlotLocked(s) ? '🔒' : '🔓' }}</span>
+              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)"><AppIcon :icon="isSlotLocked(s) ? 'lock' : 'unlock'" :size="14" /></span>
               <span v-if="isSlotLocked(s)" class="sc-lock-time" :title="getLockTitle(s)">{{ getLockTimeShort(s) }}</span>
               <span class="sc-label">{{ s.replace('灵','') }}</span>
               <span class="sc-val" :style="{ color: getQualityColor(getSlotQuality(s)) }">{{ getDetail(s) || '—' }}</span>
               <span v-if="getDetail(s) && catalogNotes[getDetail(s)]" class="sc-notes">{{ catalogNotes[getDetail(s)] }}</span>
               <span class="sc-price">{{ getPrice(s) }}</span>
-              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片">🖼</span>
-              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除">✕</span>
-              <span class="sc-arrow" v-if="!isSlotLocked(s)">▾</span>
+              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
+              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除"><AppIcon icon="x" :size="12" /></span>
+              <span class="sc-arrow" v-if="!isSlotLocked(s)"><AppIcon icon="chevron-down" :size="12" /></span>
               <div v-if="expandedSlot === s && !isSlotLocked(s)" class="slot-dropdown" @click.stop>
-                <input v-model="slotSearch[s]" class="slot-dropdown-search" :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '🔍 识别中…' : '搜索物品...'" />
+                <input v-model="slotSearch[s]" class="slot-dropdown-search" :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '识别中…' : '搜索物品...'" />
                 <!-- OCR 识别反馈 -->
                 <div v-if="ocrSearchSlot === s" class="ocr-search-hint">
                   <template v-if="ocrSearchBusy">
                     <span class="ocr-spinner-sm"></span> 识别中…
                   </template>
                   <template v-else>
-                    📋 OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
-                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭">✕</button>
+                    <AppIcon icon="copy" :size="12" /> OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
+                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭"><AppIcon icon="x" :size="12" /></button>
                   </template>
                 </div>
                 <div class="slot-dropdown-list">
@@ -193,7 +303,7 @@
                       <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
                       <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
                       <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : (item._hint || '—') }}</span>
-                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片">🖼</span>
+                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
                     </div>
                   </template>
                   <div v-if="getSlotOptions(s).length === 0" class="slot-dropdown-empty">
@@ -206,8 +316,8 @@
                     <div class="qa-form">
                       <div class="qa-row">
                         <input v-model="quickAddForm.item_name" class="qa-input" placeholder="物品名称" style="flex:1" @keydown.enter.prevent="submitQuickAdd(s)" />
-                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'">{{ quickAddOcrBusy ? '⏳' : '📋' }}</button>
-                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别">📁</button>
+                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'"><AppIcon :icon="quickAddOcrBusy ? 'loader' : 'copy'" :size="14" :class="quickAddOcrBusy ? 'icon-spin' : ''" /></button>
+                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别"><AppIcon icon="folder" :size="14" /></button>
                       </div>
                       <div class="qa-row">
                         <span class="qa-price-wrap"><input v-model.number="quickAddForm.market_price" class="qa-input qa-input--price" type="number" step="0.01" min="0" placeholder="价格" @keydown.enter.prevent="submitQuickAdd(s)" /><span class="qa-unit">万</span></span>
@@ -227,8 +337,8 @@
                   </template>
                   <template v-else>
                     <div class="qa-trigger" @click="openQuickAdd(s)">
-                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0">⚡ 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
-                      <span v-else>+ 快速录入新物品</span>
+                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0"><AppIcon icon="zap" :size="12" /> 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
+                      <span v-else><AppIcon icon="plus" :size="12" /> 快速录入新物品</span>
                     </div>
                   </template>
                 </div>
@@ -279,7 +389,7 @@
       <!-- 养成 -->
       <div class="slot-grid-2col" v-if="activeTab === 'cultivate'">
         <div class="slot-section-card">
-          <div class="sec-head">📜 养成系统</div>
+          <div class="sec-head"><AppIcon icon="scroll" :size="14" /> 养成系统</div>
           <div class="sec-slots">
             <div v-for="s in filteredCultivateSlots" :key="s"
               class="slot-card"
@@ -290,21 +400,21 @@
               }"
               @click.stop="toggleSlotDropdown(s)"
             >
-              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)">{{ isSlotLocked(s) ? '🔒' : '🔓' }}</span>
+              <span class="sc-lock" :title="getLockTitle(s)" @click.stop="toggleLock(s)"><AppIcon :icon="isSlotLocked(s) ? 'lock' : 'unlock'" :size="14" /></span>
               <span v-if="isSlotLocked(s)" class="sc-lock-time" :title="getLockTitle(s)">{{ getLockTimeShort(s) }}</span>
               <span class="sc-label">{{ s }}</span>
               <span class="sc-val" :style="{ color: getQualityColor(getSlotQuality(s)) }">{{ getDetail(s) || '—' }}</span>
               <span v-if="getDetail(s) && catalogNotes[getDetail(s)]" class="sc-notes">{{ catalogNotes[getDetail(s)] }}</span>
               <span class="sc-price">{{ getPrice(s) }}</span>
-              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片">🖼</span>
-              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除">✕</span>
-              <span class="sc-arrow" v-if="!isSlotLocked(s)">▾</span>
+              <span class="sc-img" v-if="getDetail(s) && slotImageExists(s)" @click.stop="openSlotImage(s)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
+              <span class="sc-clear" v-if="getDetail(s) && !isSlotLocked(s)" @click.stop="clearSlot(s)" title="清除"><AppIcon icon="x" :size="12" /></span>
+              <span class="sc-arrow" v-if="!isSlotLocked(s)"><AppIcon icon="chevron-down" :size="12" /></span>
               <!-- 下拉面板 -->
               <div v-if="expandedSlot === s && !isSlotLocked(s)" class="slot-dropdown" @click.stop>
                 <input
                   v-model="slotSearch[s]"
                   class="slot-dropdown-search"
-                  :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '🔍 识别中…' : '搜索物品...'"
+                  :placeholder="ocrSearchBusy && ocrSearchSlot === s ? '识别中…' : '搜索物品...'"
                 />
                 <!-- OCR 识别反馈 -->
                 <div v-if="ocrSearchSlot === s" class="ocr-search-hint">
@@ -312,8 +422,8 @@
                     <span class="ocr-spinner-sm"></span> 识别中…
                   </template>
                   <template v-else>
-                    📋 OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
-                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭">✕</button>
+                    <AppIcon icon="copy" :size="12" /> OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
+                    <button class="ocr-hint-close" @click="clearOcrHint" title="关闭"><AppIcon icon="x" :size="12" /></button>
                   </template>
                 </div>
                 <div class="slot-dropdown-list">
@@ -328,7 +438,7 @@
                       <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
                       <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
                       <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : (item._hint || '—') }}</span>
-                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片">🖼</span>
+                      <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
                     </div>
                   </template>
                   <div v-if="getSlotOptions(s).length === 0" class="slot-dropdown-empty">
@@ -341,8 +451,8 @@
                     <div class="qa-form">
                       <div class="qa-row">
                         <input v-model="quickAddForm.item_name" class="qa-input" placeholder="物品名称" style="flex:1" @keydown.enter.prevent="submitQuickAdd(s)" />
-                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'">{{ quickAddOcrBusy ? '⏳' : '📋' }}</button>
-                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别">📁</button>
+                        <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'"><AppIcon :icon="quickAddOcrBusy ? 'loader' : 'copy'" :size="14" :class="quickAddOcrBusy ? 'icon-spin' : ''" /></button>
+                        <button class="qa-btn-paste" @click="selectImageToQuickAdd()" :disabled="quickAddOcrBusy" title="选择图片识别"><AppIcon icon="folder" :size="14" /></button>
                       </div>
                       <div class="qa-row">
                         <span class="qa-price-wrap"><input v-model.number="quickAddForm.market_price" class="qa-input qa-input--price" type="number" step="0.01" min="0" placeholder="价格" @keydown.enter.prevent="submitQuickAdd(s)" /><span class="qa-unit">万</span></span>
@@ -362,8 +472,8 @@
                   </template>
                   <template v-else>
                     <div class="qa-trigger" @click="openQuickAdd(s)">
-                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0">⚡ 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
-                      <span v-else>+ 快速录入新物品</span>
+                      <span v-if="slotSearch[s] && getSlotOptions(s).filter(o => !o._disabled).length === 0 && getSlotOptions(s).length > 0"><AppIcon icon="zap" :size="12" /> 未找到「{{ slotSearch[s] }}」，点击快速录入</span>
+                      <span v-else><AppIcon icon="plus" :size="12" /> 快速录入新物品</span>
                     </div>
                   </template>
                 </div>
@@ -402,8 +512,8 @@
 	    </div>
 
 	    <!-- 方案备注（点击直接编辑） -->
-	    <div class="scheme-notes" v-if="currentScheme">
-	      <span class="sn-label">📝</span>
+	    <div class="scheme-notes" v-if="detailMode && currentScheme">
+	      <span class="sn-label"><AppIcon icon="edit" :size="14" /></span>
 	      <div v-if="editingNotes" class="sn-edit-wrap">
 	        <textarea
 	          v-model="editNotesText"
@@ -424,7 +534,7 @@
 	    <!-- 新建/编辑方案弹层 -->
     <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
       <div class="modal">
-        <div class="modal-head"><h4>{{ editingScheme ? '编辑方案' : '新建方案' }}</h4><button class="btn-icon" @click="showForm = false">✕</button></div>
+        <div class="modal-head"><h4>{{ editingScheme ? '编辑方案' : '新建方案' }}</h4><button class="btn-icon" @click="showForm = false"><AppIcon icon="x" :size="16" /></button></div>
         <div class="modal-body">
           <div class="form-row"><label class="form-label">大区</label><input class="input" :value="formServerLabel" disabled title="方案固定绑定创建时的大区" /></div>
           <div class="form-row"><label class="form-label">方案名称</label><input v-model="form.name" class="input" placeholder="如：100级剑侍5亿配装" /></div>
@@ -437,7 +547,45 @@
               <select v-model.number="form.level_num" class="input"><option v-for="l in levelNums" :key="l" :value="l">Lv.{{ l }}</option></select>
             </div>
           </div>
-          <div class="form-row"><label class="form-label">预算（亿三国币）</label><input v-model.number="form.total_budget" class="input" type="number" step="0.1" min="0" /></div>
+          <!-- 战力（可选）：阶 × 品质（下拉选择） -->
+          <div class="form-row">
+            <label class="form-label">战力<span class="form-opt-hint">可选</span></label>
+            <div class="pw-dropdown-wrap" ref="pwDropdownRef">
+              <button
+                type="button"
+                class="pw-trigger input"
+                :class="{ 'pw-trigger--set': !!form.power }"
+                :style="form.power ? powerCssVars(form.power) : {}"
+                @click="togglePowerMenu"
+              >
+                <template v-if="form.power">
+                  <span class="scc-power-swatch" aria-hidden="true"></span>
+                  <span>战力 {{ powerDisplay(form.power) }}</span>
+                </template>
+                <template v-else><span class="pw-placeholder">未设置</span></template>
+                <AppIcon icon="chevron-down" :size="12" class="pw-trigger-arrow" />
+              </button>
+              <div class="pw-menu" :class="{ 'pw-menu--up': pwMenuUp }" :style="{ maxHeight: pwMenuMaxH + 'px' }" v-if="pwMenuOpen" @click.stop>
+                <button type="button" class="pw-menu-none" :class="{ 'pw-menu-item--active': !form.power }" @click="pickPower('')">
+                  <span class="pw-swatch" aria-hidden="true"></span>未设置战力
+                </button>
+                <div class="pw-menu-divider"></div>
+                <div class="pw-menu-opts">
+                  <button
+                    v-for="opt in POWER_COMBOS"
+                    :key="opt.value"
+                    type="button"
+                    class="pw-menu-item"
+                    :class="{ 'pw-menu-item--active': form.power === opt.value }"
+                    :style="powerCssVarsByQuality(opt.quality)"
+                    @click="pickPower(opt.value)"
+                  >
+                    <span class="pw-swatch" aria-hidden="true"></span>{{ opt.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 	        </div>
         <div class="modal-foot">
           <button class="btn btn-ghost" @click="showForm = false">取消</button>
@@ -454,15 +602,23 @@ import { ref, computed, onMounted, onUnmounted, onActivated, reactive, nextTick,
 import { useAppStore } from '@/stores'
 import { convertToPinyin } from 'tiny-pinyin'
 import { parseOcrText, type ParsedFields } from '@/utils/fieldParser'
+import { getQualityColor } from '@/utils/quality'
+import { appConfirm } from '@/utils/confirm'
 import BeastPanel from '@/components/beast/BeastPanel.vue'
 import ShenyuanPanel from '@/components/shenyuan/ShenyuanPanel.vue'
 import ImageViewer from '@/components/ImageViewer.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const app = useAppStore()
 
 const EQUIP_SLOTS = ['武器', '头盔', '上装', '下装', '护手', '鞋子', '面具', '项链', '戒指']
 const SPIRIT_SLOTS = ['武器灵', '护手灵', '头盔灵', '上装灵', '下装灵', '鞋子灵', '面具灵', '翅膀灵', '符咒灵', '项链灵', '戒指灵']
 const OTHER_SLOTS = ['八阵图', '子女', '奥义', '灵珠', '羽灵']
+// 养成槽位随等级变化（灵珠/羽灵 120 级解锁），按方案等级取当前可见的养成槽位
+function cultivateSlotsFor(level: number): string[] {
+  if (level < 120) return OTHER_SLOTS.filter(s => s !== '灵珠' && s !== '羽灵')
+  return [...OTHER_SLOTS]
+}
 // 翅膀 & 符咒固定名称列表
 const FIXED_WING_NAMES = [
   '战天使之翼(男)', '血影冥光翼(男)', '枫之羽(男)', '幽灵碧焰羽(男)',
@@ -484,23 +640,117 @@ const defenseSpirits = ['头盔灵', '面具灵', '下装灵', '鞋子灵']
 const jewelrySpirits = ['项链灵', '戒指灵']
 const wingSpirits = ['翅膀灵', '符咒灵']
 const spiritGroups = [
-  { key: 'atk', icon: '⚔', label: '攻击灵魄', slots: attackSpirits },
-  { key: 'def', icon: '🛡', label: '防御灵魄', slots: defenseSpirits },
-  { key: 'jwl', icon: '💍', label: '首饰灵魄', slots: jewelrySpirits },
-  { key: 'wing', icon: '🕊', label: '翅膀&符咒灵魄', slots: wingSpirits },
+  { key: 'atk', icon: 'swords', label: '攻击灵魄', slots: attackSpirits },
+  { key: 'def', icon: 'shield', label: '防御灵魄', slots: defenseSpirits },
+  { key: 'jwl', icon: 'gem', label: '首饰灵魄', slots: jewelrySpirits },
+  { key: 'wing', icon: 'bird', label: '翅膀&符咒灵魄', slots: wingSpirits },
 ]
 
 interface SlotPriceEntry { i: number; p: number; n: string; q: string }
-interface Scheme { id: number; name: string; job: string; level_num: number; total_budget: number; details: Record<string,string>; slot_price_ids?: Record<string, number | SlotPriceEntry>; character_name?: string; notes?: string; server_id?: number | null }
+interface Scheme { id: number; name: string; job: string; level_num: number; total_budget: number; details: Record<string,string>; slot_price_ids?: Record<string, number | SlotPriceEntry>; character_name?: string; notes?: string; server_id?: number | null; power?: string }
 
 const schemes = ref<Scheme[]>([])
 const currentScheme = ref<Scheme | null>(null)
 const selectedSchemeId = ref(-1)
+// 页面模式：false = 方案卡片列表；true = 某个方案的详情（整页展示仪表盘/槽位/备注）
+const detailMode = ref(false)
 const showForm = ref(false)
 const editingScheme = ref<Scheme | null>(null)
-const form = reactive({ name: '', job: '剑侍', level_num: 100, total_budget: 5, character_name: '' })
+const form = reactive({ name: '', job: '剑侍', level_num: 100, character_name: '', power: '' })
+// 战力下拉菜单状态
+const pwMenuOpen = ref(false)
+// 面板打开方向：true=向上展开（触发按钮靠近视口底部、下方放不下时）；false=向下（默认）
+const pwMenuUp = ref(false)
+// 面板实际可用纵向高度上限（px，按打开侧视口剩余空间动态取；避免超高被视口截断）
+const pwMenuMaxH = ref(248)
+const pwDropdownRef = ref<HTMLElement | null>(null)
 const jobs = ['剑侍', '豪杰', '阴阳士', '仙术士', '游侠', '唤灵']
 const levelNums = [70,80,90,100,110,120,130,140,150]
+
+// ── 战力（可选）：阶(一~五) × 品质(绿蓝紫金) ──
+// power 存储为短码如 "1金" / "3蓝"，空串 = 未设置
+const POWER_TIER_NUMS = [1, 2, 3, 4, 5]
+const POWER_TIER_CN = ['一', '二', '三', '四', '五']
+const POWER_QUALITIES = ['绿', '蓝', '紫', '金']
+// 品质 → 徽标文字/块颜色（沿用项目品质配色，金用专用金色，与图鉴白/黄区分）
+const POWER_QUALITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  '绿': { bg: 'rgba(76,175,80,0.12)', text: '#3d9a44', border: 'rgba(76,175,80,0.4)' },
+  '蓝': { bg: 'rgba(66,165,245,0.12)', text: '#2f8fe0', border: 'rgba(66,165,245,0.4)' },
+  '紫': { bg: 'rgba(171,71,188,0.12)', text: '#a34ab5', border: 'rgba(171,71,188,0.4)' },
+  '金': { bg: 'rgba(227,173,52,0.14)', text: '#c9971f', border: 'rgba(227,173,52,0.5)' },
+}
+// 品质中文颜色字符（卡内彩色方块填充用）
+const POWER_QUALITY_FILL: Record<string, string> = {
+  '绿': '#4CAF50', '蓝': '#42A5F5', '紫': '#AB47BC', '金': '#e3ad34',
+}
+// 下拉面板的全部可选项：按阶→品质展开，每项自带完整文字（如「一阶·金」）
+const POWER_COMBOS = POWER_TIER_NUMS.flatMap(t =>
+  POWER_QUALITIES.map(q => ({
+    value: `${t}${q}`,
+    quality: q,
+    label: `${POWER_TIER_CN[t - 1]}阶·${q}`,
+  }))
+)
+/** 解析 power 短码 → { tier(1-5), quality }，非法/空返回 null */
+function parsePower(power?: string | null): { tier: number; quality: string } | null {
+  if (!power) return null
+  const m = String(power).trim().match(/^([1-5])([绿蓝紫金])$/)
+  return m ? { tier: Number(m[1]), quality: m[2] } : null
+}
+/** 按品质字符返回 CSS 变量（供战力选择按钮使用），非法返回 {} */
+function powerCssVarsByQuality(q: string): Record<string, string> {
+  const c = POWER_QUALITY_COLORS[q]
+  if (!c) return {}
+  return { '--pw-bg': c.bg, '--pw-color': c.text, '--pw-border': c.border, '--pw-fill': POWER_QUALITY_FILL[q] }
+}
+/** 返回战力徽标的 CSS 变量（颜色随品质），未设置返回 {} */
+function powerCssVars(power?: string | null): Record<string, string> {
+  const p = parsePower(power)
+  if (!p) return {}
+  const c = POWER_QUALITY_COLORS[p.quality]
+  return {
+    '--pw-bg': c.bg,
+    '--pw-color': c.text,
+    '--pw-border': c.border,
+    '--pw-fill': POWER_QUALITY_FILL[p.quality],
+  }
+}
+/** 战力徽标显示文本："一阶·金" / "三阶·蓝"；未设置返回 '' */
+function powerDisplay(power?: string | null): string {
+  const p = parsePower(power)
+  if (!p) return ''
+  return `${POWER_TIER_CN[p.tier - 1]}阶·${p.quality}`
+}
+/** 下拉选择战力并收起菜单（空串=未设置） */
+function pickPower(power: string) {
+  form.power = power
+  pwMenuOpen.value = false
+}
+/** 打开/收起战力菜单：打开时按触发按钮距视口底部的剩余空间决定展开方向与高度上限（避免面板超出屏幕） */
+function togglePowerMenu() {
+  if (pwMenuOpen.value) {
+    pwMenuOpen.value = false
+    return
+  }
+  pwMenuUp.value = false
+  pwMenuMaxH.value = 248
+  const trig = pwDropdownRef.value?.querySelector<HTMLElement>('.pw-trigger')
+  if (trig) {
+    const rect = trig.getBoundingClientRect()
+    const maxH = 248 // 面板自然最大高度
+    const spaceBelow = window.innerHeight - rect.bottom - 8
+    if (spaceBelow >= maxH) {
+      // 下方足够，向下展开
+      pwMenuMaxH.value = maxH
+    } else {
+      // 下方放不下：优先向上，若上方也不够则取剩余空间较大的一侧；高度上限 = 该侧空间
+      const spaceAbove = rect.top - 8
+      pwMenuUp.value = spaceAbove >= spaceBelow
+      pwMenuMaxH.value = Math.max(120, Math.min(maxH, pwMenuUp.value ? spaceAbove : spaceBelow))
+    }
+  }
+  pwMenuOpen.value = true
+}
 
 // Tab 切换
 const activeTab = ref('equip')
@@ -508,26 +758,31 @@ function switchTab(key: string) {
   activeTab.value = key
 }
 const tabs = [
-  { key: 'equip', label: '装备', icon: '⚔' },
-  { key: 'spirit', label: '灵魄', icon: '🛡' },
-  { key: 'shenyuan', label: '元神', icon: '⭐' },
-  { key: 'cultivate', label: '养成', icon: '📜' },
-  { key: 'pet', label: '灵兽', icon: '🐉' },
+  { key: 'equip', label: '装备', icon: 'swords' },
+  { key: 'spirit', label: '灵魄', icon: 'shield' },
+  { key: 'shenyuan', label: '元神', icon: 'star' },
+  { key: 'cultivate', label: '养成', icon: 'scroll' },
+  { key: 'pet', label: '灵兽', icon: 'ghost' },
 ]
 
 const equipGroups = [
-  { key: 'atk', icon: '⚔', label: '攻击装备', slots: ['武器', '护手', '上装'] },
-  { key: 'def', icon: '🛡', label: '防御装备', slots: ['头盔', '面具', '下装', '鞋子'] },
-  { key: 'jwl', icon: '💍', label: '首饰装备', slots: ['项链', '戒指'] },
-  { key: 'wing', icon: '🕊', label: '翅膀 & 符咒', slots: ['翅膀', '符咒'] },
+  { key: 'atk', icon: 'swords', label: '攻击装备', slots: ['武器', '护手', '上装'] },
+  { key: 'def', icon: 'shield', label: '防御装备', slots: ['头盔', '面具', '下装', '鞋子'] },
+  { key: 'jwl', icon: 'gem', label: '首饰装备', slots: ['项链', '戒指'] },
+  { key: 'wing', icon: 'bird', label: '翅膀 & 符咒', slots: ['翅膀', '符咒'] },
 ]
 
-const filteredCultivateSlots = computed(() => {
-  const slots = [...OTHER_SLOTS]
-  const lv = currentScheme.value?.level_num ?? 0
-  if (lv < 120) return slots.filter(s => s !== '灵珠' && s !== '羽灵')
-  return slots
-})
+const filteredCultivateSlots = computed(() => cultivateSlotsFor(currentScheme.value?.level_num ?? 0))
+
+// 槽位是否属于当前界面存在的卡槽。
+// 数据与 UI 可能不同步（旧版本存在的槽位后来被移除/改名，如早期养成页签的普通「灵兽」卡），
+// 这类孤立 key 界面上看不到也上不了锁，其金额一律不计入总价/可调，避免统计被脏数据虚高。
+function isVisibleSlot(slot: string, scheme?: Scheme | null): boolean {
+  if (slot.startsWith('灵兽:') || slot.startsWith('元神:')) return true
+  const s = scheme ?? currentScheme.value
+  const cultivates = cultivateSlotsFor(s?.level_num ?? 0)
+  return [...EQUIP_SLOTS, '翅膀', '符咒', ...SPIRIT_SLOTS, ...cultivates, ...SHENYUAN_SLOTS].includes(slot)
+}
 
 // ── 元神槽位（固定结构：主元神 + 5仓库×5槽位） ──
 
@@ -596,39 +851,7 @@ const viewerVisible = ref(false)
 const viewerImages = ref<string[]>([])
 const itemsWithImages = ref<Set<string>>(new Set())
 
-// ── 品质颜色映射（支持单字和全名） ──
-const QUALITY_COLORS: Record<string, string> = {
-  '白': '#C0C0C0', '白色': '#C0C0C0',
-  '绿': '#4CAF50', '绿色': '#4CAF50',
-  '蓝': '#42A5F5', '蓝色': '#42A5F5',
-  '紫': '#AB47BC', '紫色': '#AB47BC',
-  '黄': '#e2c044', '黄色': '#e2c044',
-  '橙': '#e8883a', '橙色': '#e8883a',
-  '红': '#EF5350', '红色': '#EF5350',
-}
-
-// 根据品质/阶位/等级统一映射颜色
-function getQualityColor(quality: string): string {
-  const val = (quality || '').trim()
-  if (!val) return 'inherit'
-  // 直接匹配装备品质
-  if (QUALITY_COLORS[val]) return QUALITY_COLORS[val]
-  // 灵兽品阶
-  if (val === '天') return QUALITY_COLORS['红']
-  if (val === '地') return QUALITY_COLORS['橙']
-  if (val === '玄') return QUALITY_COLORS['紫']
-  if (val === '妙') return QUALITY_COLORS['蓝']
-  if (val === '凡') return QUALITY_COLORS['绿']
-  // 阶/级 → 低阶绿、中阶蓝、高阶紫
-  const m = val.match(/^(\d+)/)
-  if (m) {
-    const n = parseInt(m[1])
-    if (n <= 2) return QUALITY_COLORS['绿']
-    if (n <= 4) return QUALITY_COLORS['蓝']
-    return QUALITY_COLORS['紫']
-  }
-  return 'inherit'
-}
+// ── 品质颜色映射（共用工具，见 src/utils/quality.ts） ──
 
 // ── 价格明细：item_name → 所有物价条目（每个条目 = 一个下拉行） ──
 interface PriceEntry { id: number; price: number; notes: string; quality: string }
@@ -962,7 +1185,7 @@ async function submitQuickAdd(slot: string) {
         await window.electronAPI.saveImage(name, pending.src, newId)
       }
       quickAddPendingImage.value = null
-      // 刷新图片集合，让 🖼 按钮即时出现
+      // 刷新图片集合，让图片按钮即时出现
       refreshImageSet()
     }
 
@@ -1099,17 +1322,19 @@ function toFullPinyin(str: string): string {
   }
 }
 
-const currentTotalWan = computed(() => {
-  if (!currentScheme.value) return 0
-  const sidMap = currentScheme.value.slot_price_ids || {}
+// 方案物品金额总和（万三国币）= 预算（自动计算，不再手动填写）
+// 优先累计 slot_price_ids 中冻结的价格；兼容旧方案（无 slot_price_ids）：回退到 catalogPrices
+function schemeTotalWan(s: Scheme): number {
+  const sidMap = s.slot_price_ids || {}
   let total = 0
-  for (const val of Object.values(sidMap)) {
+  for (const [slot, val] of Object.entries(sidMap)) {
     if (!val || !(typeof val === 'object' && 'i' in val)) continue
+    // 孤立槽位（界面已无对应卡槽）不参与统计
+    if (!isVisibleSlot(slot, s)) continue
     total += (val as SlotPriceEntry).p
   }
-  // 兼容旧方案（无 slot_price_ids）：回退到 catalogPrices
   if (total === 0) {
-    const details = currentScheme.value.details || {}
+    const details = s.details || {}
     for (const name of Object.values(details)) {
       if (name && catalogPrices.value[name]) {
         total += catalogPrices.value[name]
@@ -1117,7 +1342,9 @@ const currentTotalWan = computed(() => {
     }
   }
   return total
-})
+}
+
+const currentTotalWan = computed(() => (currentScheme.value ? schemeTotalWan(currentScheme.value) : 0))
 
 // ── 仪表盘数据 ──
 const dashTotalSlots = computed(() => {
@@ -1136,10 +1363,6 @@ const dashFilledSlots = computed(() => {
   return count
 })
 const dashSlotPercent = computed(() => dashTotalSlots.value ? Math.round(dashFilledSlots.value / dashTotalSlots.value * 100) : 0)
-const dashBudgetPercent = computed(() => {
-  const budgetWan = (currentScheme.value?.total_budget || 1) * 10000
-  return Math.min(100, Math.round(currentTotalWan.value / budgetWan * 100))
-})
 // 未锁定槽位金额汇总（锁定=已确定不动的装备，未锁定=还可调整的预算空间）
 const unlockedTotalWan = computed(() => {
   if (!currentScheme.value) return 0
@@ -1147,6 +1370,8 @@ const unlockedTotalWan = computed(() => {
   let total = 0
   for (const [slot, val] of Object.entries(sidMap)) {
     if (!val || !(typeof val === 'object' && 'i' in val)) continue
+    // 孤立槽位无法上锁，不应计入「可调」
+    if (!isVisibleSlot(slot)) continue
     if (isSlotLocked(slot)) continue
     total += (val as SlotPriceEntry).p
   }
@@ -1213,7 +1438,6 @@ function getSlotRefKeys(slot: string): string[] {
   if (slot === '奥义') return ['奥义']
   if (slot === '灵珠') return ['灵珠']
   if (slot === '羽灵') return ['羽灵']
-  if (slot === '灵兽') return ['灵兽', '灵兽材料']
   if (slot.startsWith('元神:')) return ['元神']
   if (slot === '元神') return ['元神']
   // 翅膀 / 符咒：候选名只用固定硬编码列表
@@ -1382,17 +1606,28 @@ async function clearSlot(slot: string) {
 
 // 点击外部关闭下拉
 function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (openFilterMenu.value && !target.closest('.sf-menu-wrap')) {
+    closeFilterMenu()
+  }
+  if (pwMenuOpen.value && pwDropdownRef.value && !pwDropdownRef.value.contains(target)) {
+    pwMenuOpen.value = false
+  }
   if (expandedSlot.value) {
-    const target = e.target as HTMLElement
     if (!target.closest('.slot-dropdown') && !target.closest('.slot-card--open')) {
       closeDropdown()
     }
   }
 }
 
-// ESC 关闭下拉
+// ESC 关闭下拉（优先关最上层的菜单）
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && expandedSlot.value) {
+  if (e.key !== 'Escape') return
+  if (openFilterMenu.value) {
+    closeFilterMenu()
+  } else if (pwMenuOpen.value) {
+    pwMenuOpen.value = false
+  } else if (expandedSlot.value) {
     closeDropdown()
   }
 }
@@ -1402,24 +1637,132 @@ function serverNameOf(id?: number | null): string {
   return app.servers.find(s => s.id === id)?.name || '未知大区'
 }
 
-function schemeLabel(s: Scheme): string {
-  const budget = Number(s.total_budget) || 0
-  return `${serverNameOf(s.server_id)} · ${s.name} · ${s.job} Lv.${s.level_num} · ${budget}亿`
-}
-
 function isSchemeSelectable(s: Scheme): boolean {
   const sid = app.currentServerId
   if (!sid) return false
   return s.server_id === sid
 }
 
+// ── 方案列表筛选 ──
+const SCHEME_FILTER_KEY = 'sgbuddy-scheme-filter'
+const schemeFilter = reactive({
+  keyword: '',
+  jobs: [] as string[],
+  levels: [] as number[],
+  powers: [] as string[],
+  onlyCurrentServer: true,
+})
+const openFilterMenu = ref<'' | 'job' | 'level' | 'power'>('')
+
+// 只列出真实存在的职业/等级，避免提供点不出结果的空选项
+const jobOptions = computed(() => {
+  const set = new Set<string>()
+  for (const s of schemes.value) if (s.job) set.add(s.job)
+  return jobs.filter(j => set.has(j))
+})
+const levelOptions = computed(() => {
+  const set = new Set<number>()
+  for (const s of schemes.value) if (s.level_num) set.add(s.level_num)
+  return [...set].sort((a, b) => a - b)
+})
+// 已设置战力的档位选项（仅真实存在的组合，按 阶→品质 顺序）
+const powerOptions = computed(() => {
+  const present = new Set<string>()
+  for (const s of schemes.value) {
+    const p = parsePower(s.power)
+    if (p) present.add(`${p.tier}${p.quality}`)
+  }
+  return POWER_COMBOS.filter(o => present.has(o.value))
+})
+
+// 「仅当前大区」是默认状态，关掉它才算一条筛选条件
+const hasSchemeFilter = computed(() =>
+  !!schemeFilter.keyword.trim() ||
+  schemeFilter.jobs.length > 0 ||
+  schemeFilter.levels.length > 0 ||
+  schemeFilter.powers.length > 0 ||
+  !schemeFilter.onlyCurrentServer
+)
+const filterJobLabel = computed(() => (schemeFilter.jobs.length ? `职业 ${schemeFilter.jobs.length}` : '全部职业'))
+const filterLevelLabel = computed(() => (schemeFilter.levels.length ? `等级 ${schemeFilter.levels.length}` : '全部等级'))
+const filterPowerLabel = computed(() => (schemeFilter.powers.length ? `战力 ${schemeFilter.powers.length}` : '全部战力'))
+
+function toggleFilterMenu(m: 'job' | 'level' | 'power') {
+  openFilterMenu.value = openFilterMenu.value === m ? '' : m
+}
+function closeFilterMenu() { openFilterMenu.value = '' }
+
+function toggleFilterJob(j: string) {
+  const i = schemeFilter.jobs.indexOf(j)
+  if (i >= 0) schemeFilter.jobs.splice(i, 1)
+  else schemeFilter.jobs.push(j)
+}
+function toggleFilterLevel(l: number) {
+  const i = schemeFilter.levels.indexOf(l)
+  if (i >= 0) schemeFilter.levels.splice(i, 1)
+  else schemeFilter.levels.push(l)
+}
+function toggleFilterPower(v: string) {
+  const i = schemeFilter.powers.indexOf(v)
+  if (i >= 0) schemeFilter.powers.splice(i, 1)
+  else schemeFilter.powers.push(v)
+}
+
+/** 关键词匹配：中文子串 / 全拼 / 拼音首字母，命中方案名或角色名任一即可 */
+function matchSchemeKeyword(s: Scheme, kw: string): boolean {
+  const q = kw.trim().toLowerCase()
+  if (!q) return true
+  const targets = [s.name, s.character_name || ''].filter(Boolean)
+  return targets.some(t =>
+    t.toLowerCase().includes(q) || toFullPinyin(t).includes(q) || toPinyinInitials(t).includes(q)
+  )
+}
+
 const listedSchemes = computed(() => {
   const sid = app.currentServerId
+  const rows = schemes.value.filter(s => {
+    if (schemeFilter.onlyCurrentServer && s.server_id !== sid) return false
+    if (schemeFilter.jobs.length && !schemeFilter.jobs.includes(s.job)) return false
+    if (schemeFilter.levels.length && !schemeFilter.levels.includes(s.level_num)) return false
+    if (schemeFilter.powers.length) {
+      const p = parsePower(s.power)
+      if (!p || !schemeFilter.powers.includes(`${p.tier}${p.quality}`)) return false
+    }
+    if (!matchSchemeKeyword(s, schemeFilter.keyword)) return false
+    return true
+  })
+  // 当前大区优先，其余大区排在后面（灰卡，切换大区后可选）
   return [
-    ...schemes.value.filter(s => s.server_id === sid),
-    ...schemes.value.filter(s => s.server_id !== sid),
+    ...rows.filter(s => s.server_id === sid),
+    ...rows.filter(s => s.server_id !== sid),
   ]
 })
+
+function resetSchemeFilter() {
+  schemeFilter.keyword = ''
+  schemeFilter.jobs = []
+  schemeFilter.levels = []
+  schemeFilter.powers = []
+  schemeFilter.onlyCurrentServer = true
+  closeFilterMenu()
+}
+
+// 筛选条件本地持久化，重开应用保留上次的查看口径
+function loadSchemeFilter() {
+  try {
+    const raw = localStorage.getItem(SCHEME_FILTER_KEY)
+    if (!raw) return
+    const v = JSON.parse(raw)
+    if (typeof v?.keyword === 'string') schemeFilter.keyword = v.keyword
+    if (Array.isArray(v?.jobs)) schemeFilter.jobs = v.jobs.filter((x: unknown) => typeof x === 'string')
+    if (Array.isArray(v?.levels)) schemeFilter.levels = v.levels.filter((x: unknown) => typeof x === 'number')
+    if (Array.isArray(v?.powers)) schemeFilter.powers = v.powers.filter((x: unknown) => typeof x === 'string' && /^[1-5][绿蓝紫金]$/.test(x))
+    if (typeof v?.onlyCurrentServer === 'boolean') schemeFilter.onlyCurrentServer = v.onlyCurrentServer
+  } catch { /* 本地筛选配置损坏则退回默认值 */ }
+}
+watch(schemeFilter, v => {
+  try { localStorage.setItem(SCHEME_FILTER_KEY, JSON.stringify(v)) } catch { /* 忽略写入失败 */ }
+}, { deep: true })
 
 const formServerLabel = computed(() => {
   if (editingScheme.value) return serverNameOf(editingScheme.value.server_id)
@@ -1448,6 +1791,12 @@ function rememberScheme(s: Scheme) {
 function clearCurrentScheme() {
   currentScheme.value = null
   selectedSchemeId.value = -1
+  detailMode.value = false
+}
+
+// 详情页返回方案列表（保留 currentScheme 以维持「上次编辑」标记与恢复现场）
+function backToList() {
+  detailMode.value = false
 }
 
 async function applySchemeForServer(serverId: number) {
@@ -1457,25 +1806,61 @@ async function applySchemeForServer(serverId: number) {
   else clearCurrentScheme()
 }
 
-function onSchemeSelect() {
-  const s = schemes.value.find(x => x.id === selectedSchemeId.value)
-  if (!s || !isSchemeSelectable(s)) {
-    selectedSchemeId.value = currentScheme.value?.id ?? -1
-    return
-  }
-  selectScheme(s)
-}
-
 async function selectScheme(s: Scheme) {
   if (!isSchemeSelectable(s)) return
   currentScheme.value = s
   selectedSchemeId.value = s.id
+  detailMode.value = true  // 点卡片 → 整页切换到方案详情
   rememberScheme(s)
   loadLockedSlots(s.id)
   await cleanupLegacyShenyuanKeys()
   // 迁移旧格式（纯数字 id）→ 新格式（{i,p,n,q}）
   await migrateSlotPrices()
+  // 兼容更早期数据：details 有物品但 slot_price_ids 缺失的槽位，按物品名回查图鉴补齐
+  await backfillMissingSlotPrices()
   syncCatalogFromSlotPrices()
+}
+
+// details 里配了物品但 slot_price_ids 缺记录的槽位（早期版本未持久化价格），按物品名回查图鉴补齐。
+// 不补齐会导致依赖 slot_price_ids 的功能（养成宝典快照、金额汇总）取不到价格，只有配号中心自身因有名称兜底能显示。
+async function backfillMissingSlotPrices() {
+  const scheme = currentScheme.value
+  if (!scheme) return
+  const details = scheme.details || {}
+  const sidMap = { ...(scheme.slot_price_ids || {}) }
+  const missing: string[] = []
+  for (const [slot, name] of Object.entries(details)) {
+    if (!(name || '').trim()) continue
+    const v = sidMap[slot]
+    const ok = typeof v === 'number' ? v > 0 : !!v && typeof v === 'object' && 'i' in (v as object)
+    if (ok) continue
+    missing.push(slot)
+  }
+  if (!missing.length) return
+  const names = [...new Set(missing.map(s => (details[s] || '').trim()))]
+  try {
+    const placeholders = names.map(() => '?').join(',')
+    const rows = await window.electronAPI.dbQuery(
+      `SELECT id, item_name, market_price, quality, TRIM(COALESCE(attrs,'') || ' ' || COALESCE(attr_notes,'') || ' ' || COALESCE(craft_level,'')) as notes FROM price_params WHERE item_name IN (${placeholders}) AND server_id = ? ORDER BY market_price ASC`,
+      [...names, app.currentServerId]
+    ) as Array<{ id: number; item_name: string; market_price: number; quality: string; notes: string }>
+    // 同名多条时取最便宜的一条（与槽位下拉默认排序一致）
+    const byName = new Map<string, { id: number; market_price: number; quality: string; notes: string }>()
+    for (const r of rows) if (!byName.has(r.item_name)) byName.set(r.item_name, r)
+    let changed = false
+    for (const slot of missing) {
+      const r = byName.get((details[slot] || '').trim())
+      if (!r) continue
+      sidMap[slot] = { i: r.id, p: Math.round((r.market_price || 0) * 10000), n: r.notes || '', q: r.quality || '' }
+      changed = true
+    }
+    if (!changed) return
+    scheme.slot_price_ids = sidMap
+    await window.electronAPI.dbQuery(
+      `UPDATE gear_schemes SET slot_price_ids=? WHERE id=?`,
+      [JSON.stringify(sidMap), scheme.id]
+    )
+  } catch (e) { console.warn('[配号中心] backfillMissingSlotPrices 失败:', e) }
 }
 
 // 将 slot_price_ids 中的旧格式（纯数字 id）升级为新格式（完整属性对象）
@@ -1539,30 +1924,42 @@ async function cleanupLegacyShenyuanKeys() {
 
 function openNewScheme() {
   editingScheme.value = null
-  form.name = ''; form.character_name = ''; form.job = '剑侍'; form.level_num = 100; form.total_budget = 5
+  form.name = ''; form.character_name = ''; form.job = '剑侍'; form.level_num = 100; form.power = ''
+  pwMenuOpen.value = false; pwMenuUp.value = false; pwMenuMaxH.value = 248
   showForm.value = true
 }
 function editScheme(s: Scheme) {
   editingScheme.value = s
-  form.name = s.name; form.character_name = s.character_name || ''; form.job = s.job || '剑侍'; form.level_num = s.level_num || 100; form.total_budget = s.total_budget
+  form.name = s.name; form.character_name = s.character_name || ''; form.job = s.job || '剑侍'; form.level_num = s.level_num || 100; form.power = s.power || ''
+  pwMenuOpen.value = false; pwMenuUp.value = false; pwMenuMaxH.value = 248
   showForm.value = true
 }
 async function saveScheme() {
   if (!form.name) return
   try {
     if (editingScheme.value) {
+      // 预算不再手动填写：以方案内物品金额总和为准（万 → 亿），随保存同步到 total_budget 字段
+      const derivedBudgetYi = Number((schemeTotalWan(editingScheme.value) / 10000).toFixed(4))
       await window.electronAPI.dbQuery(
-        `UPDATE gear_schemes SET name=?,character_name=?,job=?,level_num=?,total_budget=?,updated_at=datetime('now','localtime') WHERE id=?`,
-        [form.name, form.character_name, form.job, form.level_num, form.total_budget, editingScheme.value.id])
+        `UPDATE gear_schemes SET name=?,character_name=?,job=?,level_num=?,total_budget=?,power=?,updated_at=datetime('now','localtime') WHERE id=?`,
+        [form.name, form.character_name, form.job, form.level_num, derivedBudgetYi, form.power, editingScheme.value.id])
+      app.bumpSchemeDataVersion()
       showForm.value = false; await loadSchemes()
       const updated = schemes.value.find(s => s.id === editingScheme.value!.id)
-      if (updated) await selectScheme(updated)
+      if (updated) {
+        // 编辑入口在方案列表卡片上 → 保存后停留列表，不跳详情；仅把编辑对象记为「上次编辑」
+        currentScheme.value = updated
+        selectedSchemeId.value = updated.id
+        detailMode.value = false
+        rememberScheme(updated)
+      }
     } else {
       const sid = app.currentServerId
       if (!sid) { alert('请先选择大区'); return }
       await window.electronAPI.dbQuery(
-        `INSERT INTO gear_schemes (name,character_name,job,level_num,total_budget,details,server_id,updated_at) VALUES (?,?,?,?,?,'{}',?,datetime('now','localtime'))`,
-        [form.name, form.character_name, form.job, form.level_num, form.total_budget, sid])
+        `INSERT INTO gear_schemes (name,character_name,job,level_num,total_budget,details,power,server_id,updated_at) VALUES (?,?,?,?,?,'{}',?,?,datetime('now','localtime'))`,
+        [form.name, form.character_name, form.job, form.level_num, 0, form.power, sid])
+      app.bumpSchemeDataVersion()
       const rows = await window.electronAPI.dbQuery('SELECT last_insert_rowid() as id', []) as any[]
       const newId = rows?.[0]?.id
       showForm.value = false; await loadSchemes()
@@ -1576,26 +1973,28 @@ async function saveScheme() {
 }
 async function deleteScheme(id: number) {
   const scheme = schemes.value.find(s => s.id === id)
-  if (!confirm(`确定删除方案「${scheme?.name || '未命名'}」？此操作不可撤销。`)) return
+  if (!(await appConfirm({ title: '删除方案', message: `确定删除方案「${scheme?.name || '未命名'}」？此操作不可撤销。`, confirmText: '删除', danger: true }))) return
   const serverId = scheme?.server_id
   await window.electronAPI.dbQuery('DELETE FROM gear_schemes WHERE id=?', [id])
+  app.bumpSchemeDataVersion()
   if (currentScheme.value?.id === id) {
     clearCurrentScheme()
     if (serverId) localStorage.removeItem(lastSchemeStorageKey(serverId))
   }
   await loadSchemes()
 }
-async function copyScheme() {
-  if (!currentScheme.value) return
+async function copyScheme(s?: Scheme) {
+  const src = s || currentScheme.value
+  if (!src) return
   try {
-    const s = currentScheme.value
-    const sid = s.server_id || app.currentServerId
+    const sid = src.server_id || app.currentServerId
     if (!sid) { alert('请先选择大区'); return }
-    const newName = (s.name || '未命名') + ' (副本)'
+    const newName = (src.name || '未命名') + ' (副本)'
     await window.electronAPI.dbQuery(
-      `INSERT INTO gear_schemes (name,character_name,job,level_num,total_budget,details,slot_price_ids,notes,server_id,updated_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now','localtime'))`,
-      [newName, s.character_name, s.job, s.level_num, s.total_budget, JSON.stringify(s.details || {}), JSON.stringify(s.slot_price_ids || {}), s.notes || '', sid]
+      `INSERT INTO gear_schemes (name,character_name,job,level_num,total_budget,details,slot_price_ids,notes,power,server_id,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))`,
+      [newName, src.character_name, src.job, src.level_num, Number((schemeTotalWan(src) / 10000).toFixed(4)), JSON.stringify(src.details || {}), JSON.stringify(src.slot_price_ids || {}), src.notes || '', src.power || '', sid]
     )
+    app.bumpSchemeDataVersion()
     const rows = await window.electronAPI.dbQuery('SELECT last_insert_rowid() as id', []) as any[]
     const newId = rows?.[0]?.id
     await loadSchemes()
@@ -1797,13 +2196,26 @@ async function migrateNullServerIds() {
 }
 
 onMounted(async () => {
-  await loadSchemes(); await loadReferenceData(); await app.loadServers()
-  await migrateNullServerIds()
-  await loadSchemes()
-  refreshImageSet()
+  loadSchemeFilter()
   document.addEventListener('click', handleClickOutside); document.addEventListener('keydown', handleKeydown); document.addEventListener('paste', onSlotSearchPaste)
-  schemesReady.value = true
-  if (app.currentServerId) await applySchemeForServer(app.currentServerId)
+  try {
+    // loadReferenceData（4 次查询，只写 slotRefMap/equipMetaMap）与 loadServers（只写 store 大区）
+    // 互不依赖，并行省掉一轮串行等待。
+    await Promise.all([loadReferenceData(), app.loadServers()])
+    // 必须在 loadServers 之后：migrate 要用 currentServerId
+    await migrateNullServerIds()
+    // 必须在 migrate 之后：把补写上的 server_id 读回来。
+    // 原先在链首还多调了一次 loadSchemes —— 它与上面两步都无依赖，属冗余（等于全表行 JSON.parse 两遍），已去掉。
+    await loadSchemes()
+    refreshImageSet()
+    // 关键：先解析「上次编辑的方案」，再放行首屏渲染。
+    // selectScheme 内部是同步置好 currentScheme / detailMode 后才 await 后续迁移，
+    // 所以 schemesReady 置 true 的那一帧直接就是详情页，不会再先渲染一次列表。
+    if (app.currentServerId) await applySchemeForServer(app.currentServerId)
+  } finally {
+    // 放在 finally 里：加载链任何一步抛错也要放行，避免整页卡在加载态
+    schemesReady.value = true
+  }
 })
 
 watch(() => app.currentServerId, async (newId, oldId) => {
@@ -1853,7 +2265,7 @@ async function exportToExcel() {
 
     // JSON 序列化去掉 Vue 响应式代理，确保 IPC 可克隆
     const payload = JSON.parse(JSON.stringify({
-      name: s.name, job: s.job, level_num: s.level_num, total_budget: s.total_budget,
+      name: s.name, job: s.job, level_num: s.level_num, total_budget: Number((schemeTotalWan(s) / 10000).toFixed(4)),
       character_name: s.character_name, notes: s.notes,
       details: s.details || {},
       slot_price_ids: s.slot_price_ids || {},
@@ -1891,132 +2303,253 @@ onUnmounted(() => { document.removeEventListener('click', handleClickOutside); d
 /* ── 顶栏 ── */
 .topbar { display:flex; align-items:center; gap:12px; padding-bottom:12px; border-bottom:0.5px solid var(--color-border-light); flex-shrink:0; }
 .topbar-left { display:flex; align-items:center; gap:8px; }
-.topbar-left h2 { font-size:22px; font-weight:650; margin:0; }
+.topbar-left h2 { font-size:var(--text-lg); font-weight:650; letter-spacing:-0.01em; margin:0; }
 .topbar-center { display:flex; align-items:center; gap:8px; flex:1; }
 .topbar-right { display:flex; align-items:center; gap:6px; }
-.scheme-select { padding:5px 8px; font-size:12.5px; font-family:inherit; background:var(--color-surface-2); color:var(--color-text); border:0.5px solid var(--color-border); border-radius:5px; min-width:260px; max-width:420px; }
-.scheme-select option:disabled { color: var(--color-text-tertiary); }
+/* ── 方案列表模式 ── */
+.scheme-list-scroll { flex:1; overflow-y:auto; padding:2px 2px 24px; }
+.scheme-card-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+.scheme-card { display:flex; flex-direction:column; gap:8px; padding:14px 16px; min-height:104px; min-width:0; background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-md); box-shadow:var(--shadow-card); cursor:pointer; transition:border-color 0.12s, transform 0.12s; }
+.scheme-card:hover { border-color:var(--color-accent-ring); transform:translateY(-1px); }
+.scheme-card--active { border-color:var(--color-accent); background:var(--color-accent-bg); }
+.scheme-card--disabled { opacity:0.55; cursor:not-allowed; }
+.scheme-card--disabled:hover { transform:none; border-color:var(--color-border-light); }
+.scc-top { display:flex; align-items:center; gap:6px; min-width:0; }
+.scc-name { flex:1; min-width:0; font-size:var(--text-md); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scc-current { flex-shrink:0; font-size:var(--text-micro); font-weight:600; color:var(--color-accent); }
+
+/* ── 战力徽标（配色随品质，卡片上突出强调）── */
+.scc-power {
+  display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+  padding:3px 10px 3px 8px; border-radius:999px;
+  background:var(--pw-bg, var(--color-surface-2)); border:1px solid var(--pw-border, var(--color-border));
+  font-size:var(--text-xs); font-weight:600; color:var(--pw-color, var(--color-text-secondary));
+  line-height:1; width:max-content; letter-spacing:0.01em;
+}
+.scc-power-swatch { width:9px; height:9px; border-radius:2px; background:var(--pw-fill, #888); box-shadow:0 0 0 1px rgba(255,255,255,0.4) inset; }
+.scc-power-txt { white-space:nowrap; }
+/* 详情页顶栏内的内联战力徽标（右侧操作钮前不换行） */
+.scc-power--inline { align-self:center; font-size:var(--text-micro); padding:3px 9px 3px 7px; }
+.scc-power--inline .scc-power-swatch { width:8px; height:8px; }
+.scc-meta { display:flex; flex-wrap:wrap; gap:4px; }
+.scc-foot { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:auto; min-height:22px; }
+.scc-budget { display:flex; align-items:center; gap:4px; font-size:var(--text-sm); font-weight:600; color:var(--color-accent); white-space:nowrap; }
+.scc-actions { display:flex; gap:2px; opacity:0; transition:opacity 0.12s; }
+.scheme-card:hover .scc-actions, .scheme-card--active .scc-actions { opacity:1; }
+.scc-btn { display:flex; align-items:center; border:none; background:transparent; color:var(--color-text-tertiary); cursor:pointer; padding:3px; border-radius:4px; }
+.scc-btn:hover { background:var(--color-hover); color:var(--color-text); }
+.scheme-card--create { align-items:center; justify-content:center; gap:4px; min-height:104px; border-style:dashed; border-color:var(--color-border); background:transparent; box-shadow:none; color:var(--color-text-tertiary); }
+.scheme-card--create:hover { border-color:var(--color-accent); color:var(--color-accent); background:var(--color-accent-bg); transform:translateY(-1px); }
+.scc-create-text { font-size:var(--text-sm); font-weight:550; }
+.list-server { font-size:var(--text-xs); color:var(--color-text-tertiary); background:var(--color-surface-2); padding:2px 10px; border-radius:10px; }
+
+/* ── 方案列表筛选栏 ── */
+.scheme-filter { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 0 10px; flex-shrink:0; }
+.sf-search { display:flex; align-items:center; gap:6px; width:240px; height:28px; padding:0 8px; background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-sm); color:var(--color-text-tertiary); }
+.sf-search:focus-within { border-color:var(--color-accent-ring); }
+.sf-search-input { flex:1; min-width:0; border:none; background:transparent; outline:none; font-family:inherit; font-size:var(--text-xs); color:var(--color-text); }
+.sf-search-input::placeholder { color:var(--color-text-tertiary); }
+.sf-search-clear { display:flex; align-items:center; flex-shrink:0; border:none; background:transparent; color:var(--color-text-tertiary); cursor:pointer; padding:2px; border-radius:4px; }
+.sf-search-clear:hover { background:var(--color-hover); color:var(--color-text); }
+
+.sf-menu-wrap { position:relative; }
+.sf-trigger { display:flex; align-items:center; gap:4px; height:28px; padding:0 10px; font-family:inherit; font-size:var(--text-xs); color:var(--color-text-secondary); background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap; }
+.sf-trigger:hover { background:var(--color-surface-2); border-color:var(--color-border); }
+.sf-trigger--on { color:var(--color-accent); background:var(--color-accent-bg); border-color:var(--color-accent-ring); }
+.sf-menu { position:absolute; top:calc(100% + 4px); left:0; z-index:60; min-width:136px; padding:4px; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-sm); box-shadow:var(--shadow-pop); backdrop-filter:blur(20px) saturate(1.4); animation:modal-in 0.14s ease-out; }
+.sf-opt { display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:4px; font-size:var(--text-xs); color:var(--color-text-secondary); cursor:pointer; white-space:nowrap; }
+.sf-opt:hover { background:var(--color-hover); color:var(--color-text); }
+.sf-opt input { margin:0; cursor:pointer; accent-color:var(--color-accent); }
+.sf-menu-empty { padding:6px 8px; font-size:var(--text-micro); color:var(--color-text-tertiary); }
+.sf-menu--power { min-width:190px; max-height:280px; overflow-y:auto; }
+.sf-opt--hint { cursor:default; color:var(--color-text-tertiary); font-size:var(--text-micro); }
+.sf-opt--pw .pw-swatch { margin:0 2px 0 0; }
+
+.sf-check { display:flex; align-items:center; gap:5px; font-size:var(--text-xs); color:var(--color-text-secondary); cursor:pointer; white-space:nowrap; user-select:none; }
+.sf-check input { margin:0; cursor:pointer; accent-color:var(--color-accent); }
+.sf-count { font-size:var(--text-xs); color:var(--color-text-tertiary); }
+.sf-count strong { font-weight:600; color:var(--color-text-secondary); }
+.sf-reset { border:none; background:transparent; color:var(--color-accent); font-family:inherit; font-size:var(--text-xs); cursor:pointer; padding:3px 6px; border-radius:4px; }
+.sf-reset:hover { background:var(--color-accent-bg); }
+.sf-reset-inline { display:block; margin:10px auto 0; padding:4px 14px; border:none; border-radius:var(--radius-sm); background:var(--color-accent-bg); color:var(--color-accent); font-family:inherit; font-size:var(--text-xs); cursor:pointer; }
+
+/* ── 方案详情模式顶栏 ── */
+.btn-back { display:flex; align-items:center; gap:2px; background:var(--color-surface-2); color:var(--color-text-secondary); }
+.btn-back:hover { background:var(--color-hover); color:var(--color-text); }
+.detail-name { font-size:var(--text-lg); font-weight:650; letter-spacing:-0.01em; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:360px; }
 
 /* ── 帮助弹层 ── */
-.help-box { padding:12px 16px; border-radius:var(--radius-sm); background:var(--color-surface-2); border:0.5px solid var(--color-border-light); font-size:12px; color:var(--color-text-secondary); line-height:1.8; margin-bottom:8px; flex-shrink:0; }
+.help-box { padding:12px 16px; border-radius:var(--radius-sm); background:var(--color-surface-2); border:1px solid var(--color-border-light); box-shadow:var(--shadow-card); font-size:var(--text-xs); color:var(--color-text-secondary); line-height:1.8; margin-bottom:8px; flex-shrink:0; }
 .help-box p { margin:0; }
-.btn-close-help { margin-top:6px; border:none; background:var(--color-accent); color:#fff; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; font-family:inherit; }
-.btn-help { width:26px; height:26px; border-radius:50%; border:1px solid var(--color-border); background:var(--color-surface-1); font-size:13px; font-weight:600; color:var(--color-text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.btn-close-help { margin-top:6px; border:none; background:var(--color-accent); color:#fff; border-radius:4px; padding:3px 10px; font-size:var(--text-micro); cursor:pointer; font-family:inherit; }
+.btn-help { width:26px; height:26px; border-radius:50%; border:1px solid var(--color-border); background:var(--color-surface-1); font-size:var(--text-sm); font-weight:600; color:var(--color-text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .btn-help:hover { border-color:var(--color-accent); color:var(--color-accent); }
 
 /* ── 信息栏 ── */
 /* ── 仪表盘 ── */
-.dashboard { padding: 10px 14px; background: var(--color-surface-1); border: 0.5px solid var(--color-border-light); border-radius: var(--radius-md); margin-bottom: 8px; flex-shrink: 0; }
+.dashboard { padding: 10px 14px; background: var(--color-surface-1); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); margin-bottom: 8px; flex-shrink: 0; }
 .dash-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.dash-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-secondary); }
+.dash-item { display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: var(--color-text-secondary); }
 .dash-item--wide { flex: 1; min-width: 180px; }
 .dash-label { white-space: nowrap; min-width: 120px; }
-.dash-bar { flex: 1; height: 8px; background: var(--color-surface-2); border-radius: 4px; overflow: hidden; }
-.dash-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
-.dash-bar-fill--slot { background: var(--color-accent); }
-.dash-bar-fill--budget { background: var(--color-success); }
-.dash-bar-fill--over { background: var(--color-danger); }
-.dash-pct { font-size: 11px; font-weight: 600; min-width: 32px; text-align: right; }
-.dash-breakdown { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--color-border-light); gap: 12px; }
-.dash-bd-item { font-size: 11px; color: var(--color-text-secondary); }
 .dash-bd-item strong { color: var(--color-accent); margin-left: 2px; }
 
 /* ── Tab ── */
 .tab-bar { display:flex; gap:2px; margin-top:4px; flex-shrink:0; }
-.tab { padding:8px 18px; border:none; border-radius:6px 6px 0 0; background:transparent; font-size:13px; font-family:inherit; color:var(--color-text-tertiary); cursor:pointer; transition:all 0.12s; }
+.tab { padding:8px 18px; border:none; border-radius:6px 6px 0 0; background:transparent; font-size:var(--text-sm); font-family:inherit; color:var(--color-text-tertiary); cursor:pointer; transition:all 0.12s; }
 .tab:hover { color:var(--color-text); background:var(--color-surface-2); }
 .tab--active { color:var(--color-accent); background:var(--color-accent-bg); font-weight:550; }
-.tab-count { font-size:10.5px; margin-left:4px; opacity:0.6; }
-.tab-total { font-size:10.5px; margin-left:4px; color:var(--color-accent); }
+.tab-count { font-size:var(--text-micro); margin-left:4px; opacity:0.6; }
+.tab-total { font-size:var(--text-micro); margin-left:4px; color:var(--color-accent); }
 
 /* ── Tab 内容 ── */
 .tab-content { flex:1; overflow-y:auto; padding:14px 0; }
 .slot-grid-2col { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; align-content:start; }
-.slot-section-card { min-width:0; background:var(--color-surface-1); border:0.5px solid var(--color-border-light); border-radius:var(--radius-md); overflow:visible; }
-.sec-head { padding:10px 14px; background:var(--color-surface-2); font-size:13px; font-weight:600; }
+.slot-section-card { min-width:0; background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-md); box-shadow:var(--shadow-card); overflow:visible; }
+.sec-head { padding:10px 14px; background:var(--color-surface-2); font-size:var(--text-sm); font-weight:600; }
 .sec-slots { padding:8px; display:flex; flex-direction:column; gap:3px; }
-.slot-card { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--radius-sm); background:var(--color-surface-2); font-size:12px; }
+.slot-card { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--radius-sm); background:var(--color-surface-2); font-size:var(--text-xs); }
 .slot-card--empty { opacity:0.5; }
 .slot-card--ai { border-left:3px solid var(--color-accent); background:var(--color-accent-bg); }
-.sc-label { width:42px; flex-shrink:0; font-weight:550; color:var(--color-text-secondary); font-size:11px; }
+.sc-label { width:42px; flex-shrink:0; font-weight:550; color:var(--color-text-secondary); font-size:var(--text-micro); }
 .sc-val { flex:2 1 0; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .slot-card--empty .sc-val { color:var(--color-text-tertiary); }
-.sc-notes { flex:1 1 0; max-width:180px; font-size:10.5px; color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-.sc-price { font-size:10.5px; color:var(--color-accent); font-weight:500; flex-shrink:0; }
+.sc-notes { flex:1 1 0; max-width:180px; font-size:var(--text-micro); color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.sc-price { font-size:var(--text-micro); color:var(--color-accent); font-weight:500; flex-shrink:0; }
 
 /* ── 思考面板 ── */
-.thinking-panel { position:fixed; right:0; bottom:0; width:320px; max-height:50vh; background:var(--color-surface-1); border:0.5px solid var(--color-border); border-radius:var(--radius-md) 0 0 0; box-shadow:-2px -2px 12px rgba(0,0,0,0.1); z-index:100; display:flex; flex-direction:column; }
-.thinking-head { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:0.5px solid var(--color-border-light); font-size:13px; font-weight:550; flex-shrink:0; }
-.btn-close-think { background:none; border:none; font-size:14px; cursor:pointer; color:var(--color-text-tertiary); }
+.thinking-panel { position:fixed; right:0; bottom:0; width:320px; max-height:50vh; background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-md) 0 0 0; box-shadow:var(--shadow-card); z-index:100; display:flex; flex-direction:column; }
+.thinking-head { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:0.5px solid var(--color-border-light); font-size:var(--text-sm); font-weight:550; flex-shrink:0; }
+.btn-close-think { background:none; border:none; font-size:var(--text-md); cursor:pointer; color:var(--color-text-tertiary); }
 .thinking-body { flex:1; overflow-y:auto; padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
-.thinking-line { font-size:11px; color:var(--color-text-secondary); padding:3px 0; border-bottom:0.5px solid var(--color-border-light); }
+.thinking-line { font-size:var(--text-micro); color:var(--color-text-secondary); padding:3px 0; border-bottom:0.5px solid var(--color-border-light); }
 
 /* ── 通用 ── */
-.hint { color:var(--color-text-tertiary); text-align:center; padding:36px; font-size:12.5px; }
-.badge { font-size:11px; padding:2px 8px; border-radius:10px; background:var(--color-accent-bg); color:var(--color-accent); }
+.hint { color:var(--color-text-tertiary); text-align:center; padding:36px; font-size:var(--text-xs); }
+
+/* 首屏加载态：占位高度贴近列表态，避免出现「加载→列表→详情」的二次位移 */
+.boot-loading {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 60px 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+.badge { font-size:var(--text-micro); padding:2px 8px; border-radius:10px; background:var(--color-accent-bg); color:var(--color-accent); }
 .badge--char { background:var(--color-surface-3); color:var(--color-text-secondary); }
+.badge--server { background:var(--color-surface-3); color:var(--color-text-secondary); }
 
 /* ── 方案备注（点击编辑） ── */
 .scheme-notes {
   display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 12px; margin: 2px 0;
   background: var(--color-surface-2); border-radius: var(--radius-sm);
-  font-size: 12px; color: var(--color-text-secondary);
+  font-size: var(--text-xs); color: var(--color-text-secondary);
   line-height: 1.6; flex-shrink: 0; cursor: pointer;
   min-height: 100px;
 }
 .scheme-notes:hover { background: var(--color-surface-3); }
-.sn-label { flex-shrink: 0; font-size: 13px; margin-top: 2px; }
+.sn-label { flex-shrink: 0; font-size: var(--text-sm); margin-top: 2px; }
 .sn-text { white-space: pre-wrap; word-break: break-word; min-width: 0; flex: 1; padding: 4px 0; }
 .sn-text--empty { color: var(--color-text-tertiary); font-style: italic; }
 .sn-edit-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .sn-textarea {
-  width: 100%; padding: 8px 10px; font-size: 12px; font-family: inherit;
+  width: 100%; padding: 8px 10px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-1); color: var(--color-text);
-  border: 0.5px solid var(--color-accent); border-radius: 4px;
+  border: 0.5px solid var(--color-accent); border-radius: var(--radius-sm);
   resize: vertical; min-height: 120px; line-height: 1.6; outline: none;
 }
 .text-danger { color:var(--color-danger); }
 .text-warn { color:#e65100; }
 
-.btn { border:none; border-radius:5px; cursor:pointer; font-size:12.5px; font-weight:500; padding:5px 12px; font-family:inherit; transition:all 0.12s; }
+.btn { border:none; border-radius:5px; cursor:pointer; font-size:var(--text-xs); font-weight:500; padding:5px 12px; font-family:inherit; transition:all 0.12s; }
 .btn:disabled { opacity:0.4; cursor:not-allowed; }
 .btn-accent { background:var(--color-accent); color:#fff; }
 .btn-accent:hover { opacity:0.9; }
-.btn-ai { background:linear-gradient(135deg,#5E6AD2,#8B5CF6); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:550; padding:7px 16px; font-family:inherit; }
+.btn-ai { background:linear-gradient(135deg,#5E6AD2,#8B5CF6); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:var(--text-sm); font-weight:550; padding:7px 16px; font-family:inherit; }
 .btn-ai:hover { opacity:0.9; }
 .btn-ai:disabled { opacity:0.5; cursor:not-allowed; }
 .btn-ghost { background:transparent; color:var(--color-text-secondary); }
 .btn-ghost:hover { background:var(--color-hover); }
-.btn-sm { font-size:11px; padding:3px 8px; }
-.btn-icon { background:none; border:none; cursor:pointer; font-size:16px; color:var(--color-text-tertiary); }
+.btn-sm { font-size:var(--text-micro); padding:3px 8px; }
+.btn-icon { background:none; border:none; cursor:pointer; font-size:var(--text-lg); color:var(--color-text-tertiary); }
 
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200; }
-.modal { background:var(--color-surface-1); border:0.5px solid var(--color-border); border-radius:var(--radius-lg); width:420px; max-width:90vw; box-shadow:0 16px 40px rgba(0,0,0,0.3); }
+.modal-overlay { position:fixed; inset:0; background:rgba(5,6,9,0.45); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:200; animation:overlay-in 0.15s ease-out; }
+.modal { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-lg); width:420px; max-width:90vw; box-shadow:var(--shadow-pop); backdrop-filter:blur(28px) saturate(1.5); animation:modal-in 0.18s cubic-bezier(0.2,0.8,0.3,1.1); }
 .modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:0.5px solid var(--color-border-light); }
-.modal-head h4 { font-size:15px; font-weight:600; margin:0; }
+.modal-head h4 { font-size:var(--text-md); font-weight:600; margin:0; }
 .modal-body { padding:20px; display:flex; flex-direction:column; gap:14px; }
 .modal-foot { display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:0.5px solid var(--color-border-light); }
 .form-row { display:flex; flex-direction:column; gap:4px; }
 .form-row--2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.form-label { font-size:11.5px; font-weight:500; color:var(--color-text-secondary); }
-.input { width:100%; padding:7px 10px; font-size:12.5px; font-family:inherit; background:var(--color-surface-2); color:var(--color-text); border:0.5px solid var(--color-border); border-radius:5px; }
+.form-label { font-size:var(--text-micro); font-weight:500; color:var(--color-text-secondary); }
+.input { width:100%; padding:7px 10px; font-size:var(--text-xs); font-family:inherit; background:var(--color-surface-2); color:var(--color-text); border:0.5px solid var(--color-border); border-radius:var(--radius-sm); }
 .input:disabled { opacity:0.7; cursor:not-allowed; color:var(--color-text-secondary); }
 .input:focus { outline:none; border-color:var(--color-accent-ring); }
+
+/* ── 战力下拉（阶 × 品质）── */
+.form-opt-hint { margin-left:6px; font-weight:400; color:var(--color-text-tertiary); }
+.pw-dropdown-wrap { position:relative; }
+.pw-trigger {
+  display:flex; align-items:center; gap:6px; justify-content:flex-start;
+  cursor:pointer; text-align:left;
+  color:var(--color-text); font-weight:500;
+}
+.pw-trigger:not(.pw-trigger--set) { color:var(--color-text-tertiary); font-weight:400; }
+.pw-trigger:hover { border-color:var(--color-accent-ring); }
+.pw-trigger .scc-power-swatch { flex-shrink:0; }
+.pw-trigger-arrow { margin-left:auto; flex-shrink:0; color:var(--color-text-tertiary); }
+.pw-trigger--set { color:var(--pw-color, var(--color-text)); background:var(--pw-bg, var(--color-surface-2)); }
+.pw-placeholder { color:var(--color-text-tertiary); }
+.pw-menu {
+  position:absolute; top:calc(100% + 4px); left:0; width:100%; z-index:220;
+  max-height:248px; overflow-y:auto; padding:6px;
+  background:var(--glass-bg); border:1px solid var(--glass-border);
+  border-radius:var(--radius-sm); box-shadow:var(--shadow-pop);
+  backdrop-filter:blur(20px) saturate(1.4); animation:modal-in 0.14s ease-out;
+}
+.pw-menu--up { top:auto; bottom:calc(100% + 4px); }
+.pw-menu-none {
+  width:100%; display:flex; align-items:center; gap:6px; text-align:left; padding:5px 8px;
+  font-family:inherit; font-size:var(--text-xs); color:var(--color-text-tertiary);
+  background:transparent; border:none; border-radius:5px; cursor:pointer;
+}
+.pw-menu-none:hover { background:var(--color-hover); color:var(--color-text); }
+.pw-menu-divider { height:1px; margin:5px 0; background:var(--color-border-light); }
+.pw-menu-opts {
+  display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:5px;
+}
+.pw-menu-item {
+  display:flex; align-items:center; justify-content:flex-start; gap:5px; height:28px; padding:0 7px;
+  border-radius:5px; border:1px solid var(--color-border); background:var(--color-surface-1);
+  font-family:inherit; font-size:var(--text-xs); font-weight:500;
+  color:var(--pw-color, var(--color-text-secondary)); cursor:pointer; transition:all 0.1s;
+  white-space:nowrap; overflow:hidden;
+}
+.pw-menu-item:hover { border-color:var(--pw-color, var(--color-accent-ring)); background:var(--pw-bg, var(--color-surface-2)); }
+.pw-menu-item--active {
+  background:var(--pw-bg, var(--color-accent-bg));
+  border-color:var(--pw-color, var(--color-accent));
+  color:var(--pw-color, var(--color-accent));
+  box-shadow:0 0 0 1px var(--pw-color, var(--color-accent)) inset;
+  font-weight:600;
+}
+.pw-menu-item--active:hover { border-color:var(--pw-color, var(--color-accent)); }
+.pw-swatch { width:8px; height:8px; flex-shrink:0; border-radius:2px; background:var(--pw-fill, var(--color-text-tertiary)); }
 
 /* ── 设置面板 ── */
 .btn-ghost--active { background: var(--color-accent-bg); color: var(--color-accent); }
 .settings-panel {
   margin-bottom: 14px; padding: 14px 16px;
-  background: var(--color-surface-1); border: 0.5px solid var(--color-border-light);
-  border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 12px;
+  background: var(--color-surface-1); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; gap: 12px;
 }
 .st-row { display: flex; gap: 12px; }
 .st-row--end { align-items: center; }
 .st-field { flex: 1; min-width: 0; }
-.st-label { display: block; font-size: 10.5px; font-weight: 500; color: var(--color-text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+.st-label { display: block; font-size: var(--text-micro); font-weight: 500; color: var(--color-text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
 .st-input { width: 100%; }
-.st-hint { font-size: 10.5px; margin-left: 6px; white-space: nowrap; }
+.st-hint { font-size: var(--text-micro); margin-left: 6px; white-space: nowrap; }
 .model-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .model-pill {
   display: flex; flex-direction: column; gap: 2px;
@@ -2026,18 +2559,18 @@ onUnmounted(() => { document.removeEventListener('click', handleClickOutside); d
 }
 .model-pill:hover { border-color: var(--color-accent-ring); }
 .model-pill--active { background: var(--color-accent-bg); border-color: var(--color-accent); }
-.model-pill-name { font-size: 12px; font-weight: 600; color: var(--color-text); }
+.model-pill-name { font-size: var(--text-xs); font-weight: 600; color: var(--color-text); }
 .model-pill--active .model-pill-name { color: var(--color-accent); }
-.model-pill-desc { font-size: 10px; color: var(--color-text-tertiary); }
-.test-result { font-size: 12px; }
+.model-pill-desc { font-size: var(--text-micro); color: var(--color-text-tertiary); }
+.test-result { font-size: var(--text-xs); }
 .prompt-details { margin-top: 4px; }
-.prompt-summary { cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--color-text-secondary); padding: 4px 0; user-select: none; }
+.prompt-summary { cursor: pointer; font-size: var(--text-xs); font-weight: 500; color: var(--color-text-secondary); padding: 4px 0; user-select: none; }
 .prompt-summary:hover { color: var(--color-text); }
 .prompt-editor {
-  width: 100%; margin-top: 8px; padding: 10px; font-size: 12px;
+  width: 100%; margin-top: 8px; padding: 10px; font-size: var(--text-xs);
   font-family: 'SF Mono','Cascadia Code','Consolas',monospace;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 5px;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
   resize: vertical; outline: none; line-height: 1.6;
 }
 .prompt-editor:focus { border-color: var(--color-accent-ring); }
@@ -2051,61 +2584,66 @@ onUnmounted(() => { document.removeEventListener('click', handleClickOutside); d
 .slot-card { position: relative; cursor: pointer; }
 .slot-card:hover { background: var(--color-surface-3); }
 .slot-card--open { border-color: var(--color-accent); background: var(--color-accent-bg); z-index: 101; opacity: 1; }
-.sc-arrow { font-size: 10px; color: var(--color-text-tertiary); flex-shrink: 0; }
-.sc-img { font-size: 13px; flex-shrink: 0; cursor: pointer; opacity: 0.7; }
+.sc-arrow { font-size: var(--text-micro); color: var(--color-text-tertiary); flex-shrink: 0; }
+.sc-img { font-size: var(--text-sm); flex-shrink: 0; cursor: pointer; opacity: 0.7; }
 .sc-img:hover { opacity: 1; }
-.sc-lock { font-size: 13px; cursor: pointer; flex-shrink: 0; opacity: 0.5; transition: opacity 0.12s; }
+.sc-lock { font-size: var(--text-sm); cursor: pointer; flex-shrink: 0; opacity: 0.5; transition: opacity 0.12s; }
 .sc-lock:hover { opacity: 1; }
-.sc-lock-time { font-size: 10px; color: var(--color-accent); flex-shrink: 0; white-space: nowrap; opacity: 0.8; }
-.slot-card--locked { border-left: 2px solid var(--color-accent); cursor: default; }
-.slot-card--locked:hover { background: var(--color-surface-3); }
-.sc-clear { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; flex-shrink: 0; padding: 0 2px; }
+.sc-lock-time { font-size: var(--text-micro); color: var(--color-accent); flex-shrink: 0; white-space: nowrap; opacity: 0.8; }
+/* 锁定槽位：淡金底 + 虚线描边，暗示「冻结待复核」，不再用左侧色条 */
+.slot-card--locked {
+  border: 1px dashed var(--color-warning);
+  background: linear-gradient(180deg, var(--color-warning-bg), transparent);
+  cursor: default;
+}
+.slot-card--locked:hover { background: var(--color-warning-bg); }
+.sc-clear { font-size: var(--text-micro); color: var(--color-text-tertiary); cursor: pointer; flex-shrink: 0; padding: 0 2px; }
 .sc-clear:hover { color: var(--color-danger); }
 .slot-dropdown {
   position: absolute; left: 0; right: 0; top: 100%; z-index: 100;
-  background: var(--color-surface-2); border: 0.5px solid var(--color-accent);
+  background: var(--color-surface-2); border: 1px solid var(--color-border-light);
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  box-shadow: var(--shadow-pop);
   max-height: 280px; display: flex; flex-direction: column;
 }
 .slot-dropdown-search {
-  width: 100%; padding: 8px 10px; font-size: 12px; font-family: inherit;
+  width: 100%; padding: 8px 10px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-3); color: var(--color-text);
   border: none; border-bottom: 0.5px solid var(--color-border-light);
   outline: none; border-radius: 0;
 }
-.slot-dropdown-search:focus { border-color: var(--color-accent); }
+.slot-dropdown-search:focus { border-color: var(--color-accent-ring); }
 .slot-dropdown-list { flex: 1; overflow-y: auto; }
 .slot-dropdown-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 7px 10px; font-size: 12px; cursor: pointer;
+  padding: 7px 10px; font-size: var(--text-xs); cursor: pointer;
   border-bottom: 0.5px solid var(--color-border-light);
 }
 .slot-dropdown-item:hover { background: var(--color-hover); }
 .slot-dropdown-item--disabled { opacity: 0.45; cursor: not-allowed; }
 .slot-dropdown-item--disabled:hover { background: transparent; }
 .sdi-name { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
-.sdi-notes { flex: 2; font-size: 10.5px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
-.sdi-price { font-size: 11px; color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
-.sdi-img { font-size: 13px; flex-shrink: 0; cursor: pointer; opacity: 0.7; }
+.sdi-notes { flex: 2; font-size: var(--text-micro); color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
+.sdi-price { font-size: var(--text-micro); color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
+.sdi-img { font-size: var(--text-sm); flex-shrink: 0; cursor: pointer; opacity: 0.7; }
 .sdi-img:hover { opacity: 1; }
 
 /* ── 下拉空状态 ── */
 .slot-dropdown-empty {
-  padding: 16px 10px; text-align: center; font-size: 12px;
+  padding: 16px 10px; text-align: center; font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
 /* ── OCR 搜索提示 ── */
 .ocr-search-hint {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 10px; font-size: 11px; color: var(--color-accent);
+  padding: 5px 10px; font-size: var(--text-micro); color: var(--color-accent);
   background: var(--color-accent-bg); border-bottom: 0.5px solid var(--color-border-light);
 }
 .ocr-search-hint strong { font-weight: 600; }
 .ocr-hint-close {
   margin-left: auto; background: none; border: none; cursor: pointer;
-  font-size: 11px; color: var(--color-text-tertiary); padding: 0 2px;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); padding: 0 2px;
 }
 .ocr-hint-close:hover { color: var(--color-text); }
 .ocr-spinner-sm {
@@ -2122,7 +2660,7 @@ onUnmounted(() => { document.removeEventListener('click', handleClickOutside); d
   flex-shrink: 0;
 }
 .qa-trigger {
-  padding: 8px 10px; font-size: 11.5px; color: var(--color-accent);
+  padding: 8px 10px; font-size: var(--text-micro); color: var(--color-accent);
   cursor: pointer; text-align: center; transition: background 0.12s;
 }
 .qa-trigger:hover { background: var(--color-accent-bg); }
@@ -2130,27 +2668,31 @@ onUnmounted(() => { document.removeEventListener('click', handleClickOutside); d
   padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;
 }
 .qa-input {
-  width: 100%; padding: 5px 8px; font-size: 11.5px; font-family: inherit;
+  width: 100%; padding: 5px 8px; font-size: var(--text-micro); font-family: inherit;
   background: var(--color-surface-3); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
   outline: none;
 }
-.qa-input:focus { border-color: var(--color-accent); }
+.qa-input:focus { border-color: var(--color-accent-ring); }
 .qa-input--price { width: 96px; flex-shrink: 0; }
 .qa-price-wrap { display: flex; align-items: center; flex-shrink: 0; }
-.qa-unit { font-size: 11px; color: var(--color-text-muted); margin-left: 3px; }
+.qa-unit { font-size: var(--text-micro); color: var(--color-text-muted); margin-left: 3px; }
 .qa-row { display: flex; gap: 6px; align-items: center; }
 .qa-select {
-  flex: 1; padding: 5px 6px; font-size: 11.5px; font-family: inherit;
-  background: var(--color-surface-3); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
-  outline: none;
+  flex: 1; padding: 5px 26px 5px 6px; font-size: var(--text-micro); font-family: inherit;
+  background-color: var(--color-surface-3);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center;
+  appearance: none; -webkit-appearance: none;
+  color: var(--color-text);
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
+  outline: none; cursor: pointer;
 }
-.qa-select:focus { border-color: var(--color-accent); }
+.qa-select:focus { border-color: var(--color-accent-ring); }
 .qa-actions { display: flex; gap: 6px; justify-content: flex-end; }
 .qa-btn-paste {
   flex-shrink: 0; width: 28px; height: 28px; padding: 0;
-  font-size: 14px; line-height: 1; cursor: pointer;
+  font-size: var(--text-md); line-height: 1; cursor: pointer;
   background: var(--color-surface-3); color: var(--color-text-secondary);
   border: 0.5px solid var(--color-border); border-radius: 4px;
   transition: all 0.12s;

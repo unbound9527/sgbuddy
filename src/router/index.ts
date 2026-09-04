@@ -13,6 +13,11 @@ const router = createRouter({
       component: () => import('@/views/GearCenter.vue'),
     },
     {
+      path: '/growth-book',
+      name: 'growth-book',
+      component: () => import('@/views/GrowthBook.vue'),
+    },
+    {
       path: '/growth',
       name: 'growth',
       component: () => import('@/views/GrowthTracker.vue'),

@@ -1,11 +1,11 @@
 <template>
   <div class="iv-overlay" v-if="modelValue" @click.self="close" @keydown="onKey">
-    <button class="iv-close" @click="close">✕</button>
-    <button class="iv-nav iv-nav--prev" v-if="images.length > 1" @click="prev">◀</button>
+    <button class="iv-close" @click="close"><AppIcon icon="x" :size="16" /></button>
+    <button class="iv-nav iv-nav--prev" v-if="images.length > 1" @click="prev"><AppIcon icon="chevron-left" :size="20" /></button>
     <div class="iv-main">
       <img :src="current" class="iv-img" />
     </div>
-    <button class="iv-nav iv-nav--next" v-if="images.length > 1" @click="next">▶</button>
+    <button class="iv-nav iv-nav--next" v-if="images.length > 1" @click="next"><AppIcon icon="chevron-right" :size="20" /></button>
     <div class="iv-thumbs" v-if="images.length > 1">
       <div
         v-for="(img, idx) in images" :key="idx"
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{
   images: string[]  // data URLs (base64)
@@ -60,20 +61,24 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
   flex-direction: column;
+  animation: overlay-in 0.15s ease-out;
 }
 .iv-close {
   position: absolute; top: 16px; right: 16px; z-index: 10;
   width: 36px; height: 36px; border-radius: 50%; border: none;
-  background: rgba(255,255,255,0.15); color: #fff; font-size: 18px;
+  background: rgba(255,255,255,0.15); color: #fff; font-size: var(--text-lg);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s ease;
 }
 .iv-close:hover { background: rgba(255,255,255,0.3); }
 .iv-main { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 60px; }
-.iv-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+.iv-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-sm); }
 .iv-nav {
   position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
   width: 40px; height: 60px; border: none; background: rgba(255,255,255,0.1);
-  color: #fff; font-size: 20px; cursor: pointer; border-radius: 4px;
+  color: #fff; font-size: var(--text-xl); cursor: pointer; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s ease;
 }
 .iv-nav:hover { background: rgba(255,255,255,0.25); }
 .iv-nav--prev { left: 16px; }
@@ -83,12 +88,12 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   max-width: 100%; justify-content: center;
 }
 .iv-thumb {
-  width: 48px; height: 48px; flex-shrink: 0; border-radius: 4px;
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--radius-sm);
   overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.5;
 }
 .iv-thumb--active { border-color: #fff; opacity: 1; }
 .iv-thumb-img { width: 100%; height: 100%; object-fit: cover; }
 .iv-counter {
-  color: rgba(255,255,255,0.6); font-size: 12px; padding-bottom: 4px;
+  color: rgba(255,255,255,0.6); font-size: var(--text-xs); padding-bottom: 4px;
 }
 </style>

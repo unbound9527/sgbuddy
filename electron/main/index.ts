@@ -1,9 +1,9 @@
-import { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, nativeImage, shell, Tray } from 'electron'
 import { exec } from 'child_process'
 import { existsSync, mkdirSync, copyFileSync, unlinkSync, readFileSync, writeFileSync } from 'fs'
-import { startCurrencyScheduler, scrapeAllRates, scrapeOneServer, setPriorityServer } from '../services/currency-scraper'
-import { scrapeAll, startClueScheduler, stopClueScheduler, setClueServer } from '../services/clue-scraper'
-import { listGameWindows, activateWindow, refreshAndGet, getCachedWindows, applyPresetOrder, switchBySlot } from '../services/window-manager'
+import { startCurrencyScheduler, scrapeAllRates, scrapeOneServer, setPriorityServer, openTaobaoLogin, isTaobaoLoggedIn } from '../services/currency-scraper'
+import { scrapeAll, startClueScheduler, stopClueScheduler, setClueServer, deleteClueSoft, TIEBA_MAP, openWallVerifyWindow } from '../services/clue-scraper'
+import { listGameWindows, activateWindow, refreshAndGet, getCachedWindows, applyPresetOrder, switchBySlot, startWindowWatcher, stopWindowWatcher } from '../services/window-manager'
 import type { WinPreset } from '../services/window-manager'
 import { join } from 'path'
 import { initDatabase, getDatabase } from '../database'
@@ -12,6 +12,7 @@ import { MONSTER_EXP_DEFAULTS } from '../database/monster-exp-defaults'
 import { isUnlocked, unlock } from '../services/auth'
 import { generateExcel, type SchemeExportData } from '../services/export-scheme'
 import { generateExpExcel, type ExpExportData } from '../services/export-exp'
+import ExcelJS from 'exceljs'
 import { type OcrInput, createOcrService } from '../services/ocr'
 import { createUmiOcrService } from '../services/umi-ocr'
 import { analyzeNameQuality } from '../services/quality-color'
@@ -33,7 +34,16 @@ if (process.platform === 'win32') {
   try { require('child_process').execSync('chcp 65001 >nul 2>&1', { stdio: 'ignore' }) } catch { /* ignore */ }
 }
 
+// 开发调试：SGBUDDY_DEBUG_PORT=9222 时开放 CDP 端口，配合 scripts/dev-nav.mjs 使用
+if (process.env.SGBUDDY_DEBUG_PORT) {
+  app.commandLine.appendSwitch('remote-debugging-port', process.env.SGBUDDY_DEBUG_PORT)
+}
+
 let mainWindow: BrowserWindow | null = null
+// 托盘
+let tray: Tray | null = null
+// true 表示正处于退出流程（app.quit() 已触发）：放行窗口关闭；false 时点 × 会触发退出
+let quitting = false
 // OCR 高精度引擎：PaddleOCR-json（下载安装到 userData/ocr-engine，或开发模式本机 resources/umi-ocr）
 let umiOcr: ReturnType<typeof createUmiOcrService> | null = null
 // OCR 降级引擎：Tesseract（内置语言包，离线可用）
@@ -73,9 +83,7 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 700,
     title: 'SG Buddy — QQ三国助手',
-    icon: app.isPackaged
-      ? join(process.resourcesPath, 'icon.png')
-      : join(__dirname, '..', '..', 'resources', 'icon.png'),
+    icon: getWindowIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -91,9 +99,102 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+  // 外部链接（如交易线索的贴吧帖子）一律交给系统默认浏览器，不在应用内开子窗口
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) {
+      shell.openExternal(url).catch(() => {})
+    }
+    return { action: 'deny' }
+  })
+  // 阻止页面内导航离开应用（file:// 下误点相对链接会白屏）
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith('file://') && !url.startsWith(process.env.ELECTRON_RENDERER_URL ?? 'app://')) {
+      e.preventDefault()
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url).catch(() => {})
+    }
+  })
+
+  // 点右上角 × / Alt+F4：退出整个程序（不再驻留托盘）。
+  // 真正隐藏到托盘只由 Ctrl+Q 触发（hide() 不会走 close 事件）。
+  mainWindow.on('close', () => {
+    if (!quitting) {
+      // 触发真正的退出流程；before-quit 会把 quitting 置 true，
+      // 随后重入本 close 时放行窗口销毁。
+      app.quit()
+    }
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+}
+
+/** 应用窗口图标：打包后在 resourcesPath，开发时在项目 resources/ */
+function getAppIconPath(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '..', '..', 'resources', 'icon.png')
+}
+
+/**
+ * 窗口/任务栏图标（区别于托盘 png）：
+ * Windows 上 BrowserWindow 的 icon 需用 .ico 才能真正显示到窗口标题栏与任务栏，
+ * png 在 Windows 端经常被忽略 → 退回 exe 默认 Electron 图标。其余平台继续用 png。
+ */
+function getWindowIconPath(): string {
+  const base = app.isPackaged ? process.resourcesPath : join(__dirname, '..', '..', 'resources')
+  return process.platform === 'win32'
+    ? join(base, 'icon.ico')
+    : join(base, 'icon.png')
+}
+
+/** 显示并聚焦主窗口（窗口已销毁时重建） */
+function showMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow()
+    return
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+/**
+ * 显示主窗口并发送托盘指令。
+ * payload.path    → 渲染层路由跳转；payload.cat → 攻略页分类（quiz 答题题库 / activity 活跃计算）
+ * payload.action  → check-update 检查更新 / about 关于弹窗
+ * 窗口加载中时延迟到加载完成再发送，避免事件丢失。
+ */
+function openMainWindow(payload: { path?: string; cat?: string; action?: 'check-update' | 'about' }): void {
+  showMainWindow()
+  const win = mainWindow
+  if (!win || win.isDestroyed()) return
+  const send = () => {
+    if (!win.isDestroyed()) win.webContents.send('tray:command', payload)
+  }
+  if (win.webContents.isLoading()) win.webContents.once('did-finish-load', send)
+  else send()
+}
+
+function createTray(): void {
+  const icon = nativeImage.createFromPath(getAppIconPath())
+  tray = new Tray(icon.isEmpty() ? getAppIconPath() : icon)
+  tray.setToolTip('SG Buddy — QQ三国助手')
+  // 左键单击显示主界面
+  tray.on('click', () => showMainWindow())
+  // 右键菜单：从上到下依次为 打开主界面/窗口管理/答题题库/活跃计算/检查更新/关于/退出
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '打开主界面', click: () => showMainWindow() },
+    { label: '窗口管理', click: () => openMainWindow({ path: '/growth' }) },
+    { label: '答题题库', click: () => openMainWindow({ path: '/guides', cat: 'quiz' }) },
+    { label: '活跃计算', click: () => openMainWindow({ path: '/guides', cat: 'activity' }) },
+    { label: '检查更新', click: () => openMainWindow({ action: 'check-update' }) },
+    { label: '关于SG Buddy', click: () => openMainWindow({ action: 'about' }) },
+    {
+      label: '退出',
+      click: () => app.quit(),
+    },
+  ]))
 }
 
 // 注册 IPC 处理
@@ -179,10 +280,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('app:scrape-one', async (_event, serverName: string, force?: boolean) => {
     try {
-      const price = await scrapeOneServer(serverName, !!force)
-      return { price }
+      const { rate, needLogin } = await scrapeOneServer(serverName, !!force)
+      return { price: rate, needLogin }
     } catch (e) {
-      return { price: null, error: String(e) }
+      return { price: null, needLogin: false, error: String(e) }
     }
   })
 
@@ -191,7 +292,21 @@ function registerIpcHandlers(): void {
       const result = await scrapeAllRates(!!force)
       return { ...result, ok: true }
     } catch (e) {
-      return { updated: 0, failed: 23, currentPrice: null, ok: false, error: String(e) }
+      return { updated: 0, failed: 23, currentPrice: null, needLogin: false, ok: false, error: String(e) }
+    }
+  })
+
+  // 打开淘宝登录窗口；关闭后检查登录态并返回
+  ipcMain.handle('currency:login', async () => {
+    openTaobaoLogin()
+    return { ok: true }
+  })
+
+  ipcMain.handle('currency:login-status', async () => {
+    try {
+      return { loggedIn: await isTaobaoLoggedIn() }
+    } catch (e) {
+      return { loggedIn: false, error: String(e) }
     }
   })
 
@@ -201,14 +316,23 @@ function registerIpcHandlers(): void {
   ipcMain.handle('clue:scrape', async (_event, serverName: string) => {
     try {
       const win = mainWindow
-      const result = await scrapeAll(serverName, (source, done, total) => {
-        if (win && !win.isDestroyed()) {
-          win.webContents.send('clue:progress', { source, done, total })
+      const result = await scrapeAll(
+        serverName,
+        (source, done, total) => {
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('clue:progress', { source, done, total })
+          }
+        },
+        // 手动刷新时逐条推送新线索：前端收到即上屏（clue:new），无需等全部抓完
+        (row) => {
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('clue:new', row)
+          }
         }
-      })
+      )
       return result
     } catch (e: any) {
-      return { added: 0, errors: [e.message] }
+      return { added: 0, errors: [e.message], meta: { wall: false, triedTieba: true, titles: [], pages: 0, foundClues: 0, diag: [] } }
     }
   })
 
@@ -216,7 +340,7 @@ function registerIpcHandlers(): void {
     serverName: string; source?: string; keyword?: string; limit?: number
   }) => {
     const db = getDatabase()
-    let sql = 'SELECT * FROM trade_clues WHERE server_name = ?'
+    let sql = 'SELECT * FROM trade_clues WHERE server_name = ? AND deleted_at IS NULL'
     const sqlParams: unknown[] = [params.serverName]
 
     if (params.source) {
@@ -240,10 +364,22 @@ function registerIpcHandlers(): void {
     return db.prepare('UPDATE trade_clues SET status = ? WHERE id = ?').run(status, id)
   })
 
+  // 删除单条 → 软删除（墓碑）：load 不可见，下次抓取因 url 唯一键不会复活
   ipcMain.handle('clue:delete', (_event, id: number) => {
-    const db = getDatabase()
-    const r = db.prepare('DELETE FROM trade_clues WHERE id = ?').run(id)
-    return { ok: true, deleted: r.changes }
+    return deleteClueSoft(id)
+  })
+
+  // 区服-贴吧映射单一数据源：前端读取主进程同一份 TIEBA_MAP（避免两处硬编码不一致）
+  ipcMain.handle('clue:tieba-map', () => {
+    return TIEBA_MAP
+  })
+
+  // 被反爬拦截时：弹出可见窗口让用户手动过一次「百度安全验证」
+  // 传 serverName（如「得陇望蜀」）或直接传贴吧名；cookie 走默认 session，与抓取共享且持久化
+  ipcMain.handle('clue:open-wall', (_event, serverOrTiebaName: string) => {
+    const tiebaName = TIEBA_MAP[serverOrTiebaName] || serverOrTiebaName
+    openWallVerifyWindow(tiebaName)
+    return { ok: true }
   })
 
   ipcMain.handle('clue:set-server', (_event, name: string) => {
@@ -652,6 +788,103 @@ function registerIpcHandlers(): void {
     }
   })
 
+  // ── 物价导出 / 导入 Excel（表头：物品名称 | 分类 | 品质 | 备注 | 成本价(万) | 市场价(万) | 热门） ──
+  const PRICE_HEADERS = ['物品名称', '分类', '品质', '备注', '成本价(万)', '市场价(万)', '热门']
+  ipcMain.handle('prices:export', async (_event, rows: Array<{
+    item_name: string; category?: string; quality?: string; attr_notes?: string
+    benchmark_wan?: number; market_wan?: number; hot?: boolean
+  }>) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindow!, {
+        title: '导出物价数据',
+        defaultPath: '物价图鉴.xlsx',
+        filters: [{ name: 'Excel 文件', extensions: ['xlsx'] }],
+      })
+      if (result.canceled || !result.filePath) return { ok: false, error: '已取消' }
+      const wb = new ExcelJS.Workbook()
+      const ws = wb.addWorksheet('物价')
+      ws.addRow(PRICE_HEADERS)
+      ws.getRow(1).font = { bold: true }
+      for (const r of rows) {
+        ws.addRow([
+          r.item_name, r.category || '', r.quality || '', r.attr_notes || '',
+          r.benchmark_wan ?? 0, r.market_wan ?? 0, r.hot ? '是' : '',
+        ])
+      }
+      ws.columns.forEach(col => { col.width = 14 })
+      ws.getColumn(1).width = 22
+      ws.getColumn(4).width = 26
+      await wb.xlsx.writeFile(result.filePath)
+      shell.showItemInFolder(result.filePath)
+      return { ok: true, path: result.filePath }
+    } catch (e: any) {
+      return { ok: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('prices:import', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow!, {
+        title: '导入物价数据',
+        filters: [{ name: 'Excel 文件', extensions: ['xlsx'] }],
+        properties: ['openFile'],
+      })
+      if (result.canceled || !result.filePaths[0]) return { ok: false, error: '已取消' }
+      const wb = new ExcelJS.Workbook()
+      await wb.xlsx.readFile(result.filePaths[0])
+      const ws = wb.worksheets[0]
+      if (!ws) return { ok: false, error: '文件中没有工作表' }
+
+      // 校验表头（允许顺序一致；至少要求包含「物品名称」与「市场价(万)」）
+      const headerRow = ws.getRow(1)
+      const headers: string[] = []
+      headerRow.eachCell((cell, col) => { headers[col] = String(cell.value ?? '').trim() })
+      const nameCol = headers.indexOf('物品名称')
+      const marketCol = headers.indexOf('市场价(万)')
+      if (nameCol < 0 || marketCol < 0) {
+        return { ok: false, error: `表头不匹配：需要包含「物品名称」和「市场价(万)」，实际为：${headers.filter(Boolean).join(' | ')}` }
+      }
+      const colOf = (name: string) => headers.indexOf(name)
+
+      const rows: Array<{
+        item_name: string; category: string; quality: string; attr_notes: string
+        benchmark_wan: number; market_wan: number; hot: boolean
+      }> = []
+      ws.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return
+        const get = (name: string) => {
+          const col = colOf(name)
+          return col > 0 ? row.getCell(col).value : null
+        }
+        const text = (name: string) => {
+          const v = get(name)
+          if (v == null) return ''
+          if (typeof v === 'object' && 'text' in (v as object)) return String((v as { text: unknown }).text ?? '').trim()
+          return String(v).trim()
+        }
+        const num = (name: string) => {
+          const v = get(name)
+          const n = typeof v === 'number' ? v : parseFloat(String(v ?? ''))
+          return isNaN(n) ? 0 : n
+        }
+        const item_name = text('物品名称')
+        if (!item_name) return
+        rows.push({
+          item_name,
+          category: text('分类'),
+          quality: text('品质'),
+          attr_notes: text('备注'),
+          benchmark_wan: num('成本价(万)'),
+          market_wan: num('市场价(万)'),
+          hot: text('热门') === '是' || text('热门') === '1',
+        })
+      })
+      return { ok: true, rows }
+    } catch (e: any) {
+      return { ok: false, error: e.message }
+    }
+  })
+
   // ── 应用设置（DB替代localStorage） ──
   ipcMain.handle('setting:get', (_event, key: string) => {
     const db = getDatabase()
@@ -821,8 +1054,15 @@ app.whenReady().then(async () => {
   initDatabase()
   registerIpcHandlers()
   createWindow()
+  createTray()
   await initWindows()
   registerGlobalShortcuts()
+  // 窗口监视：主进程每秒检测一次，窗口开/关/托盘隐藏时推送给渲染进程（准实时，替代前端轮询）
+  startWindowWatcher((list) => {
+    if (mainWindow && !mainWindow.isDestroyed() && isUnlocked()) {
+      mainWindow.webContents.send('windows:changed', list)
+    }
+  })
   startCurrencyScheduler()
   startClueScheduler((source, done, total) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -855,12 +1095,12 @@ async function initWindows(): Promise<void> {
 }
 
 function registerGlobalShortcuts(): void {
-  // Ctrl+1~5: 激活固定位置窗口（不刷新列表，纯切换）
+  // Ctrl+1~5: 激活固定位置窗口（切换前先刷新缓存，新开/已关的窗口立即生效）
   for (let i = 1; i <= 5; i++) {
     const slot = i
     const ok = globalShortcut.register(`Ctrl+${i}`, () => {
       if (!isUnlocked()) return
-      const list = getCachedWindows()
+      const list = refreshAndGet()
       if (list.length === 0) return
       const result = switchBySlot(slot)
       if (result >= 0) {
@@ -871,7 +1111,17 @@ function registerGlobalShortcuts(): void {
     if (!ok) console.log(`[快捷键] Ctrl+${i} 注册失败（可能已被其他应用占用）`)
   }
 
-  console.log('[快捷键] 全局快捷键已注册: Ctrl+1~5')
+  // Ctrl+Q: 隐藏到托盘（窗口不退出、后台调度继续运行；点托盘图标可恢复）。
+  // 与关闭窗口语义相反：Ctrl+Q 只隐藏，点 × 才是退出。
+  const hideOk = globalShortcut.register('Ctrl+Q', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.hide()
+    }
+  })
+  if (!hideOk) console.log('[快捷键] Ctrl+Q 注册失败（可能已被其他应用占用）')
+
+  console.log('[快捷键] 全局快捷键已注册: Ctrl+1~5, Ctrl+Q(隐藏到托盘)')
 }
 
 /** 通知渲染进程当前激活窗口和窗口数量 */
@@ -884,18 +1134,25 @@ function notifyRenderer(winCount: number) {
   }
 }
 
+// 任何退出路径（托盘菜单、更新安装器重启 app.quit()）都放行窗口关闭
+app.on('before-quit', () => {
+  quitting = true
+})
+
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
+  stopClueScheduler()
+  stopWindowWatcher()
   // 关闭 OCR 引擎子进程
   umiOcr?.dispose()
   tessOcr?.dispose()
+  tray?.destroy()
+  tray = null
 })
 
 app.on('window-all-closed', () => {
-  stopClueScheduler()
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  // 托盘常驻：窗口隐藏（而非销毁）时调度器继续在后台运行；
+  // 真正退出由托盘菜单触发，清理在 will-quit 中完成
 })
 
 app.on('activate', () => {

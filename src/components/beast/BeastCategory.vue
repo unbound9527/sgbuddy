@@ -62,6 +62,7 @@ defineEmits<{
 </script>
 
 <style scoped>
-.sec-head { padding: 8px 14px; background: var(--color-surface-2); font-size: 13px; font-weight: 600; border-radius: var(--radius-sm) var(--radius-sm) 0 0; color: var(--color-text); }
-.sec-slots { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: var(--color-surface-1); border: 0.5px solid var(--color-border-light); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.beast-category { background: var(--color-surface-1); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); overflow: hidden; }
+.sec-head { padding: 8px 14px; background: var(--color-surface-2); font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.sec-slots { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
 </style>

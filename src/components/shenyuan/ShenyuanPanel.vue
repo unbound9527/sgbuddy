@@ -3,7 +3,7 @@
   <div class="slot-grid-2col">
     <!-- 背包 -->
     <div class="slot-section-card">
-      <div class="sec-head">🎒 背包</div>
+      <div class="sec-head"><AppIcon icon="backpack" :size="14" /> 背包</div>
       <div class="sec-slots">
         <div
           v-for="b in 5"
@@ -16,20 +16,20 @@
           }"
           @click.stop="toggle(`元神:背包${b}`)"
         >
-          <span class="sc-lock" :title="getLockTitle(`元神:背包${b}`)" @click.stop="$emit('toggleLock', `元神:背包${b}`)">{{ isSlotLocked(`元神:背包${b}`) ? '🔒' : '🔓' }}</span>
+          <span class="sc-lock" :title="getLockTitle(`元神:背包${b}`)" @click.stop="$emit('toggleLock', `元神:背包${b}`)"><AppIcon :icon="isSlotLocked(`元神:背包${b}`) ? 'lock' : 'unlock'" :size="14" /></span>
           <span v-if="isSlotLocked(`元神:背包${b}`)" class="sc-lock-time" :title="getLockTitle(`元神:背包${b}`)">{{ getLockTimeShort(`元神:背包${b}`) }}</span>
           <span class="sc-label">背包{{ b }}</span>
           <span class="sc-val" :style="{ color: getQualityColor(getSlotQuality(`元神:背包${b}`)) }">{{ getDetail(`元神:背包${b}`) || '—' }}</span>
           <span v-if="getDetail(`元神:背包${b}`) && getNotes(`元神:背包${b}`)" class="sc-notes">{{ getNotes(`元神:背包${b}`) }}</span>
           <span class="sc-price">{{ getPrice(`元神:背包${b}`) }}</span>
-          <span class="sc-img" v-if="getDetail(`元神:背包${b}`) && hasImage(getDetail(`元神:背包${b}`))" @click.stop="viewImage(getDetail(`元神:背包${b}`))" title="查看图片">🖼</span>
-          <span class="sc-clear" v-if="getDetail(`元神:背包${b}`) && !isSlotLocked(`元神:背包${b}`)" @click.stop="clear(`元神:背包${b}`)" title="清除">✕</span>
-          <span class="sc-arrow" v-if="!isSlotLocked(`元神:背包${b}`)">▾</span>
+          <span class="sc-img" v-if="getDetail(`元神:背包${b}`) && hasImage(getDetail(`元神:背包${b}`))" @click.stop="viewImage(getDetail(`元神:背包${b}`))" title="查看图片"><AppIcon icon="image" :size="14" /></span>
+          <span class="sc-clear" v-if="getDetail(`元神:背包${b}`) && !isSlotLocked(`元神:背包${b}`)" @click.stop="clear(`元神:背包${b}`)" title="清除"><AppIcon icon="x" :size="12" /></span>
+          <span class="sc-arrow" v-if="!isSlotLocked(`元神:背包${b}`)"><AppIcon icon="chevron-down" :size="12" /></span>
           <div v-if="expandedSlot === `元神:背包${b}` && !isSlotLocked(`元神:背包${b}`)" class="slot-dropdown" @click.stop>
             <input
               :value="slotSearch[`元神:背包${b}`] || ''"
               class="slot-dropdown-search"
-              :placeholder="ocrSearchBusy && ocrSearchSlot === `元神:背包${b}` ? '🔍 识别中…' : '搜索元神...'"
+              :placeholder="ocrSearchBusy && ocrSearchSlot === `元神:背包${b}` ? '识别中…' : '搜索元神...'"
               @input="onSearch(`元神:背包${b}`, ($event.target as HTMLInputElement).value)"
             />
             <!-- OCR 识别反馈 -->
@@ -38,8 +38,8 @@
                 <span class="ocr-spinner-sm"></span> 识别中…
               </template>
               <template v-else>
-                📋 OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
-                <button class="ocr-hint-close" @click="clearOcrHint" title="关闭">✕</button>
+                <AppIcon icon="copy" :size="12" /> OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
+                <button class="ocr-hint-close" @click="clearOcrHint" title="关闭"><AppIcon icon="x" :size="11" /></button>
               </template>
             </div>
             <div class="slot-dropdown-list">
@@ -53,7 +53,7 @@
                   <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
                   <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
                   <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : '—' }}</span>
-                  <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片">🖼</span>
+                  <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
                 </div>
               </template>
               <div v-if="getSlotOptions(`元神:背包${b}`).length === 0" class="slot-dropdown-empty">
@@ -66,7 +66,7 @@
                 <div class="qa-form">
                   <div class="qa-row">
                     <input v-model="quickAddForm.item_name" class="qa-input" placeholder="物品名称" style="flex:1" @keydown.enter.prevent="submitQuickAdd(`元神:背包${b}`)" />
-                    <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'">{{ quickAddOcrBusy ? '⏳' : '📋' }}</button>
+                    <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'"><AppIcon :icon="quickAddOcrBusy ? 'loader' : 'copy'" :size="14" :class="quickAddOcrBusy ? 'icon-spin' : ''" /></button>
                   </div>
                   <div class="qa-row">
                     <input v-model.number="quickAddForm.market_price" class="qa-input qa-input--price" type="number" step="0.01" min="0" placeholder="价格(万)" @keydown.enter.prevent="submitQuickAdd(`元神:背包${b}`)" />
@@ -83,8 +83,8 @@
               </template>
               <template v-else>
                 <div class="qa-trigger" @click="openQuickAdd(`元神:背包${b}`)">
-                  <span v-if="slotSearch[`元神:背包${b}`] && getSlotOptions(`元神:背包${b}`).filter(o => !o._disabled).length === 0 && getSlotOptions(`元神:背包${b}`).length > 0">⚡ 未找到「{{ slotSearch[`元神:背包${b}`] }}」，点击快速录入</span>
-                  <span v-else>+ 快速录入新物品</span>
+                  <span v-if="slotSearch[`元神:背包${b}`] && getSlotOptions(`元神:背包${b}`).filter(o => !o._disabled).length === 0 && getSlotOptions(`元神:背包${b}`).length > 0"><AppIcon icon="zap" :size="12" /> 未找到「{{ slotSearch[`元神:背包${b}`] }}」，点击快速录入</span>
+                  <span v-else><AppIcon icon="plus" :size="12" /> 快速录入新物品</span>
                 </div>
               </template>
             </div>
@@ -95,7 +95,7 @@
 
     <!-- 仓库 1~5 -->
     <div v-for="w in 5" :key="w" class="slot-section-card">
-      <div class="sec-head">🏦 仓库{{ w }}</div>
+      <div class="sec-head"><AppIcon icon="building" :size="14" /> 仓库{{ w }}</div>
       <div class="sec-slots">
         <div
           v-for="s in 5"
@@ -108,20 +108,20 @@
           }"
           @click.stop="toggle(`元神:仓${w}槽${s}`)"
         >
-          <span class="sc-lock" :title="getLockTitle(`元神:仓${w}槽${s}`)" @click.stop="$emit('toggleLock', `元神:仓${w}槽${s}`)">{{ isSlotLocked(`元神:仓${w}槽${s}`) ? '🔒' : '🔓' }}</span>
+          <span class="sc-lock" :title="getLockTitle(`元神:仓${w}槽${s}`)" @click.stop="$emit('toggleLock', `元神:仓${w}槽${s}`)"><AppIcon :icon="isSlotLocked(`元神:仓${w}槽${s}`) ? 'lock' : 'unlock'" :size="14" /></span>
           <span v-if="isSlotLocked(`元神:仓${w}槽${s}`)" class="sc-lock-time" :title="getLockTitle(`元神:仓${w}槽${s}`)">{{ getLockTimeShort(`元神:仓${w}槽${s}`) }}</span>
           <span class="sc-label">槽{{ s }}</span>
           <span class="sc-val" :style="{ color: getQualityColor(getSlotQuality(`元神:仓${w}槽${s}`)) }">{{ getDetail(`元神:仓${w}槽${s}`) || '—' }}</span>
           <span v-if="getDetail(`元神:仓${w}槽${s}`) && getNotes(`元神:仓${w}槽${s}`)" class="sc-notes">{{ getNotes(`元神:仓${w}槽${s}`) }}</span>
           <span class="sc-price">{{ getPrice(`元神:仓${w}槽${s}`) }}</span>
-          <span class="sc-img" v-if="getDetail(`元神:仓${w}槽${s}`) && hasImage(getDetail(`元神:仓${w}槽${s}`))" @click.stop="viewImage(getDetail(`元神:仓${w}槽${s}`))" title="查看图片">🖼</span>
-          <span class="sc-clear" v-if="getDetail(`元神:仓${w}槽${s}`) && !isSlotLocked(`元神:仓${w}槽${s}`)" @click.stop="clear(`元神:仓${w}槽${s}`)" title="清除">✕</span>
-          <span class="sc-arrow" v-if="!isSlotLocked(`元神:仓${w}槽${s}`)">▾</span>
+          <span class="sc-img" v-if="getDetail(`元神:仓${w}槽${s}`) && hasImage(getDetail(`元神:仓${w}槽${s}`))" @click.stop="viewImage(getDetail(`元神:仓${w}槽${s}`))" title="查看图片"><AppIcon icon="image" :size="14" /></span>
+          <span class="sc-clear" v-if="getDetail(`元神:仓${w}槽${s}`) && !isSlotLocked(`元神:仓${w}槽${s}`)" @click.stop="clear(`元神:仓${w}槽${s}`)" title="清除"><AppIcon icon="x" :size="12" /></span>
+          <span class="sc-arrow" v-if="!isSlotLocked(`元神:仓${w}槽${s}`)"><AppIcon icon="chevron-down" :size="12" /></span>
           <div v-if="expandedSlot === `元神:仓${w}槽${s}` && !isSlotLocked(`元神:仓${w}槽${s}`)" class="slot-dropdown" @click.stop>
             <input
               :value="slotSearch[`元神:仓${w}槽${s}`] || ''"
               class="slot-dropdown-search"
-              :placeholder="ocrSearchBusy && ocrSearchSlot === `元神:仓${w}槽${s}` ? '🔍 识别中…' : '搜索元神...'"
+              :placeholder="ocrSearchBusy && ocrSearchSlot === `元神:仓${w}槽${s}` ? '识别中…' : '搜索元神...'"
               @input="onSearch(`元神:仓${w}槽${s}`, ($event.target as HTMLInputElement).value)"
             />
             <!-- OCR 识别反馈 -->
@@ -130,8 +130,8 @@
                 <span class="ocr-spinner-sm"></span> 识别中…
               </template>
               <template v-else>
-                📋 OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
-                <button class="ocr-hint-close" @click="clearOcrHint" title="关闭">✕</button>
+                <AppIcon icon="copy" :size="12" /> OCR 识别为「<strong>{{ ocrSearchText }}</strong>」
+                <button class="ocr-hint-close" @click="clearOcrHint" title="关闭"><AppIcon icon="x" :size="11" /></button>
               </template>
             </div>
             <div class="slot-dropdown-list">
@@ -145,7 +145,7 @@
                   <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
                   <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
                   <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : '—' }}</span>
-                  <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片">🖼</span>
+                  <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="viewOptionImage(item)" title="查看图片"><AppIcon icon="image" :size="14" /></span>
                 </div>
               </template>
               <div v-if="getSlotOptions(`元神:仓${w}槽${s}`).length === 0" class="slot-dropdown-empty">
@@ -158,7 +158,7 @@
                 <div class="qa-form">
                   <div class="qa-row">
                     <input v-model="quickAddForm.item_name" class="qa-input" placeholder="物品名称" style="flex:1" @keydown.enter.prevent="submitQuickAdd(`元神:仓${w}槽${s}`)" />
-                    <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'">{{ quickAddOcrBusy ? '⏳' : '📋' }}</button>
+                    <button class="qa-btn-paste" @click="pasteImageToQuickAdd()" :disabled="quickAddOcrBusy" :title="quickAddOcrBusy ? '识别中…' : '粘贴图片识别（或 Ctrl+V）'"><AppIcon :icon="quickAddOcrBusy ? 'loader' : 'copy'" :size="14" :class="quickAddOcrBusy ? 'icon-spin' : ''" /></button>
                   </div>
                   <div class="qa-row">
                     <input v-model.number="quickAddForm.market_price" class="qa-input qa-input--price" type="number" step="0.01" min="0" placeholder="价格(万)" @keydown.enter.prevent="submitQuickAdd(`元神:仓${w}槽${s}`)" />
@@ -175,8 +175,8 @@
               </template>
               <template v-else>
                 <div class="qa-trigger" @click="openQuickAdd(`元神:仓${w}槽${s}`)">
-                  <span v-if="slotSearch[`元神:仓${w}槽${s}`] && getSlotOptions(`元神:仓${w}槽${s}`).filter(o => !o._disabled).length === 0 && getSlotOptions(`元神:仓${w}槽${s}`).length > 0">⚡ 未找到「{{ slotSearch[`元神:仓${w}槽${s}`] }}」，点击快速录入</span>
-                  <span v-else>+ 快速录入新物品</span>
+                  <span v-if="slotSearch[`元神:仓${w}槽${s}`] && getSlotOptions(`元神:仓${w}槽${s}`).filter(o => !o._disabled).length === 0 && getSlotOptions(`元神:仓${w}槽${s}`).length > 0"><AppIcon icon="zap" :size="12" /> 未找到「{{ slotSearch[`元神:仓${w}槽${s}`] }}」，点击快速录入</span>
+                  <span v-else><AppIcon icon="plus" :size="12" /> 快速录入新物品</span>
                 </div>
               </template>
             </div>
@@ -188,6 +188,8 @@
 </template>
 
 <script setup lang="ts">
+import AppIcon from '@/components/ui/AppIcon.vue'
+
 interface SlotOption {
   name: string
   _id: number
@@ -250,70 +252,71 @@ function clearOcrHint() { emit('clearOcrHint') }
 <style scoped>
 /* ── 与 GearCenter 槽位一致的样式（scoped 需自带，无法复用父组件 scoped 样式） ── */
 .slot-grid-2col { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-content:start; }
-.slot-section-card { background:var(--color-surface-1); border:0.5px solid var(--color-border-light); border-radius:var(--radius-md); overflow:visible; }
-.sec-head { padding:10px 14px; background:var(--color-surface-2); font-size:13px; font-weight:600; }
+.slot-section-card { min-width:0; background:var(--color-surface-1); border:1px solid var(--color-border-light); border-radius:var(--radius-md); box-shadow:var(--shadow-card); overflow:visible; }
+.sec-head { padding:10px 14px; background:var(--color-surface-2); font-size:var(--text-sm); font-weight:600; display:flex; align-items:center; gap:6px; }
 .sec-slots { padding:8px; display:flex; flex-direction:column; gap:3px; }
-.slot-card { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--radius-sm); background:var(--color-surface-2); font-size:12px; }
+.slot-card { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:var(--radius-sm); background:var(--color-surface-2); font-size:var(--text-xs); }
 .slot-card--empty { opacity:0.5; }
-.sc-label { width:42px; flex-shrink:0; font-weight:550; color:var(--color-text-secondary); font-size:11px; }
+.sc-label { width:42px; flex-shrink:0; font-weight:550; color:var(--color-text-secondary); font-size:var(--text-micro); }
 .sc-val { flex:2 1 0; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .slot-card--empty .sc-val { color:var(--color-text-tertiary); }
-.sc-notes { flex:1 1 0; font-size:10.5px; color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-.sc-price { font-size:10.5px; color:var(--color-accent); font-weight:500; flex-shrink:0; }
+.sc-notes { flex:1 1 0; font-size:var(--text-micro); color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.sc-price { font-size:var(--text-micro); color:var(--color-accent); font-weight:500; flex-shrink:0; }
 .slot-card { position: relative; cursor: pointer; }
 .slot-card:hover { background: var(--color-surface-3); }
 .slot-card--open { border-color: var(--color-accent); background: var(--color-accent-bg); z-index: 101; opacity: 1; }
-.sc-arrow { font-size: 10px; color: var(--color-text-tertiary); flex-shrink: 0; }
-.sc-img { font-size: 13px; flex-shrink: 0; cursor: pointer; opacity: 0.7; }
+.sc-arrow { font-size: var(--text-micro); color: var(--color-text-tertiary); flex-shrink: 0; display: inline-flex; align-items: center; }
+.sc-img { font-size: var(--text-sm); flex-shrink: 0; cursor: pointer; opacity: 0.7; display: inline-flex; align-items: center; }
 .sc-img:hover { opacity: 1; }
-.sc-lock { font-size: 13px; cursor: pointer; flex-shrink: 0; opacity: 0.5; transition: opacity 0.12s; }
+.sc-lock { font-size: var(--text-sm); cursor: pointer; flex-shrink: 0; opacity: 0.5; transition: opacity 0.12s; display: inline-flex; align-items: center; }
 .sc-lock:hover { opacity: 1; }
-.sc-lock-time { font-size: 10px; color: var(--color-accent); flex-shrink: 0; white-space: nowrap; opacity: 0.8; }
+.sc-lock-time { font-size: var(--text-micro); color: var(--color-accent); flex-shrink: 0; white-space: nowrap; opacity: 0.8; }
 .slot-card--locked { border-left: 2px solid var(--color-accent); cursor: default; }
 .slot-card--locked:hover { background: var(--color-surface-3); }
-.sc-clear { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; flex-shrink: 0; padding: 0 2px; }
+.sc-clear { font-size: var(--text-micro); color: var(--color-text-tertiary); cursor: pointer; flex-shrink: 0; padding: 0 2px; display: inline-flex; align-items: center; }
 .sc-clear:hover { color: var(--color-danger); }
 .slot-dropdown {
   position: absolute; left: 0; right: 0; top: 100%; z-index: 100;
   background: var(--color-surface-2); border: 0.5px solid var(--color-accent);
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  box-shadow: var(--shadow-pop);
   max-height: 280px; display: flex; flex-direction: column;
 }
 .slot-dropdown-search {
-  width: 100%; padding: 8px 10px; font-size: 12px; font-family: inherit;
+  width: 100%; padding: 8px 10px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-3); color: var(--color-text);
   border: none; border-bottom: 0.5px solid var(--color-border-light);
   outline: none; border-radius: 0;
 }
-.slot-dropdown-search:focus { border-color: var(--color-accent); }
+.slot-dropdown-search:focus { border-color: var(--color-accent-ring); }
 .slot-dropdown-list { flex: 1; overflow-y: auto; }
 .slot-dropdown-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 7px 10px; font-size: 12px; cursor: pointer;
+  padding: 7px 10px; font-size: var(--text-xs); cursor: pointer;
   border-bottom: 0.5px solid var(--color-border-light);
 }
 .slot-dropdown-item:hover { background: var(--color-hover); }
 .sdi-name { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
-.sdi-notes { flex: 2; font-size: 10.5px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
-.sdi-price { font-size: 11px; color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
-.sdi-img { font-size: 13px; flex-shrink: 0; cursor: pointer; opacity: 0.7; }
+.sdi-notes { flex: 2; font-size: var(--text-micro); color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
+.sdi-price { font-size: var(--text-micro); color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
+.sdi-img { font-size: var(--text-sm); flex-shrink: 0; cursor: pointer; opacity: 0.7; display: inline-flex; align-items: center; }
 .sdi-img:hover { opacity: 1; }
 .slot-dropdown-empty {
-  padding: 16px 10px; text-align: center; font-size: 12px;
+  padding: 16px 10px; text-align: center; font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
 /* ── OCR 搜索提示 ── */
 .ocr-search-hint {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 10px; font-size: 11px; color: var(--color-accent);
+  padding: 5px 10px; font-size: var(--text-micro); color: var(--color-accent);
   background: var(--color-accent-bg); border-bottom: 0.5px solid var(--color-border-light);
 }
 .ocr-search-hint strong { font-weight: 600; }
 .ocr-hint-close {
   margin-left: auto; background: none; border: none; cursor: pointer;
-  font-size: 11px; color: var(--color-text-tertiary); padding: 0 2px;
+  font-size: var(--text-micro); color: var(--color-text-tertiary); padding: 0 2px;
+  display: inline-flex; align-items: center;
 }
 .ocr-hint-close:hover { color: var(--color-text); }
 .ocr-spinner-sm {
@@ -330,7 +333,7 @@ function clearOcrHint() { emit('clearOcrHint') }
   flex-shrink: 0;
 }
 .qa-trigger {
-  padding: 8px 10px; font-size: 11.5px; color: var(--color-accent);
+  padding: 8px 10px; font-size: var(--text-micro); color: var(--color-accent);
   cursor: pointer; text-align: center; transition: background 0.12s;
 }
 .qa-trigger:hover { background: var(--color-accent-bg); }
@@ -338,28 +341,33 @@ function clearOcrHint() { emit('clearOcrHint') }
   padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;
 }
 .qa-input {
-  width: 100%; padding: 5px 8px; font-size: 11.5px; font-family: inherit;
+  width: 100%; padding: 5px 8px; font-size: var(--text-micro); font-family: inherit;
   background: var(--color-surface-3); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
   outline: none;
 }
-.qa-input:focus { border-color: var(--color-accent); }
+.qa-input:focus { border-color: var(--color-accent-ring); }
 .qa-input--price { width: 100px; flex-shrink: 0; }
 .qa-row { display: flex; gap: 6px; align-items: center; }
 .qa-select {
-  flex: 1; padding: 5px 6px; font-size: 11.5px; font-family: inherit;
-  background: var(--color-surface-3); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
-  outline: none;
+  flex: 1; padding: 5px 26px 5px 6px; font-size: var(--text-micro); font-family: inherit;
+  background-color: var(--color-surface-3);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center;
+  appearance: none; -webkit-appearance: none;
+  color: var(--color-text);
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
+  outline: none; cursor: pointer;
 }
-.qa-select:focus { border-color: var(--color-accent); }
+.qa-select:focus { border-color: var(--color-accent-ring); }
 .qa-actions { display: flex; gap: 6px; justify-content: flex-end; }
 .qa-btn-paste {
   flex-shrink: 0; width: 28px; height: 28px; padding: 0;
-  font-size: 14px; line-height: 1; cursor: pointer;
+  font-size: var(--text-md); line-height: 1; cursor: pointer;
   background: var(--color-surface-3); color: var(--color-text-secondary);
-  border: 0.5px solid var(--color-border); border-radius: 4px;
-  transition: all 0.12s;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.12s ease;
 }
 .qa-btn-paste:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
 .qa-btn-paste:disabled { opacity: 0.5; cursor: not-allowed; }

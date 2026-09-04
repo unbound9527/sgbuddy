@@ -16,7 +16,7 @@
             :class="{ 'tab-row--active': activeTab === t.key }"
             @click="activeTab = t.key"
           >
-            <span class="tab-row-icon">{{ t.icon }}</span>
+            <span class="tab-row-icon"><AppIcon :icon="t.icon" :size="14" /></span>
             <span>{{ t.label }}</span>
           </div>
         </div>
@@ -47,11 +47,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 const tabs = [
-  { key: 'prices', label: '物价本', icon: '📋' },
-  { key: 'profit', label: '利润计算器', icon: '🧮' },
-  { key: 'inventory', label: '持仓库存', icon: '📦' },
-  { key: 'logs', label: '交易日志', icon: '📝' },
+  { key: 'prices', label: '物价本', icon: 'copy' },
+  { key: 'profit', label: '利润计算器', icon: 'calculator' },
+  { key: 'inventory', label: '持仓库存', icon: 'package' },
+  { key: 'logs', label: '交易日志', icon: 'edit' },
 ]
 const activeTab = ref('prices')
 </script>
@@ -59,8 +60,8 @@ const activeTab = ref('prices')
 <style scoped>
 .page { height: 100%; display: flex; flex-direction: column; }
 .page-head { margin-bottom: 22px; }
-.page-head h2 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
-.page-head p { color: var(--color-text-secondary); font-size: 13.5px; margin-top: 4px; }
+.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
+.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 4px; }
 
 .layout--2col {
   flex: 1; display: grid;
@@ -71,22 +72,23 @@ const activeTab = ref('prices')
 /* ── 卡片 ── */
 .card {
   background: var(--color-surface-1);
-  border: 0.5px solid var(--color-border-light);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   padding: 18px 20px;
   display: flex; flex-direction: column;
   overflow-y: auto;
 }
 .card--compact { padding: 16px; }
 .card-head { margin-bottom: 12px; }
-.card-head h3 { font-size: 14px; font-weight: 600; }
+.card-head h3 { font-size: var(--text-md); font-weight: 600; }
 
 /* ── 标签 ── */
 .tab-list { display: flex; flex-direction: column; gap: 2px; }
 .tab-row {
   display: flex; align-items: center; gap: 9px;
   padding: 8px 10px; border-radius: var(--radius-sm);
-  cursor: pointer; font-size: 12.5px; color: var(--color-text-secondary);
+  cursor: pointer; font-size: var(--text-xs); color: var(--color-text-secondary);
   transition: all 0.1s ease;
 }
 .tab-row:hover { background: var(--color-surface-2); color: var(--color-text); }
@@ -94,12 +96,12 @@ const activeTab = ref('prices')
   background: var(--color-accent-bg); color: var(--color-accent);
   font-weight: 500;
 }
-.tab-row-icon { font-size: 14px; line-height: 1; }
+.tab-row-icon { font-size: var(--text-md); line-height: 1; }
 
 /* ── 通用 ── */
 .hint {
   color: var(--color-text-tertiary); text-align: center;
-  padding: 48px 20px; font-size: 12.5px;
+  padding: 48px 20px; font-size: var(--text-xs);
   flex: 1; display: flex; align-items: center; justify-content: center;
 }
 </style>

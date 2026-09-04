@@ -34,9 +34,9 @@
           class="business-del"
           @click.stop="deleteBusiness(idx)"
           title="删除商行"
-        >×</button>
+        ><AppIcon icon="x" :size="11" /></button>
       </button>
-      <button class="business-tab business-tab--add" @click="addBusiness" title="新建商行">+</button>
+      <button class="business-tab business-tab--add" @click="addBusiness" title="新建商行"><AppIcon icon="plus" :size="14" /></button>
     </div>
 
     <div class="stats-row">
@@ -48,7 +48,7 @@
     </div>
     <div class="stats-row">
       <div class="stat-card stat-card--editable" @dblclick="startEditStalls" :title="'双击编辑大区商行总数'">
-        <span class="stat-label">大区商行总数 <span class="info-dot" title="当前大区所有商行的铺面总数，可双击编辑">ⓘ</span></span>
+        <span class="stat-label">大区商行总数 <span class="info-dot" title="当前大区所有商行的铺面总数，可双击编辑"><AppIcon icon="info" :size="10" /></span></span>
         <span v-if="!editingStalls" class="stat-value">{{ totalStalls }}</span>
         <input
           v-else
@@ -63,10 +63,10 @@
           ref="stallsInputRef"
         />
       </div>
-      <div class="stat-card"><span class="stat-label">物价指数 <span class="info-dot" :title="`物价指数 = 大区商行总数 ÷ 100 = ${totalStalls} ÷ 100 = ${priceIndex.toFixed(2)}`">ⓘ</span></span><span class="stat-value">{{ priceIndex.toFixed(2) }}</span></div>
-      <div class="stat-card"><span class="stat-label">每日维护费用 <span class="info-dot" :title="`每日维护费用 = 物价指数 × 1000 × 24 × 已使用店铺数 = ${priceIndex.toFixed(2)} × 1000 × 24 × ${usedShopCount} = ${dailyMaintenance.toFixed(0)} 元`">ⓘ</span></span><span class="stat-value">{{ dailyMaintenance.toFixed(0) }} 元</span></div>
-      <div class="stat-card"><span class="stat-label">每日活力消耗 <span class="info-dot" :title="`每日活力消耗 = 物价指数 × 45 × 24 × 已使用店铺数 = ${priceIndex.toFixed(2)} × 45 × 24 × ${usedShopCount} = ${dailyVitality.toFixed(0)}`">ⓘ</span></span><span class="stat-value">{{ dailyVitality.toFixed(0) }}</span></div>
-      <div class="stat-card"><span class="stat-label">已使用店铺 <span class="info-dot" title="当前商行中有「持有」物品的店铺数量">ⓘ</span></span><span class="stat-value">{{ usedShopCount }} / 10</span></div>
+      <div class="stat-card"><span class="stat-label">物价指数 <span class="info-dot" :title="`物价指数 = 大区商行总数 ÷ 100 = ${totalStalls} ÷ 100 = ${priceIndex.toFixed(2)}`"><AppIcon icon="info" :size="10" /></span></span><span class="stat-value">{{ priceIndex.toFixed(2) }}</span></div>
+      <div class="stat-card"><span class="stat-label">每日维护费用 <span class="info-dot" :title="`每日维护费用 = 物价指数 × 1000 × 24 × 已使用店铺数 = ${priceIndex.toFixed(2)} × 1000 × 24 × ${usedShopCount} = ${dailyMaintenance.toFixed(0)} 元`"><AppIcon icon="info" :size="10" /></span></span><span class="stat-value">{{ dailyMaintenance.toFixed(0) }} 元</span></div>
+      <div class="stat-card"><span class="stat-label">每日活力消耗 <span class="info-dot" :title="`每日活力消耗 = 物价指数 × 45 × 24 × 已使用店铺数 = ${priceIndex.toFixed(2)} × 45 × 24 × ${usedShopCount} = ${dailyVitality.toFixed(0)}`"><AppIcon icon="info" :size="10" /></span></span><span class="stat-value">{{ dailyVitality.toFixed(0) }}</span></div>
+      <div class="stat-card"><span class="stat-label">已使用店铺 <span class="info-dot" title="当前商行中有「持有」物品的店铺数量"><AppIcon icon="info" :size="10" /></span></span><span class="stat-value">{{ usedShopCount }} / 10</span></div>
     </div>
 
     <div class="shop-layout">
@@ -117,7 +117,7 @@
                   @blur="saveMarkupRate(($event.target as HTMLInputElement).value)" />%
               </label>
             </div>
-            <button class="btn btn-accent" :disabled="currentShopFull" @click="openForm()">+ 入库</button>
+            <button class="btn btn-accent" :disabled="currentShopFull" @click="openForm()"><AppIcon icon="plus" :size="12" /> 入库</button>
           </div>
         <div class="table-wrap" v-if="shopItems.length > 0">
           <table class="table">
@@ -174,8 +174,8 @@
                     @blur="inlineSaveNotes(item, ($event.target as HTMLInputElement).value)" />
                 </td>
                 <td class="td-actions">
-                  <button class="btn-icon" @click="editItem(item)">✎</button>
-                  <button class="btn-icon btn-icon--danger" @click="deleteItem(item.id)">✕</button>
+                  <button class="btn-icon" @click="editItem(item)"><AppIcon icon="pencil" :size="13" /></button>
+                  <button class="btn-icon btn-icon--danger" @click="deleteItem(item.id)"><AppIcon icon="x" :size="13" /></button>
                 </td>
               </tr>
             </tbody>
@@ -190,7 +190,7 @@
     <!-- 入库/编辑弹窗 -->
     <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
       <div class="modal">
-        <div class="modal-head"><h4>{{ editing ? '编辑' : '入库' }} · {{ businesses[businessId] }} · {{ shopAliases[form.form_shop] }}</h4><button class="btn-icon" @click="showForm = false">✕</button></div>
+        <div class="modal-head"><h4>{{ editing ? '编辑' : '入库' }} · {{ businesses[businessId] }} · {{ shopAliases[form.form_shop] }}</h4><button class="btn-icon" @click="showForm = false"><AppIcon icon="x" :size="13" /></button></div>
         <div class="modal-body">
           <div class="form-row sug-form-row">
             <label class="form-label">物品名称</label>
@@ -248,9 +248,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
 import { useAppStore } from '@/stores'
 import { convertToPinyin } from 'tiny-pinyin'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const app = useAppStore()
 
@@ -573,8 +574,8 @@ function toggleSort(field: 'buy_price' | 'target_price' | 'cost' | 'margin' | 'p
   }
 }
 
-const shopItems = computed(() => {
-  const items = inventory.value.filter(i => (i.business_id || 0) === businessId.value && (i.shop_index || 0) === shopIndex.value)
+function itemsForShop(si: number) {
+  const items = inventory.value.filter(i => (i.business_id || 0) === businessId.value && (i.shop_index || 0) === si)
   items.sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9))
   if (sortField.value) {
     const dir = sortDir.value === 'desc' ? -1 : 1
@@ -594,7 +595,9 @@ const shopItems = computed(() => {
     })
   }
   return items
-})
+}
+
+const shopItems = computed(() => itemsForShop(shopIndex.value))
 
 // 每个店铺的持有物品计数
 const shopItemCounts = computed(() => {
@@ -866,9 +869,18 @@ async function reloadAll() {
   await loadStalls()
   await loadAliases()
   await loadInventory()
+  lastLoadedServerId = app.currentServerId
 }
 
+// keep-alive 下页面被缓存但仍保持挂载：用 active-view + 待刷标记，
+// 避免切大区时所有缓存页面的 reload 同时并发（隐藏页只标记，回到前台才真正重载）。
+let activeView = false
+let pendingReload = false
+let everDeactivated = false
+let lastLoadedServerId: number | null = null
+
 onMounted(async () => {
+  activeView = true
   app.loadServers()
   await migrateServerIsolation()
   await loadBusinesses()
@@ -877,45 +889,67 @@ onMounted(async () => {
   await loadAliases()
   await loadInventory()
   await loadNameIndex()
+  lastLoadedServerId = app.currentServerId
   document.addEventListener('click', onDocClick)
 })
 
-// 切换大区时重新加载全部数据
-watch(() => app.currentServerId, async (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    await reloadAll()
+// 从其他页面切回：仅当本次是「再次激活」（非首挂载）且期间切过大区时，补一次重载。
+// 首挂载的数据加载已由 onMounted 完成，避免重复加载。
+onActivated(() => {
+  activeView = true
+  if (everDeactivated && (pendingReload || lastLoadedServerId !== app.currentServerId)) {
+    pendingReload = false
+    reloadAll()
   }
+})
+onDeactivated(() => {
+  activeView = false
+  everDeactivated = true
+})
+
+// 切换大区时重新加载全部数据：仅当页面正被查看才立即重载；隐藏时挂起待刷标记
+// （去抖合并，避免快速连切大区时多轮 reload 并发叠加）
+let reloadTimer: ReturnType<typeof setTimeout> | null = null
+watch(() => app.currentServerId, (newId, oldId) => {
+  if (!newId || newId === oldId) return
+  if (!activeView) { pendingReload = true; return }
+  if (reloadTimer) clearTimeout(reloadTimer)
+  reloadTimer = setTimeout(async () => {
+    reloadTimer = null
+    await reloadAll()
+  }, 80)
 })
 
 onUnmounted(() => {
+  if (reloadTimer) clearTimeout(reloadTimer)
   document.removeEventListener('click', onDocClick)
 })
 </script>
 
 <style scoped>
 .page { height: 100%; display: flex; flex-direction: column; }
-.page-head { margin-bottom: 14px; flex-shrink: 0; }
-.page-head h2 { font-size: 26px; font-weight: 650; }
-.page-head p { color: var(--color-text-secondary); font-size: 13.5px; margin-top: 4px; }
-.stats-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 12px; flex-shrink: 0; }
-.stat-card { padding: 12px 14px; background: var(--color-surface-1); border: 0.5px solid var(--color-border-light); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 4px; }
+.page-head { margin-bottom: 10px; flex-shrink: 0; }
+.page-head h2 { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.01em; }
+.page-head p { color: var(--color-text-secondary); font-size: var(--text-sm); margin-top: 4px; }
+.stats-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 8px; flex-shrink: 0; }
+.stat-card { padding: 7px 12px; background: var(--color-surface-1); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 2px; }
 .stat-card--editable { cursor: text; }
 .stat-card--editable:hover { border-color: var(--color-accent-ring); }
-.stat-label { font-size: 10.5px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 3px; }
+.stat-label { font-size: var(--text-micro); color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 3px; }
 .info-dot {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px; font-size: 9px; font-weight: 600;
+  width: 14px; height: 14px; font-size: var(--text-micro); font-weight: 600;
   border-radius: 50%; cursor: help;
   color: var(--color-text-tertiary); background: var(--color-surface-2);
   transition: color 0.1s, background 0.1s;
   flex-shrink: 0;
 }
 .info-dot:hover { color: var(--color-accent); background: var(--color-accent-bg); }
-.stat-value { font-size: 18px; font-weight: 650; }
+.stat-value { font-size: var(--text-lg); font-weight: 650; letter-spacing: -0.02em; }
 .stalls-input {
-  width: 100%; padding: 2px 4px; font-size: 18px; font-weight: 650; font-family: inherit;
+  width: 100%; padding: 2px 4px; font-size: var(--text-lg); font-weight: 650; font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-accent-ring); border-radius: 4px; outline: none;
+  border: 0.5px solid var(--color-accent-ring); border-radius: var(--radius-sm); outline: none;
   -moz-appearance: textfield;
 }
 .stalls-input::-webkit-inner-spin-button,
@@ -923,17 +957,17 @@ onUnmounted(() => {
 
 /* ── 卡片标题栏 ── */
 .card-head-left { display: flex; align-items: center; gap: 6px; }
-.card-head-divider { color: var(--color-text-tertiary); font-size: 13px; }
+.card-head-divider { color: var(--color-text-tertiary); font-size: var(--text-sm); }
 .rate-chip {
   display: inline-flex; align-items: center; gap: 1px;
-  padding: 1px 6px; font-size: 10px; border-radius: 10px;
+  padding: 1px 6px; font-size: var(--text-micro); border-radius: 10px;
   background: var(--color-surface-2); color: var(--color-text-tertiary);
   cursor: text; font-weight: 500; border: 0.5px solid transparent;
 }
 .rate-chip:hover { color: var(--color-text-secondary); }
 .rate-chip input {
   width: 28px; padding: 0; border: none; background: transparent;
-  color: var(--color-text); font-size: 10px; font-family: inherit; font-weight: 500;
+  color: var(--color-text); font-size: var(--text-micro); font-family: inherit; font-weight: 500;
   text-align: right; outline: none;
 }
 .rate-chip:focus-within { border-color: var(--color-accent-ring); color: var(--color-accent); }
@@ -955,27 +989,27 @@ onUnmounted(() => {
   padding: 4px 12px; border: 0.5px solid var(--color-border-light);
   border-radius: 14px; background: var(--color-surface-1);
   color: var(--color-text-secondary); cursor: pointer;
-  font-family: inherit; font-size: 12px; transition: all 0.1s;
+  font-family: inherit; font-size: var(--text-xs); transition: all 0.12s;
 }
 .business-tab:hover { background: var(--color-surface-2); color: var(--color-text); }
 .business-tab--active { background: var(--color-accent-bg); color: var(--color-accent); border-color: var(--color-accent-ring); }
 .business-tab-label { cursor: text; }
 .business-tab-label:hover { text-decoration: underline; text-decoration-style: dashed; text-underline-offset: 2px; }
 .business-name-input {
-  width: 80px; padding: 1px 4px; font-size: 12px; font-family: inherit;
+  width: 80px; padding: 1px 4px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-accent-ring); border-radius: 3px;
+  border: 0.5px solid var(--color-accent-ring); border-radius: var(--radius-sm);
   text-align: center; outline: none;
 }
 .business-del {
-  background: none; border: none; cursor: pointer; font-size: 14px;
+  background: none; border: none; cursor: pointer; font-size: var(--text-md);
   color: var(--color-text-tertiary); padding: 0 1px; line-height: 1;
   border-radius: 50%;
 }
 .business-del:hover { color: var(--color-danger); background: var(--color-surface-2); }
 .business-tab--add {
   width: 28px; height: 28px; padding: 0; justify-content: center;
-  border-radius: 50%; font-size: 16px; font-weight: 600;
+  border-radius: 50%; font-size: var(--text-lg); font-weight: 600;
   color: var(--color-text-tertiary);
 }
 .business-tab--add:hover { color: var(--color-accent); border-color: var(--color-accent-ring); }
@@ -994,12 +1028,12 @@ onUnmounted(() => {
   display: flex; flex-direction: column; align-items: center; gap: 0px;
   padding: 4px 1px; border: none; border-radius: 3px;
   background: transparent; color: var(--color-text-secondary);
-  cursor: pointer; font-family: inherit; font-size: 12px;
-  transition: all 0.1s;
+  cursor: pointer; font-family: inherit; font-size: var(--text-xs);
+  transition: all 0.12s;
 }
 .shop-tab:hover { background: var(--color-surface-2); color: var(--color-text); }
 .shop-tab--active { background: var(--color-accent-bg); color: var(--color-accent); }
-.shop-tab-num { font-size: 13px; font-weight: 700; line-height: 1; }
+.shop-tab-num { font-size: var(--text-sm); font-weight: 700; line-height: 1; }
 .shop-tab-label {
   font-size: 8px; opacity: 0.7; max-width: 44px; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; cursor: text; line-height: 1.1;
@@ -1009,7 +1043,7 @@ onUnmounted(() => {
 .shop-alias-input {
   width: 44px; padding: 1px 2px; font-size: 8px; font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-accent-ring); border-radius: 3px;
+  border: 0.5px solid var(--color-accent-ring); border-radius: var(--radius-sm);
   text-align: center; outline: none;
 }
 
@@ -1018,73 +1052,92 @@ onUnmounted(() => {
   padding: 0 0 0 8px; min-width: 0;
 }
 
-.card { flex: 1; background: var(--color-surface-1); border: 0.5px solid var(--color-border-light); border-radius: var(--radius-md); padding: 12px 10px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
-.card-head h3 { font-size: 13px; font-weight: 600; }
+.card { flex: 1; background: var(--color-surface-1); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 8px 8px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-shrink: 0; }
+.card-head h3 { font-size: var(--text-sm); font-weight: 600; }
 .table-wrap { flex: 1; overflow-y: auto; }
-.table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-.table th { text-align: left; padding: 5px 6px; font-size: 10px; font-weight: 600; color: var(--color-text-tertiary); border-bottom: 0.5px solid var(--color-border-light); position: sticky; top: 0; background: var(--color-surface-1); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-micro); }
+.table th { text-align: left; padding: 5px 6px; font-size: var(--text-micro); font-weight: 600; color: var(--color-text-tertiary); border-bottom: 0.5px solid var(--color-border-light); position: sticky; top: 0; background: var(--color-surface-1); }
 .th-sort { cursor: pointer; user-select: none; }
 .th-sort:hover { color: var(--color-accent); }
 .sort-arrow { font-size: 7px; margin-left: 1px; color: var(--color-accent); }
-.table td { padding: 5px 6px; border-bottom: 0.5px solid var(--color-border-light); white-space: nowrap; }
+.table td { padding: 3px 6px; border-bottom: 0.5px solid var(--color-border-light); white-space: nowrap; }
 .table tbody tr:hover { background: var(--color-surface-2); }
 .row-high-margin { background: rgba(255, 152, 0, 0.12); }
 .row-high-margin:hover { background: rgba(255, 152, 0, 0.20); }
 .td-name { font-weight: 500; cursor: pointer; user-select: all; min-width: 120px; }
 .td-name:active { opacity: 0.7; }
 .td-muted { color: var(--color-text-tertiary); }
-.td-notes { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-secondary); font-size: 11px; }
+.td-notes { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-secondary); font-size: var(--text-micro); }
 
 /* ── 行内编辑（与物价图鉴一致） ── */
 .inline-input {
-  width: 60px; padding: 2px 4px; font-size: 11px; font-family: inherit;
+  width: 60px; padding: 2px 4px; font-size: var(--text-micro); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid transparent; border-radius: 4px; text-align: right;
+  border: 0.5px solid transparent; border-radius: var(--radius-sm); text-align: right;
   transition: border-color 0.1s;
   -moz-appearance: textfield;
 }
 .inline-input::-webkit-inner-spin-button,
 .inline-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .inline-input:focus { outline: none; border-color: var(--color-accent-ring); background: var(--color-surface-1); }
-.inline-input::placeholder { color: var(--color-text-tertiary); font-size: 10px; }
+.inline-input::placeholder { color: var(--color-text-tertiary); font-size: var(--text-micro); }
 .inline-input--price { width: 54px; }
 .inline-input--qty { width: 42px; text-align: center; }
 .inline-input--notes { width: 64px; text-align: left; }
 .inline-select {
-  padding: 1px 3px; font-size: 10px; font-family: inherit;
+  padding: 1px 3px; font-size: var(--text-micro); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid transparent; border-radius: 4px;
+  border: 0.5px solid transparent; border-radius: var(--radius-sm);
   outline: none; cursor: pointer;
 }
-.inline-select:focus { border-color: var(--color-accent-ring); background: var(--color-surface-1); }
+.inline-select:focus { border-color: var(--color-accent-ring); background-color: var(--color-surface-1); }
 .td-actions { display: flex; gap: 2px; }
-.badge-sm { font-size: 10.5px; padding: 1px 7px; border-radius: 8px; }
+.badge-sm { font-size: var(--text-micro); padding: 1px 7px; border-radius: 8px; }
 .badge-hold { background: var(--color-accent-bg); color: var(--color-accent); }
 .badge-sold { background: var(--color-surface-2); color: var(--color-text-tertiary); }
 
-.btn { border: none; border-radius: 5px; cursor: pointer; font-size: 12.5px; font-weight: 500; padding: 6px 14px; font-family: inherit; }
+.btn { border: none; border-radius: 5px; cursor: pointer; font-size: var(--text-xs); font-weight: 500; padding: 6px 14px; font-family: inherit; }
 .btn-accent { background: var(--color-accent); color: #fff; }
 .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-ghost { background: transparent; color: var(--color-text-secondary); }
-.btn-icon { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--color-text-tertiary); padding: 2px 6px; border-radius: 3px; }
+.btn-icon { background: none; border: none; cursor: pointer; font-size: var(--text-sm); color: var(--color-text-tertiary); padding: 2px 6px; border-radius: 3px; }
 .btn-icon:hover { background: var(--color-surface-2); color: var(--color-text); }
 .btn-icon--danger:hover { color: var(--color-danger); }
-.input { width: 100%; padding: 7px 10px; font-size: 12.5px; font-family: inherit; background: var(--color-surface-2); color: var(--color-text); border: 0.5px solid var(--color-border); border-radius: 5px; }
+.input { width: 100%; padding: 7px 10px; font-size: var(--text-xs); font-family: inherit; background: var(--color-surface-2); color: var(--color-text); border: 0.5px solid var(--color-border); border-radius: var(--radius-sm); }
 .input:focus { outline: none; border-color: var(--color-accent-ring); }
 select.input { cursor: pointer; }
+/* 原生 select：appearance:none + 自定义 chevron（参照 global.css .server-select） */
+select.input,
+select.inline-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 26px;
+}
+select.inline-select { padding-right: 16px; background-position: right 3px center; }
+select.input option,
+select.inline-select option {
+  background: var(--color-surface-1);
+  color: var(--color-text);
+}
 .form-row { margin-bottom: 12px; }
-.form-label { display: block; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.form-label { display: block; font-size: var(--text-micro); color: var(--color-text-secondary); margin-bottom: 4px; }
 .form-row--2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-calc { font-size: 12.5px; color: var(--color-accent); font-weight: 500; }
-.form-label-hint { font-weight: 400; color: var(--color-text-tertiary); font-size: 10px; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal { background: var(--color-surface-1); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); width: 420px; }
+.form-calc { font-size: var(--text-xs); color: var(--color-accent); font-weight: 500; }
+.form-label-hint { font-weight: 400; color: var(--color-text-tertiary); font-size: var(--text-micro); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(5,6,9,0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 200; animation: overlay-in 0.15s ease-out; }
+.modal { background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(28px) saturate(1.5); -webkit-backdrop-filter: blur(28px) saturate(1.5); border-radius: var(--radius-lg); width: 420px; max-width: 90vw; box-shadow: var(--shadow-pop); animation: modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.1); }
+@supports not (backdrop-filter: blur(1px)) {
+  .modal { background: var(--color-surface-1); }
+}
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid var(--color-border-light); }
-.modal-head h4 { font-size: 14px; font-weight: 600; }
+.modal-head h4 { font-size: var(--text-md); font-weight: 600; }
 .modal-body { padding: 16px 18px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 0.5px solid var(--color-border-light); }
-.hint { color: var(--color-text-tertiary); text-align: center; padding: 48px 20px; font-size: 12.5px; }
+.hint { color: var(--color-text-tertiary); text-align: center; padding: 48px 20px; font-size: var(--text-xs); }
 .text-success { color: var(--color-success); }
 .text-danger { color: var(--color-danger); }
 
@@ -1093,17 +1146,17 @@ select.input { cursor: pointer; }
 .search-sug-wrap { position: relative; }
 .sug-dropdown {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 250;
-  background: var(--color-surface-2); border: 0.5px solid var(--color-border);
-  border-radius: 0 0 5px 5px; list-style: none; padding: 4px 0; margin: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  background: var(--color-surface-2); border: 1px solid var(--color-border-light);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm); list-style: none; padding: 4px 0; margin: 0;
+  box-shadow: var(--shadow-pop);
 }
 .sug-dropdown li {
-  padding: 6px 10px; cursor: pointer; font-size: 12px;
+  padding: 6px 10px; cursor: pointer; font-size: var(--text-xs);
   display: flex; justify-content: space-between; align-items: center;
   transition: background 0.08s;
 }
 .sug-dropdown li:hover,
 .sug-item--active { background: var(--color-accent-bg); }
 .sug-name { color: var(--color-text); }
-.sug-slot { color: var(--color-text-tertiary); font-size: 11px; }
+.sug-slot { color: var(--color-text-tertiary); font-size: var(--text-micro); }
 </style>

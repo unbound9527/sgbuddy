@@ -14,8 +14,10 @@ interface ElectronAPI {
   selectGamePath: () => Promise<string | null>
   getAppVersion: () => Promise<string>
   openExternal: (url: string) => Promise<{ ok: boolean; error?: string }>
-  scrapeOne: (serverName: string, force?: boolean) => Promise<{ price: number | null }>
-  scrapeRates: (force?: boolean) => Promise<{ updated: number; failed: number }>
+  scrapeOne: (serverName: string, force?: boolean) => Promise<{ price: number | null; needLogin?: boolean; error?: string }>
+  scrapeRates: (force?: boolean) => Promise<{ updated: number; failed: number; needLogin?: boolean }>
+  currencyLogin: () => Promise<{ ok: boolean }>
+  currencyLoginStatus: () => Promise<{ loggedIn: boolean; error?: string }>
   selectImage: () => Promise<string | null>
   saveImage: (itemName: string, sourcePath: string, priceId?: number) => Promise<{ ok: boolean; id?: number; path?: string; error?: string }>
   listImages: (itemName: string, priceId?: number) => Promise<Array<{ id: number; image_path: string; sort_order: number }>>
@@ -29,13 +31,22 @@ interface ElectronAPI {
   readClipboardText: () => Promise<string | null>
   exportScheme: (data: any) => Promise<{ ok: boolean; path?: string; error?: string }>
   exportExp: (data: any) => Promise<{ ok: boolean; path?: string; error?: string }>
-  scrapeClues: (serverName: string) => Promise<{ added: number; errors: string[] }>
+  exportPrices: (rows: any[]) => Promise<{ ok: boolean; path?: string; error?: string }>
+  importPrices: () => Promise<{ ok: boolean; rows?: any[]; error?: string }>
+  scrapeClues: (serverName: string) => Promise<{
+    added: number
+    errors: string[]
+    meta: { wall: boolean; wallMsg?: string; triedTieba: boolean; titles: string[]; pages: number; foundClues: number; diag: string[] }
+  }>
   loadClues: (params: { serverName: string; source?: string; keyword?: string; limit?: number }) => Promise<ClueRecord[]>
   updateClueStatus: (id: number, status: string) => Promise<unknown>
   deleteClue: (id: number) => Promise<{ ok: boolean; deleted: number }>
+  getTiebaMap: () => Promise<Record<string, string | null>>
+  openWallVerify: (serverOrTiebaName: string) => Promise<{ ok: boolean }>
   setClueServer: (name: string) => Promise<void>
   clearClues: (serverName: string) => Promise<{ ok: boolean; deleted: number }>
   onClueProgress: (cb: (data: { source: string; done: number; total: number }) => void) => () => void
+  onClueNew: (cb: (row: ClueRecord) => void) => () => void
   getSetting: (key: string) => Promise<string | null>
   setSetting: (key: string, value: string) => Promise<void>
   listDailyLinks: () => Promise<DailyLink[]>
@@ -52,6 +63,8 @@ interface ElectronAPI {
   cancelShutdown: () => Promise<{ ok: boolean }>
   shutdownStatus: () => Promise<ShutdownStatus>
   onSwitched: (cb: (payload: { idx: number; count: number }) => void) => () => void
+  // 窗口列表变化推送（主进程监视器）
+  onWindowsChanged: (cb: (list: GameWindow[]) => void) => () => void
   // 等级经验表
   getAllExp: () => Promise<ExpRow[]>
   updateExp: (params: { level: number; field: string; value: string | number }) => Promise<ExpRow>
@@ -78,6 +91,8 @@ interface ElectronAPI {
   installUpdate: (installerPath: string) => Promise<{ ok: boolean }>
   onUpdateProgress: (cb: (p: { received: number; total: number }) => void) => () => void
   onUpdateAvailable: (cb: (info: UpdateInfo) => void) => () => void
+  // 托盘指令（path → 路由跳转；cat → 攻略页分类；action → check-update/about）
+  onTrayCommand: (cb: (cmd: { path?: string; cat?: string; action?: 'check-update' | 'about' }) => void) => () => void
 }
 
 interface ReleaseAsset {

@@ -24,12 +24,12 @@
     />
     <!-- 显示模式 -->
     <template v-else>
-      <span class="slot-lock" :title="lockTitle" @click.stop="$emit('toggleLock', slotKey)">{{ locked ? '🔒' : '🔓' }}</span>
+      <span class="slot-lock" :title="lockTitle" @click.stop="$emit('toggleLock', slotKey)"><AppIcon :icon="locked ? 'lock' : 'unlock'" :size="12" /></span>
       <span v-if="itemName" class="slot-name" :style="{ color: nameColor }" @dblclick.stop="editing = true">{{ itemName }}</span>
       <span v-else class="slot-placeholder" @dblclick.stop="editing = true">{{ hint || '—' }}</span>
       <span v-if="itemName && price" class="slot-price">{{ price }}</span>
-      <span v-if="itemName && hasImage && !locked" class="slot-img" @click.stop="$emit('viewImage', itemName)" title="查看图片">🖼</span>
-      <span v-if="itemName && !locked" class="slot-clear" @click.stop="$emit('clear', slotKey)" title="清除">✕</span>
+      <span v-if="itemName && hasImage && !locked" class="slot-img" @click.stop="$emit('viewImage', itemName)" title="查看图片"><AppIcon icon="image" :size="12" /></span>
+      <span v-if="itemName && !locked" class="slot-clear" @click.stop="$emit('clear', slotKey)" title="清除"><AppIcon icon="x" :size="11" /></span>
     </template>
 
     <!-- 下拉面板 -->
@@ -45,7 +45,7 @@
           <span class="sdi-name" :style="{ color: getQualityColor(item._quality) }">{{ item.name }}</span>
           <span v-if="item._notes" class="sdi-notes">{{ item._notes }}</span>
           <span class="sdi-price">{{ item._price > 0 ? item._price + '万' : (item._hint || '—') }}</span>
-          <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="emit('viewOptionImage', item)" title="查看图片">🖼</span>
+          <span class="sdi-img" v-if="optionHasImage(item)" @click.stop="emit('viewOptionImage', item)" title="查看图片"><AppIcon icon="image" :size="13" /></span>
         </div>
         <div v-if="options && options.length === 0" class="slot-dropdown-empty">
           暂无物价数据
@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps<{
   slotKey: string; itemName: string; nameColor: string; price: string
@@ -101,7 +102,7 @@ function finishEdit(e: Event) {
   background: var(--color-surface-2);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-xs);
   transition: border-color .15s;
 }
 .beast-slot:hover { border-color: var(--color-accent); background: var(--color-surface-3); }
@@ -111,39 +112,39 @@ function finishEdit(e: Event) {
 .beast-slot--editing { border-color: var(--color-accent); opacity: 1; cursor: text; }
 .slot-edit-input {
   width: 100%; height: 100%; border: none; background: transparent;
-  text-align: center; font-size: 11px; color: var(--color-text);
+  text-align: center; font-size: var(--text-micro); color: var(--color-text);
   outline: none; padding: 2px;
 }
-.slot-placeholder { color: var(--color-text-tertiary); font-size: 11px; text-align: center; line-height: 1.2; overflow: hidden; }
-.slot-name { font-size: 13px; text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 58px; font-weight: 500; }
-.slot-price { position: absolute; bottom: 1px; right: 3px; font-size: 10px; color: var(--color-accent); }
-.slot-img { position: absolute; top: 0; left: 2px; font-size: 10px; cursor: pointer; opacity: 0.7; z-index: 1; }
+.slot-placeholder { color: var(--color-text-tertiary); font-size: var(--text-micro); text-align: center; line-height: 1.2; overflow: hidden; }
+.slot-name { font-size: var(--text-sm); text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 58px; font-weight: 500; }
+.slot-price { position: absolute; bottom: 1px; right: 3px; font-size: var(--text-micro); color: var(--color-accent); }
+.slot-img { position: absolute; top: 0; left: 2px; font-size: var(--text-micro); cursor: pointer; opacity: 0.7; z-index: 1; display: inline-flex; align-items: center; }
 .slot-img:hover { opacity: 1; }
-.slot-lock { position: absolute; top: 0; left: 2px; font-size: 11px; cursor: pointer; opacity: 0.5; z-index: 1; transition: opacity 0.12s; }
+.slot-lock { position: absolute; top: 0; left: 2px; font-size: var(--text-micro); cursor: pointer; opacity: 0.5; z-index: 1; transition: opacity 0.12s; display: inline-flex; align-items: center; }
 .slot-lock:hover { opacity: 1; }
 .beast-slot--locked { border-color: var(--color-accent); border-width: 2px; cursor: default; }
 .beast-slot--locked:hover { background: var(--color-surface-3); }
-.slot-clear { position: absolute; top: 0; right: 2px; font-size: 11px; color: var(--color-text-tertiary); line-height: 1; cursor: pointer; padding: 0 2px; }
+.slot-clear { position: absolute; top: 0; right: 2px; font-size: var(--text-micro); color: var(--color-text-tertiary); line-height: 1; cursor: pointer; padding: 0 2px; display: inline-flex; align-items: center; }
 .slot-clear:hover { color: var(--color-danger); }
 .slot-dropdown {
   position: absolute; top: 100%; left: 0; z-index: 100;
   background: var(--color-surface-1); border: 0.5px solid var(--color-accent);
-  border-radius: var(--radius-sm); box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-pop);
   width: 200px; max-height: 180px; display: flex; flex-direction: column;
 }
 .slot-dropdown-list { flex: 1; overflow-y: auto; }
 .slot-dropdown-item {
   display: flex; align-items: center; gap: 6px; padding: 5px 8px;
-  font-size: 12px; cursor: pointer;
+  font-size: var(--text-xs); cursor: pointer;
   border-bottom: 0.5px solid var(--color-border-light);
 }
 .slot-dropdown-item:hover { background: var(--color-hover); }
 .slot-dropdown-item--disabled { opacity: 0.45; cursor: not-allowed; }
 .slot-dropdown-item--disabled:hover { background: transparent; }
 .sdi-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sdi-notes { flex: 2; font-size: 10.5px; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
-.sdi-price { font-size: 11px; color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
-.sdi-img { font-size: 13px; flex-shrink: 0; cursor: pointer; opacity: 0.7; }
+.sdi-notes { flex: 2; font-size: var(--text-micro); color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 60px; }
+.sdi-price { font-size: var(--text-micro); color: var(--color-accent); font-weight: 500; flex-shrink: 0; margin-left: auto; }
+.sdi-img { font-size: var(--text-sm); flex-shrink: 0; cursor: pointer; opacity: 0.7; display: inline-flex; align-items: center; }
 .sdi-img:hover { opacity: 1; }
-.slot-dropdown-empty { padding: 12px; text-align: center; font-size: 12px; color: var(--color-text-tertiary); }
+.slot-dropdown-empty { padding: 12px; text-align: center; font-size: var(--text-xs); color: var(--color-text-tertiary); }
 </style>

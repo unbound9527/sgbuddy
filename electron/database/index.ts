@@ -22,6 +22,8 @@ export function initDatabase(): void {
   createTables()
   // 迁移：新增 slot_price_ids 列（存储 {slot: priceParamId}）
   try { db.exec(`ALTER TABLE gear_schemes ADD COLUMN slot_price_ids TEXT DEFAULT '{}'`) } catch { /* 列已存在 */ }
+  // 迁移：新增 power 列（配号方案战力，可选；存「阶+品质」如 "1金"/"3蓝"，空串=未设置）
+  try { db.exec(`ALTER TABLE gear_schemes ADD COLUMN power TEXT DEFAULT ''`) } catch { /* 列已存在 */ }
   // 迁移：新增 equipment_images 表
   try { db.exec(`CREATE TABLE IF NOT EXISTS equipment_images (id INTEGER PRIMARY KEY AUTOINCREMENT, item_name TEXT NOT NULL, image_path TEXT NOT NULL, sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')))`) } catch { /* 表已存在 */ }
   // 迁移：equipment_images 增加 price_id 列（图片与价格记录绑定，避免同名物品图片混用；旧数据为 NULL 按 item_name 回退）
@@ -100,6 +102,122 @@ export function initDatabase(): void {
       `)
     }
   } catch (e) { console.warn('[迁移] price_params 唯一约束重建失败:', e) }
+  // 迁移：asset_wallet 增加现金投入列（宝典解锁用现金购买装备时计入起步资金成本）
+  try { db.exec('ALTER TABLE asset_wallet ADD COLUMN cash_injected REAL DEFAULT 0') } catch { /* 列已存在 */ }
+  // 迁移：growth_journey 增加本宝典起步基准列（新建宝典时的既有配置估值，指标随选中宝典展示）
+  try { db.exec('ALTER TABLE growth_journey ADD COLUMN starting_basis REAL DEFAULT 0') } catch { /* 列已存在 */ }
+  // 迁移：宝典独立核算——流水挂 journey_id，宝典行记录各自初始流动资金
+  try { db.exec('ALTER TABLE asset_records ADD COLUMN journey_id INTEGER') } catch { /* 列已存在 */ }
+  try { db.exec('ALTER TABLE growth_journey ADD COLUMN starting_liquid REAL DEFAULT 0') } catch { /* 列已存在 */ }
+  // 迁移：growth_journey 增加职业列（新建宝典时锁定配置职业，调整目标只能选同职业方案）
+  try { db.exec("ALTER TABLE growth_journey ADD COLUMN job TEXT DEFAULT ''") } catch { /* 列已存在 */ }
+  try {
+    // 存量流水归入各服第一个激活宝典
+    db.exec(`
+      UPDATE asset_records SET journey_id = (
+        SELECT MIN(gj.id) FROM growth_journey gj WHERE gj.server_id = asset_records.server_id AND gj.status = 'active'
+      ) WHERE journey_id IS NULL
+    `)
+    // 首个激活宝典继承钱包的初始流动资金与初始固定（作为该宝典起步基准）；有流水的宝典不重复继承
+    db.exec(`
+      UPDATE growth_journey SET starting_liquid = COALESCE((
+        SELECT w.starting_liquid FROM asset_wallet w WHERE w.server_id = growth_journey.server_id
+      ), 0)
+      WHERE starting_liquid = 0 AND NOT EXISTS (SELECT 1 FROM asset_records ar WHERE ar.journey_id = growth_journey.id)
+        AND id IN (SELECT MIN(id) FROM growth_journey WHERE status = 'active' GROUP BY server_id)
+    `)
+    db.exec(`
+      UPDATE growth_journey SET starting_basis = COALESCE((
+        SELECT w.starting_fixed FROM asset_wallet w WHERE w.server_id = growth_journey.server_id
+      ), 0)
+      WHERE starting_basis = 0
+        AND NOT EXISTS (SELECT 1 FROM asset_records ar WHERE ar.journey_id = growth_journey.id)
+        AND id IN (SELECT MIN(id) FROM growth_journey WHERE status = 'active' GROUP BY server_id)
+    `)
+  } catch (e) { console.warn('[迁移] 宝典流水归集失败:', e) }
+  // 迁移：背包按宝典独立——backpack_items 挂 journey_id（存量归到该服最新激活宝典，与默认选中一致）
+  // SQLite 无法修改 UNIQUE，重建表搬迁数据
+  try {
+    const bpSql = (db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='backpack_items'`).get() as any)?.sql ?? ''
+    if (!bpSql.includes('journey_id')) {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE backpack_items_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          server_id INTEGER NOT NULL,
+          journey_id INTEGER NOT NULL DEFAULT 0,
+          price_param_id INTEGER NOT NULL,
+          item_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now','localtime')),
+          updated_at TEXT DEFAULT (datetime('now','localtime')),
+          UNIQUE(server_id, journey_id, price_param_id),
+          FOREIGN KEY (server_id) REFERENCES servers(id)
+        );
+        INSERT INTO backpack_items_new (id, server_id, journey_id, price_param_id, item_name, quantity, created_at, updated_at)
+          SELECT id, server_id,
+            COALESCE((SELECT MAX(gj.id) FROM growth_journey gj WHERE gj.server_id = backpack_items.server_id AND gj.status = 'active'), 0),
+            price_param_id, item_name, quantity, created_at, updated_at
+          FROM backpack_items;
+        DROP TABLE backpack_items;
+        ALTER TABLE backpack_items_new RENAME TO backpack_items;
+        COMMIT;
+      `)
+    }
+  } catch (e) { console.warn('[迁移] 背包按宝典独立失败:', e) }
+  // 迁移：背包唯一键含 item_name——图鉴外装备（price_param_id=0）也能按名字独立入库
+  try {
+    const bpSql = (db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='backpack_items'`).get() as any)?.sql ?? ''
+    if (!/UNIQUE\([^)]*price_param_id[^)]*item_name/.test(bpSql)) {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE backpack_items_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          server_id INTEGER NOT NULL,
+          journey_id INTEGER NOT NULL DEFAULT 0,
+          price_param_id INTEGER NOT NULL DEFAULT 0,
+          item_name TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now','localtime')),
+          updated_at TEXT DEFAULT (datetime('now','localtime')),
+          UNIQUE(server_id, journey_id, price_param_id, item_name),
+          FOREIGN KEY (server_id) REFERENCES servers(id)
+        );
+        INSERT INTO backpack_items_new (id, server_id, journey_id, price_param_id, item_name, quantity, created_at, updated_at)
+          SELECT id, server_id, journey_id, price_param_id, item_name, quantity, created_at, updated_at
+          FROM backpack_items;
+        DROP TABLE backpack_items;
+        ALTER TABLE backpack_items_new RENAME TO backpack_items;
+        COMMIT;
+      `)
+    }
+  } catch (e) { console.warn('[迁移] 背包唯一键含物品名失败:', e) }
+  // 背包不保留数量为 0 的物品（清历史残留；此后各扣减点会在归零时删行）
+  try { db.exec('DELETE FROM backpack_items WHERE quantity <= 0') } catch { /* 表不存在时忽略 */ }
+  // 迁移：清除配号方案中的孤立槽位 key「灵兽」
+  // 背景：早期养成页签有一张独立的「灵兽」槽位卡，后被灵兽页签（key 格式：灵兽:分类:品级:序号）取代。
+  // 遗留在 details/slot_price_ids 中的普通 key「灵兽」界面上没有任何卡槽 → 看不到、也上不了锁，
+  // 金额却被统计进方案总价和「可调」，导致仪表盘「可调」永远清不掉。这里一次性清除（幂等）。
+  try {
+    const rows = db.prepare('SELECT id, details, slot_price_ids FROM gear_schemes').all() as any[]
+    const upd = db.prepare('UPDATE gear_schemes SET details=?, slot_price_ids=? WHERE id=?')
+    const scrub = () => {
+      for (const r of rows) {
+        const parse = (v: any) => { try { return typeof v === 'string' ? JSON.parse(v || '{}') : (v || {}) } catch { return {} } }
+        const d = parse(r.details)
+        const s = parse(r.slot_price_ids)
+        let changed = false
+        if (d && typeof d === 'object' && '灵兽' in d) { delete d['灵兽']; changed = true }
+        if (s && typeof s === 'object' && '灵兽' in s) { delete s['灵兽']; changed = true }
+        if (changed) upd.run(JSON.stringify(d), JSON.stringify(s), r.id)
+      }
+    }
+    db.transaction(scrub)()
+  } catch (e) { console.warn('[迁移] 清理孤立槽位「灵兽」失败:', e) }
+  // 迁移：trade_clues 增加软删除墓碑列（删除不删行，靠 deleted_at 隔离，避免下次抓取同帖复活）
+  try { db.exec(`ALTER TABLE trade_clues ADD COLUMN deleted_at TEXT DEFAULT NULL`) } catch { /* 列已存在 */ }
+  // 迁移：trade_clues 增加绝对发帖时间列（posted_at 是相对文案「x小时前」；此列存归一化的 yyyy-MM-dd HH:mm:ss）
+  try { db.exec(`ALTER TABLE trade_clues ADD COLUMN posted_at_abs TEXT DEFAULT ''`) } catch { /* 列已存在 */ }
   seedBaseData()
 }
 
@@ -159,6 +277,7 @@ function createTables(): void {
       total_budget REAL DEFAULT 0,
       details TEXT DEFAULT '{}',
       notes TEXT DEFAULT '',
+      power TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now','localtime')),
       updated_at TEXT DEFAULT (datetime('now','localtime')),
       FOREIGN KEY (server_id) REFERENCES servers(id)
@@ -272,6 +391,19 @@ function createTables(): void {
         value TEXT NOT NULL DEFAULT ''
       );
 
+      -- 防骗黑名单：server_id 0 = 全大区通用条目；source local=本地录入 / cloud=云端同步（预留）
+      -- 建表语句幂等（IF NOT EXISTS），存量数据库升级时自动补表
+      CREATE TABLE IF NOT EXISTS scammer_blacklist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        server_id INTEGER NOT NULL DEFAULT 0,
+        role_name TEXT NOT NULL,
+        method TEXT NOT NULL DEFAULT '其他',
+        description TEXT NOT NULL DEFAULT '',
+        source TEXT NOT NULL DEFAULT 'local',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
       CREATE TABLE IF NOT EXISTS win_presets (
         title TEXT PRIMARY KEY,
         slot INTEGER NOT NULL DEFAULT 0,
@@ -299,6 +431,60 @@ function createTables(): void {
       net_profit REAL NOT NULL,
       profit_margin REAL NOT NULL,
       calculated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+
+    -- 养成宝典：钱包（每大区一条，起步资金冻结不随行情变化）
+    CREATE TABLE IF NOT EXISTS asset_wallet (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      starting_liquid REAL DEFAULT 0,
+      starting_fixed REAL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      updated_at TEXT DEFAULT (datetime('now','localtime')),
+      UNIQUE(server_id)
+    );
+
+    -- 养成宝典：收支流水。source: active(活跃)/item(道具)/manual(直录)/gear(购装备)/adjust(纠错±)
+    -- gear 类型计入余额公式但不计入收益统计；active 同日重提由渲染层覆盖
+    CREATE TABLE IF NOT EXISTS asset_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      record_date TEXT NOT NULL,
+      type TEXT NOT NULL,
+      source TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      detail TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (server_id) REFERENCES servers(id)
+    );
+
+    -- 养成宝典：背包资产（按大区+图鉴物品聚合数量，估值按图鉴市场价实时折算）
+    CREATE TABLE IF NOT EXISTS backpack_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      price_param_id INTEGER NOT NULL,
+      item_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      updated_at TEXT DEFAULT (datetime('now','localtime')),
+      UNIQUE(server_id, price_param_id),
+      FOREIGN KEY (server_id) REFERENCES servers(id)
+    );
+
+    -- 养成宝典：宝典档案（每大区可多条激活）。nodes JSON:
+    -- [{slot, fromItem, toItem, fromPriceId, priceParamId, cost, claimed, paid, claimedAt, recordId}]
+    CREATE TABLE IF NOT EXISTS growth_journey (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id INTEGER NOT NULL,
+      name TEXT DEFAULT '',
+      job TEXT DEFAULT '',
+      current_snapshot TEXT DEFAULT '{}',
+      target_snapshot TEXT DEFAULT '{}',
+      nodes TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'active',
+      opened_at TEXT DEFAULT (datetime('now','localtime')),
+      updated_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (server_id) REFERENCES servers(id)
     );
 
     CREATE TABLE IF NOT EXISTS price_history (

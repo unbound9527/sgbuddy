@@ -182,6 +182,42 @@ export function refreshAndGet(): GameWindow[] {
   return cachedWindows
 }
 
+// ── 常驻监视器：主进程每秒枚举一次，列表变化时回调 ──
+// EnumWindows + 标题过滤开销极低（<1ms），固定 1s 间隔即可准实时感知窗口开/关/托盘隐藏。
+// 相比渲染进程轮询：不受页面 keep-alive、窗口最小化、Chromium 定时器节流影响。
+
+let watcherTimer: ReturnType<typeof setInterval> | null = null
+
+function isSameList(a: GameWindow[], b: GameWindow[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].handle !== b[i].handle || a[i].pid !== b[i].pid || a[i].title !== b[i].title) return false
+  }
+  return true
+}
+
+/** 启动窗口监视，列表变化时触发 onChange（先触发一次初始同步） */
+export function startWindowWatcher(onChange: (list: GameWindow[]) => void): void {
+  stopWindowWatcher()
+  let prev = refreshWindows()
+  onChange(prev)
+  watcherTimer = setInterval(() => {
+    try {
+      const next = refreshWindows()
+      if (!isSameList(prev, next)) {
+        prev = next
+        onChange(next)
+      }
+    } catch (e: any) {
+      console.error('[窗口监视] 刷新失败:', e?.message || e)
+    }
+  }, 1000)
+}
+
+export function stopWindowWatcher(): void {
+  if (watcherTimer) { clearInterval(watcherTimer); watcherTimer = null }
+}
+
 // ── IPC API ──
 
 export async function listGameWindows(): Promise<GameWindow[]> { return refreshWindows() }

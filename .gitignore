@@ -27,3 +27,6 @@ src/data/quiz-bank-categorized.json
 
 # Gitee 私人令牌（本地发布用，勿提交）
 .gitee-token
+
+# WorkBuddy 本地工作数据（不提交 remote）
+.workbuddy/

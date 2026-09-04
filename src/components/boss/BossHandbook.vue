@@ -6,7 +6,7 @@
         <input
           :value="store.searchQuery"
           class="boss-search"
-          placeholder="&#x1F50D; 搜索怪物名称..."
+          placeholder="搜索怪物名称..."
           @input="store.setSearch(($event.target as HTMLInputElement).value)"
         />
       </div>
@@ -16,17 +16,17 @@
           class="boss-btn boss-btn-del"
           :disabled="!store.selectedId"
           @click="confirmDelete"
-        >&#x1F5D1; 删除</button>
+        ><AppIcon icon="trash" :size="12" /> 删除</button>
         <button
           class="boss-btn boss-btn-up"
           :disabled="!store.selectedId"
           @click="store.selectedId && store.moveRow(store.selectedId, 'up')"
-        >&#x2191; 上移</button>
+        ><AppIcon icon="arrow-up" :size="12" /> 上移</button>
         <button
           class="boss-btn boss-btn-down"
           :disabled="!store.selectedId"
           @click="store.selectedId && store.moveRow(store.selectedId, 'down')"
-        >&#x2193; 下移</button>
+        ><AppIcon icon="arrow-down" :size="12" /> 下移</button>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
               >
                 <span>{{ col.label }}</span>
                 <span v-if="col.key === 'level' && store.levelSort !== 'none'" class="boss-sort-arrow">
-                  {{ store.levelSort === 'asc' ? '▲' : '▼' }}
+                  <AppIcon :icon="store.levelSort === 'asc' ? 'chevron-up' : 'chevron-down'" :size="10" />
                 </span>
                 <button
                   v-if="col.key !== 'name'"
@@ -71,7 +71,7 @@
                   :class="{ active: store.columnFilters.has(col.key) }"
                   @click.stop="toggleFilter(col.key)"
                   title="筛选"
-                >&#x25BE;</button>
+                ><AppIcon icon="chevron-down" :size="10" /></button>
               </div>
               <div
                 class="boss-col-resizer"
@@ -143,7 +143,7 @@
 
     <!-- 空状态 -->
     <div class="boss-empty" v-else-if="!store.loading">
-      <span class="boss-empty-icon">&#x1F479;</span>
+      <span class="boss-empty-icon"><AppIcon icon="ghost" :size="44" /></span>
       <p>暂无数据</p>
       <p class="boss-empty-hint">点击「+ 新增」添加第一条Boss记录</p>
     </div>
@@ -168,6 +168,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { useBossHandbook, COLUMNS } from '@/stores/bossHandbook'
 
 const store = useBossHandbook()
@@ -409,18 +410,19 @@ function stopResize() {
 .boss-toolbar-right { display: flex; gap: 6px; }
 
 .boss-search {
-  width: 260px; padding: 7px 10px; font-size: 12.5px; font-family: inherit;
+  width: 260px; padding: 7px 10px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-1); color: var(--color-text);
-  border: 0.5px solid var(--color-border); border-radius: 6px;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
   outline: none; transition: border-color 0.12s;
 }
 .boss-search:focus { border-color: var(--color-accent-ring); }
 .boss-search::placeholder { color: var(--color-text-tertiary); }
 
 .boss-btn {
-  padding: 6px 12px; font-size: 12px; font-family: inherit;
-  border: 0.5px solid var(--color-border); border-radius: 6px;
-  cursor: pointer; transition: all 0.12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 6px 12px; font-size: var(--text-xs); font-family: inherit;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.12s ease;
   background: var(--color-surface-1); color: var(--color-text-secondary);
 }
 .boss-btn:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
@@ -432,7 +434,7 @@ function stopResize() {
 /* 顶部横向滚动条镜像 */
 .boss-scroll-top {
   overflow-x: auto; overflow-y: hidden;
-  border: 0.5px solid var(--color-border);
+  border: 1px solid var(--color-border-light);
   border-bottom: none;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: var(--color-surface-1);
@@ -440,24 +442,25 @@ function stopResize() {
 .boss-scroll-spacer { height: 1px; }
 
 .boss-table-wrap {
-  flex: 1; overflow: auto; border: 0.5px solid var(--color-border);
+  flex: 1; overflow: auto; border: 1px solid var(--color-border-light);
   border-top: none;
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   background: var(--color-surface-1);
+  box-shadow: var(--shadow-card);
 }
 
 .boss-table {
   border-collapse: separate; border-spacing: 0; table-layout: fixed; min-width: 100%;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 /* 表头 */
 .boss-th {
   position: sticky; top: 0; z-index: 2;
   background: var(--color-surface-2); padding: 8px 6px;
-  text-align: center; font-weight: 600; font-size: 11.5px;
+  text-align: center; font-weight: 600; font-size: var(--text-micro);
   color: var(--color-text-secondary); white-space: nowrap;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
   min-width: 60px; overflow: hidden;
 }
 .boss-th--name { min-width: 120px; }
@@ -467,14 +470,15 @@ function stopResize() {
 }
 
 .boss-filter-btn {
-  background: none; border: none; cursor: pointer; font-size: 10px;
+  background: none; border: none; cursor: pointer; font-size: var(--text-micro);
   color: var(--color-text-tertiary); padding: 0 2px; line-height: 1;
+  display: inline-flex; align-items: center;
 }
 .boss-filter-btn:hover, .boss-filter-btn.active { color: var(--color-accent); }
 
 .boss-th-clickable { cursor: pointer; user-select: none; }
 .boss-th-clickable:hover { color: var(--color-text); }
-.boss-sort-arrow { font-size: 10px; margin-left: 2px; }
+.boss-sort-arrow { font-size: var(--text-micro); margin-left: 2px; display: inline-flex; align-items: center; }
 
 .boss-filter-row .boss-th-filter {
   position: sticky; top: 32px; z-index: 1;
@@ -483,9 +487,9 @@ function stopResize() {
 }
 
 .boss-filter-input {
-  width: 100%; padding: 4px 6px; font-size: 11px; font-family: inherit;
+  width: 100%; padding: 4px 6px; font-size: var(--text-micro); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text);
-  border: 0.5px solid var(--color-accent-ring); border-radius: 4px;
+  border: 0.5px solid var(--color-accent-ring); border-radius: var(--radius-sm);
   outline: none; text-align: center;
 }
 
@@ -513,27 +517,64 @@ function stopResize() {
 
 /* 编辑输入框 */
 .boss-cell-input {
-  width: 100%; padding: 2px 4px; font-size: 12px; font-family: inherit;
+  width: 100%; padding: 2px 4px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-1); color: var(--color-text);
-  border: 1px solid var(--color-accent); border-radius: 3px;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-sm);
   outline: none; text-align: inherit;
 }
 .boss-td--num .boss-cell-input { text-align: center; }
 
 /* 空状态 */
 .boss-empty { text-align: center; padding: 60px 20px; color: var(--color-text-tertiary); }
-.boss-empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
-.boss-empty-hint { font-size: 11px; margin-top: 6px; color: var(--color-text-tertiary); }
+.boss-empty-icon { display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; opacity: 0.75; }
+.boss-empty-hint { font-size: var(--text-micro); margin-top: 6px; color: var(--color-text-tertiary); }
 
-/* 确认弹窗按钮 (modal 结构样式复用全局 .modal-overlay / .modal / .modal-head / .modal-body / .modal-foot) */
+/* 确认弹窗（玻璃，结构类复用 .modal-overlay / .modal / .modal-head / .modal-body / .modal-foot） */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5, 6, 9, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  animation: overlay-in 0.15s ease-out;
+}
+[data-theme="light"] .modal-overlay { background: rgba(30, 35, 45, 0.25); }
+.modal {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border-radius: var(--radius-lg); width: 360px; max-width: 90vw;
+  box-shadow: var(--shadow-pop);
+  animation: modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .modal { background: var(--color-surface-1); }
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 0.5px solid var(--color-border-light);
+}
+.modal-head h4 { font-size: var(--text-md); font-weight: 600; margin: 0; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-body p { font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.6; margin: 0; }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 20px; border-top: 0.5px solid var(--color-border-light);
+}
+
+/* 确认弹窗按钮 */
 .boss-modal-btn-cancel {
-  padding: 6px 14px; font-size: 12px; font-family: inherit;
+  padding: 6px 14px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-surface-2); color: var(--color-text-secondary);
-  border: 0.5px solid var(--color-border); border-radius: 6px; cursor: pointer;
+  border: 0.5px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer;
+  transition: all 0.12s ease;
 }
+.boss-modal-btn-cancel:hover { background: var(--color-surface-3); color: var(--color-text); }
 .boss-modal-btn-danger {
-  padding: 6px 14px; font-size: 12px; font-family: inherit;
+  padding: 6px 14px; font-size: var(--text-xs); font-family: inherit;
   background: var(--color-danger); color: #fff;
-  border: none; border-radius: 6px; cursor: pointer;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
+  transition: all 0.12s ease;
 }
+.boss-modal-btn-danger:hover { background: var(--color-danger); opacity: 0.9; }
 </style>
