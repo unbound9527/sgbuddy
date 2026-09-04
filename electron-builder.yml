@@ -24,6 +24,20 @@ files:
   - '!**/node_modules/vue-router/**'
   - '!**/node_modules/pinia/**'
   - '!**/node_modules/tiny-pinyin/**'
+  # 主进程仅 require better-sqlite3/exceljs/koffi/tesseract.js（见 dist/main/index.cjs），
+  # 其余 node_modules 均为渲染层/构建链传递依赖，vite 构建时已内联
+  - '!**/node_modules/@babel/**'
+  # better-sqlite3 只保留运行时 .node 二进制，剔除编译中间产物（obj/pdb/lib 等约 50MB）
+  - '!**/node_modules/better-sqlite3/build/Release/obj*'
+  - '!**/node_modules/better-sqlite3/build/Release/*.pdb'
+  - '!**/node_modules/better-sqlite3/build/Release/*.lib'
+  - '!**/node_modules/better-sqlite3/build/Release/*.exp'
+  - '!**/node_modules/better-sqlite3/build/Release/*.iobj'
+  - '!**/node_modules/better-sqlite3/build/Release/*.ipdb'
+  - '!**/node_modules/better-sqlite3/build/Release/test_extension*'
+  - '!**/node_modules/better-sqlite3/build/Release/sqlite3.lib'
+  - '!**/node_modules/better-sqlite3/deps/**'
+  - '!**/node_modules/better-sqlite3/src/**'
 asar: true
 compression: maximum
 win:
