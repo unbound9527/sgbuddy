@@ -26,6 +26,7 @@
 
 - 货币价格抓取拆出 `currency-units` 纯函数层并补测试。
 - UI 规范化：global.css 设计 token、AppIcon / ConfirmDialog 统一组件，字号阶梯与动效统一。
+- 打包体积优化：`misans`、`lucide-vue-next` 仅渲染层使用（vite 构建时已内联），不再随包分发 node_modules 原包，安装包体积回落至 100MB 以内（满足 Gitee 附件上限）。
 
 ## v1.0.0（2026-08）
 
