@@ -1,6 +1,6 @@
 {
   "name": "sgbuddy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "QQ三国助手 — 配号、养成、倒卖一体化桌面工具",
   "main": "./dist/main/index.cjs",
   "author": "QQ三国烟尘",
